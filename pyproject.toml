@@ -1,0 +1,22 @@
+[project]
+name = "agent-k"
+version = "0.1.0"
+description = "An extremely fast Python package and project manager, written in Rust."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "aiohttp>=3.11.10",
+    "asyncio>=3.4.3",
+    "httpx>=0.28.1",
+    "loguru>=0.7.3",
+    "markitdown>=0.0.1a2",
+    "pandas>=2.2.3",
+    "tqdm>=4.67.1",
+]
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.0.1",
+    "python-dotenv>=1.0.1",
+    "ruff>=0.8.3",
+]
