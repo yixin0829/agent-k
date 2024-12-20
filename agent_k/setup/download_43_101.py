@@ -1,46 +1,49 @@
+"""
+1. Fetch deduplicated nickel mineral site entities from the MinMod API.
+2. Download 43-101 PDF reports from the CDR API.
+"""
+
 import os
-from dotenv import load_dotenv
 import httpx
 import pandas as pd
 from tqdm import tqdm
 import warnings
 from agent_k.utils.minmod_sparql import run_minmod_query
-from agent_k.config.schemas import MinModHyperCols
+from agent_k.config.schemas import MinModHyperCols, DataSource
 import asyncio
 from agent_k.utils.ms_model import MineralSite
+import agent_k.config.general as config_general
+from loguru import logger
 
 warnings.filterwarnings("ignore")
 tqdm.pandas()
 
-load_dotenv()
+COMMODITY = "nickel"
+DATA_DIR = "data"
+RAW_DIR = os.path.join(DATA_DIR, "raw")
+MINMOD_DIR = os.path.join(RAW_DIR, "minmod")
+REPORTS_DIR = os.path.join(RAW_DIR, "43-101")
 
-# Read ENV variables
-API_USR_NAME: str = os.getenv("API_CDR_USR_NAME")
-API_PASSWORD: str = os.getenv("API_CDR_PASSWORD")
-AUTH_TOKEN: str = os.getenv("API_CDR_AUTH_TOKEN")
 
-# CDR API
-API_CDR_LAND_URL = "https://api.cdr.land/v1"
-DOCUMENTS_ENDPOINT = "/docs/documents"
-DOCUMENT_BY_ID_ENDPOINT = "/docs/document/{doc_id}"  # for querying pdf document by id
-PROVENANCE_ENDPOINT = "/docs/documents/q/provenance/url"  # for querying record id based on source id (e.g. https://w3id.org/usgs/z/4530692/5CAAGFXV)
+def hyper_reponse_file(commodity: str):
+    return f"minmod_hyper_response_{commodity}.csv"
+
+
+def enriched_hyper_reponse_file(commodity: str):
+    return f"minmod_hyper_response_enriched_{commodity}.csv"
 
 
 def download_hyper_csv():
-    # Create data/raw/minmod directories if they don't exist
-    data_dir = "data"
-    raw_dir = os.path.join(data_dir, "raw")
-    minmod_dir = os.path.join(raw_dir, "minmod")
+    # Create directories if they don't exist
+    if not os.path.exists(DATA_DIR):
+        os.makedirs(DATA_DIR)
+    if not os.path.exists(RAW_DIR):
+        os.makedirs(RAW_DIR)
+    if not os.path.exists(MINMOD_DIR):
+        os.makedirs(MINMOD_DIR)
 
-    if not os.path.exists(data_dir):
-        os.makedirs(data_dir)
-    if not os.path.exists(raw_dir):
-        os.makedirs(raw_dir)
-    if not os.path.exists(minmod_dir):
-        os.makedirs(minmod_dir)
-
-    print("Downloading MinMod nickel sites data...")
-    ms = MineralSite(commodity="nickel")
+    logger.info(f"Downloading MinMod {COMMODITY} sites data...")
+    ms = MineralSite(commodity=COMMODITY)
     try:
         ms.init()
         df = ms.df
@@ -57,9 +60,9 @@ def download_hyper_csv():
             country_options,
         )
 
-    df.to_csv(os.path.join(minmod_dir, "minmod_hyper_response.csv"), index=False)
+    df.to_csv(os.path.join(MINMOD_DIR, hyper_reponse_file(COMMODITY)), index=False)
 
-    print("Download complete!")
+    logger.info("Download complete!")
 
 
 def download_minmod_site_record_id():
@@ -74,61 +77,59 @@ def download_minmod_site_record_id():
 
 
 def enrich_hyper_w_record_id():
-    df_hyper = pd.read_csv("./data/raw/minmod/minmod_hyper_response.csv")
-    df_minmod_sites = pd.read_csv("./data/raw/minmod/minmod_sites_record_id.csv")
-    print(f"df_hyper shape: {df_hyper.shape}")
-    print(f"df minmod sites shape: {df_minmod_sites.shape}")
+    df_hyper = pd.read_csv(os.path.join(MINMOD_DIR, hyper_reponse_file(COMMODITY)))
+    logger.info(f"df_hyper shape: {df_hyper.shape}")
 
-    # Deduplicate the ms column in df_hyper
-    df_hyper = df_hyper.drop_duplicates(subset=["ms"])
-    print(f"(after dedup) df_hyper shape: {df_hyper.shape}")
+    # Assert that the ms column is unique
+    assert (
+        df_hyper[MinModHyperCols.MINERAL_SITE_NAME.value].nunique() == df_hyper.shape[0]
+    ), f"{MinModHyperCols.MINERAL_SITE_NAME.value} column is not unique"
 
-    # Deduplicate the ms.value column in df_minmod_sites
-    df_minmod_sites = df_minmod_sites.drop_duplicates(subset=["ms.value"])
-    print(f"(after dedup) df_minmod_sites shape: {df_minmod_sites.shape}")
-    import ast
+    # If mineral site name contains (MRDS, DOI, 43-101) then set the data source to the appropriate enum
+    # Examples:
+    # [Unnamed Copper Prospect](https://minmod.isi.edu/resource/dedup_site__mrdata-usgs-gov-mrds__10013841) -> MRDS
+    # [Unnamed Prospect](https://minmod.isi.edu/resource/dedup_site__doi-org-10-5066-p9htergk__13368) -> DOI
+    # [Minago Nickel Mine](https://minmod.isi.edu/resource/dedup_site__api-cdr-land-v1-docs-documents__020ad3e9246df19d58b68751eb9e1e49bf8631d31c70d9737647bfab306354fa0c) -> 43-101
+    for ds in DataSource:
+        ds_mask = df_hyper[MinModHyperCols.MINERAL_SITE_NAME.value].str.contains(
+            ds.name.lower().replace("_", "-")
+        )
+        df_hyper.loc[ds_mask, MinModHyperCols.DATA_SOURCE.value] = ds.value
 
-    # Parse ms from string to list type
-    df_hyper["ms"] = df_hyper["ms"].apply(
-        lambda x: [x] if not x.startswith("[") else ast.literal_eval(x)
+    url_pattern = r"(https?://[^\s\)]+)"
+    df_hyper.loc[:, MinModHyperCols.SOURCE_VALUE.value] = df_hyper[
+        MinModHyperCols.MINERAL_SITE_NAME.value
+    ].str.extract(url_pattern, expand=False)
+    df_hyper.loc[:, MinModHyperCols.RECORD_VALUE.value] = (
+        df_hyper[MinModHyperCols.SOURCE_VALUE.value].str.split("__").str[-1]
     )
 
-    # Explode the ms and ms_name columns
-    print(f"df_hyper shape: {df_hyper.shape}")
-    df_hyper = df_hyper.explode(["ms"])
-    print(f"df_hyper exploded shape: {df_hyper.shape}")
-
-    df_hyper = df_hyper.merge(
-        df_minmod_sites, left_on="ms", right_on="ms.value", how="left"
-    )
-    df_hyper = df_hyper.drop(columns=["ms.value"])
-
-    # Impute the record id for those `1` using `https://api.cdr.land/v1/docs/documents/q/provenance/url?pattern=...` CDR endpoint.
-    df_hyper["record.value_imputed"] = df_hyper["record.value"]
+    # Check if PDF report with record value exist in data/raw/43-101
+    df_hyper[MinModHyperCols.DOWNLOADED_PDF.value] = False
     for idx, row in df_hyper.iterrows():
-        if row["record.value"] == "1":
-            source_id = row["source.value"]
-            print(f"Imputing record id for row {idx} with source id: {source_id}")
-            url = API_CDR_LAND_URL + PROVENANCE_ENDPOINT
-            try:
-                res = httpx.post(
-                    url=url,
-                    params={"pattern": source_id, "size": 10, "page": 0},
-                    headers={
-                        "Authorization": f"Bearer {os.getenv("API_CDR_AUTH_TOKEN")}"
-                    },
-                )
-                res.raise_for_status()
-                res_json = res.json()
-                if res_json:
-                    record_id = res_json[0]["id"]
-                    df_hyper.loc[idx, "record.value_imputed"] = record_id
-            except Exception as e:
-                print(f"Error: {e}")
-                continue
+        if row[MinModHyperCols.DATA_SOURCE.value] == DataSource.API_CDR_LAND.value:
+            record_id = row[MinModHyperCols.RECORD_VALUE.value]
+            if os.path.exists(os.path.join(REPORTS_DIR, f"{record_id}.pdf")):
+                df_hyper.loc[idx, MinModHyperCols.DOWNLOADED_PDF.value] = True
 
-    df_hyper["record.value_imputed"].value_counts(ascending=False).head(5)
-    df_hyper.to_csv("./data/raw/minmod/minmod_hyper_response_enriched.csv", index=False)
+    logger.info(
+        f"{df_hyper[MinModHyperCols.DOWNLOADED_PDF.value].sum()} / {df_hyper.shape[0]} 43-101 reports already downloaded. Skipping download by setting DOWNLOADED_PDF to True."
+    )
+
+    # Assert all enriched columns are not null
+    for col in [
+        MinModHyperCols.DATA_SOURCE.value,
+        MinModHyperCols.SOURCE_VALUE.value,
+        MinModHyperCols.RECORD_VALUE.value,
+        MinModHyperCols.DOWNLOADED_PDF.value,
+    ]:
+        assert df_hyper[col].notna().all(), f"{col} column has null values"
+
+    df_hyper.to_csv(
+        os.path.join(MINMOD_DIR, enriched_hyper_reponse_file(COMMODITY)), index=False
+    )
+    logger.info(f"df_hyper shape: {df_hyper.shape}")
+    logger.info("Successfully enriched hyper with record id!")
 
 
 async def download_report(record_id: str, save_path: str, semaphore: asyncio.Semaphore):
@@ -143,11 +144,14 @@ async def download_report(record_id: str, save_path: str, semaphore: asyncio.Sem
     Returns:
         bool: True if download was successful, False otherwise
     """
-    url = API_CDR_LAND_URL + DOCUMENT_BY_ID_ENDPOINT.format(record_id=record_id)
+    url = (
+        config_general.API_CDR_LAND_URL
+        + config_general.DOCUMENT_BY_ID_ENDPOINT.format(doc_id=record_id)
+    )
     async with semaphore:  # Limit concurrent requests
         try:
             async with httpx.AsyncClient() as client:
-                # Download PDF with authentication headers
+                # Download PDF with authentication headers and write to file in save_path
                 res = await client.get(
                     url,
                     headers={
@@ -156,41 +160,39 @@ async def download_report(record_id: str, save_path: str, semaphore: asyncio.Sem
                     follow_redirects=True,
                 )
                 res.raise_for_status()
+                logger.info(f"Downloaded {record_id} successfully")
 
-                # Create save directory if it doesn't exist
                 os.makedirs(save_path, exist_ok=True)
 
-                # Save PDF to file
                 with open(os.path.join(save_path, f"{record_id}.pdf"), "wb") as f:
                     f.write(res.content)
+                return True
         except Exception:
-            print(f"Error downloading {record_id}: {res.status_code}")
+            logger.error(f"Error downloading {record_id}: {res.status_code}")
             return False
-    return True
 
 
 async def download_all_reports(df_hyper: pd.DataFrame, max_concurrent_requests: int):
     """
     Downloads all PDF reports referenced in the provided DataFrame concurrently.
-
-    Args:
-        df_hyper: DataFrame containing report record IDs in 'record.value_imputed' column
-        max_concurrent_requests: Maximum number of concurrent downloads allowed
-
-    Returns:
-        list: List of tuples containing (index, success) for each download attempt
     """
     # Create semaphore to limit concurrent downloads
     semaphore = asyncio.Semaphore(max_concurrent_requests)
     tasks = []
 
-    # Create download tasks for each record
+    # Create download tasks for records with 43-101 data source and not yet downloaded
     for idx, row in df_hyper.iterrows():
-        record_id = row[MinModHyperCols.RECORD_VALUE_IMPUTED.value]
-        task = asyncio.create_task(
-            download_report(record_id, save_path="data/raw/43-101", semaphore=semaphore)
-        )
-        tasks.append((task, idx))
+        if (
+            row[MinModHyperCols.DATA_SOURCE.value] == DataSource.API_CDR_LAND.value
+            and not row[MinModHyperCols.DOWNLOADED_PDF.value]
+        ):
+            record_id = row[MinModHyperCols.RECORD_VALUE.value]
+            task = asyncio.create_task(
+                download_report(
+                    record_id, save_path="data/raw/43-101", semaphore=semaphore
+                )
+            )
+            tasks.append((task, idx))
 
     # Wait for all downloads to complete
     results = []
@@ -204,27 +206,25 @@ async def download_all_reports(df_hyper: pd.DataFrame, max_concurrent_requests: 
 def download_reports_main(max_concurrent_requests: int = 10):
     """
     Main function to orchestrate downloading all reports.
-
-    Args:
-        max_concurrent_requests: Maximum number of concurrent downloads allowed
     """
     # Load report metadata
-    df_hyper = pd.read_csv("./data/raw/minmod/minmod_hyper_response_enriched.csv")
+    df_hyper = pd.read_csv(
+        os.path.join(MINMOD_DIR, enriched_hyper_reponse_file(COMMODITY))
+    )
 
     # Download all reports concurrently
     results = asyncio.run(download_all_reports(df_hyper, max_concurrent_requests))
 
-    # Update download status in DataFrame
-    df_hyper["downloaded_pdf"] = False
     for idx, success in results:
-        df_hyper.loc[idx, "downloaded_pdf"] = success
+        df_hyper.loc[idx, MinModHyperCols.DOWNLOADED_PDF.value] = success
 
-    # Print summary and save updated DataFrame
-    print(df_hyper["downloaded_pdf"].value_counts())
-    df_hyper.to_csv("./data/raw/minmod/minmod_hyper_response_enriched.csv", index=False)
+    # logger.info summary and save updated DataFrame
+    logger.info(df_hyper[MinModHyperCols.DOWNLOADED_PDF.value].value_counts())
+    df_hyper.to_csv(
+        os.path.join(MINMOD_DIR, enriched_hyper_reponse_file(COMMODITY)), index=False
+    )
 
 
 download_hyper_csv()
-# download_minmod_site_record_id()
-# enrich_hyper_w_record_id()
-# download_reports_main()
+enrich_hyper_w_record_id()
+download_reports_main()

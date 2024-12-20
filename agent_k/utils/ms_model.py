@@ -27,6 +27,7 @@ class MineralSite:
 
         self.load_data_cache()
 
+        # https://github.com/DARPA-CRITICALMAAS/ta2-minmod-kg/blob/0bdb5482e1bce393672721f64d8426a86c642366/minmodkg/api/routers/dedup_mineral_site.py#L30
         self.df = pd.DataFrame(
             self.clean_and_fix(
                 dataservice_utils.fetch_api_data(

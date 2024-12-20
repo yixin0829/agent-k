@@ -1,26 +1,32 @@
 from agent_k.utils.listable_class import ListableClass
+from enum import Enum
 
 
 class MinModHyperCols(ListableClass):
-    GROUP_ID = "group_id"
-    MS = "ms"
-    MS_NAME = "ms_name"
-    MS_NAME_PREPROCESSED = "ms_name_preprocessed"
-    MS_TYPE = "ms_type"
-    MS_RANK = "ms_rank"
-    COUNTRY = "country"
-    STATE_OR_PROVINCE = "state_or_province"
-    LOC_CRS = "loc_crs"
-    LOC_WKT = "loc_wkt"
-    TOT_CONTAINED_METAL = "tot_contained_metal"
-    TOT_TONNAGE = "total_tonnage"
-    TOT_GRADE = "total_grade"
-    TOP1_DEPOSIT_TYPE = "top1_deposit_type"
-    TOP1_DEPOSIT_GROUP = "top1_deposit_group"
-    TOP1_DEPOSIT_ENVIRONMENT = "top1_deposit_environment"
-    TOP1_DEPOSIT_CLASSIFICATION_CONFIDENCE = "top1_deposit_classification_confidence"
-    TOP1_DEPOSIT_CLASSIFICATION_SOURCE = "top1_deposit_classification_source"
-    SOURCE_VALUE = "source.value"
-    RECORD_VALUE = "record.value"
-    RECORD_VALUE_IMPUTED = "record.value_imputed"
-    DOWNLOADED_PDF = "downloaded_pdf"
+    MINERAL_SITE_NAME = "Mineral Site Name"
+    MINERAL_SITE_TYPE = "Mineral Site Type"
+    MINERAL_SITE_RANK = "Mineral Site Rank"
+    COUNTRY = "Country"
+    STATE_OR_PROVINCE = "State/Province"
+    LATITUDE = "Latitude"
+    LONGITUDE = "Longitude"
+    TOP_1_DEPOSIT_TYPE = "Top 1 Deposit Type"
+    TOP_DEPOSIT_GROUP = "Top Deposit Group"
+    TOP_1_DEPOSIT_ENVIRONMENT = "Top 1 Deposit Environment"
+    TOP_1_DEPOSIT_CLASSIFICATION_CONFIDENCE = "Top 1 Deposit Classification Confidence"
+    TOTAL_GRADE = "Total Grade"  # Unit %
+    TOTAL_TONNAGE = "Total Tonnage"  # Unit MM tonnes
+
+    # Enrich columns
+    DATA_SOURCE = "Data Source"  # The source of the data see DataSource enum
+    SOURCE_VALUE = "Source Value"  # The value of the source
+    RECORD_VALUE = "Record Value"  # The value of the record
+    DOWNLOADED_PDF = "Downloaded PDF"  # Whether the PDF has been downloaded
+
+
+class DataSource(Enum):
+    DOI_ORG = "DOI"
+    MRDATA_USGS_GOV_MRDS = "MRDS"
+    API_CDR_LAND = "43-101"
+    MRDATA_USGS_GOV = "MRDS_OTHER"
+    W3ID_ORG_USGS = "W3ID"
