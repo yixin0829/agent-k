@@ -18,32 +18,18 @@ from loguru import logger
 warnings.filterwarnings("ignore")
 tqdm.pandas()
 
-COMMODITY = "nickel"
-DATA_DIR = "data"
-RAW_DIR = os.path.join(DATA_DIR, "raw")
-MINMOD_DIR = os.path.join(RAW_DIR, "minmod")
-REPORTS_DIR = os.path.join(RAW_DIR, "43-101")
-
-
-def hyper_reponse_file(commodity: str):
-    return f"minmod_hyper_response_{commodity}.csv"
-
-
-def enriched_hyper_reponse_file(commodity: str):
-    return f"minmod_hyper_response_enriched_{commodity}.csv"
-
 
 def download_hyper_csv():
     # Create directories if they don't exist
-    if not os.path.exists(DATA_DIR):
-        os.makedirs(DATA_DIR)
-    if not os.path.exists(RAW_DIR):
-        os.makedirs(RAW_DIR)
-    if not os.path.exists(MINMOD_DIR):
-        os.makedirs(MINMOD_DIR)
+    if not os.path.exists(config_general.DATA_DIR):
+        os.makedirs(config_general.DATA_DIR)
+    if not os.path.exists(config_general.RAW_DIR):
+        os.makedirs(config_general.RAW_DIR)
+    if not os.path.exists(config_general.MINMOD_DIR):
+        os.makedirs(config_general.MINMOD_DIR)
 
-    logger.info(f"Downloading MinMod {COMMODITY} sites data...")
-    ms = MineralSite(commodity=COMMODITY)
+    logger.info(f"Downloading MinMod {config_general.COMMODITY} sites data...")
+    ms = MineralSite(commodity=config_general.COMMODITY)
     try:
         ms.init()
         df = ms.df
@@ -60,7 +46,20 @@ def download_hyper_csv():
             country_options,
         )
 
-    df.to_csv(os.path.join(MINMOD_DIR, hyper_reponse_file(COMMODITY)), index=False)
+    # Convert column names to lowercase with underscores
+    df.columns = [col.lower().replace(" ", "_").replace("-", "_") for col in df.columns]
+    df.rename(
+        columns={"state/province": MinModHyperCols.STATE_OR_PROVINCE.value},
+        inplace=True,
+    )
+
+    df.to_csv(
+        os.path.join(
+            config_general.MINMOD_DIR,
+            config_general.hyper_reponse_file(config_general.COMMODITY),
+        ),
+        index=False,
+    )
 
     logger.info("Download complete!")
 
@@ -77,7 +76,12 @@ def download_minmod_site_record_id():
 
 
 def enrich_hyper_w_record_id():
-    df_hyper = pd.read_csv(os.path.join(MINMOD_DIR, hyper_reponse_file(COMMODITY)))
+    df_hyper = pd.read_csv(
+        os.path.join(
+            config_general.MINMOD_DIR,
+            config_general.hyper_reponse_file(config_general.COMMODITY),
+        )
+    )
     logger.info(f"df_hyper shape: {df_hyper.shape}")
 
     # Assert that the ms column is unique
@@ -107,13 +111,15 @@ def enrich_hyper_w_record_id():
     # Check if PDF report with record value exist in data/raw/43-101
     df_hyper[MinModHyperCols.DOWNLOADED_PDF.value] = False
     for idx, row in df_hyper.iterrows():
-        if row[MinModHyperCols.DATA_SOURCE.value] == DataSource.API_CDR_LAND.value:
+        if row[MinModHyperCols.DATA_SOURCE.value] == DataSource.REPORTS_43_101.value:
             record_id = row[MinModHyperCols.RECORD_VALUE.value]
-            if os.path.exists(os.path.join(REPORTS_DIR, f"{record_id}.pdf")):
+            if os.path.exists(
+                os.path.join(config_general.REPORTS_DIR, f"{record_id}.pdf")
+            ):
                 df_hyper.loc[idx, MinModHyperCols.DOWNLOADED_PDF.value] = True
 
     logger.info(
-        f"{df_hyper[MinModHyperCols.DOWNLOADED_PDF.value].sum()} / {df_hyper.shape[0]} 43-101 reports already downloaded. Skipping download by setting DOWNLOADED_PDF to True."
+        f"{df_hyper[MinModHyperCols.DOWNLOADED_PDF.value].sum()}/{df_hyper.shape[0]} 43-101 reports already downloaded. Skipping download by setting DOWNLOADED_PDF to True."
     )
 
     # Assert all enriched columns are not null
@@ -125,11 +131,20 @@ def enrich_hyper_w_record_id():
     ]:
         assert df_hyper[col].notna().all(), f"{col} column has null values"
 
+    # Extract mineral site name from the mineral site name column
+    df_hyper[MinModHyperCols.MINERAL_SITE_NAME.value] = df_hyper[
+        MinModHyperCols.MINERAL_SITE_NAME.value
+    ].str.extract(r"\[(.*?)\]")
+
     df_hyper.to_csv(
-        os.path.join(MINMOD_DIR, enriched_hyper_reponse_file(COMMODITY)), index=False
+        os.path.join(
+            config_general.MINMOD_DIR,
+            config_general.enriched_hyper_reponse_file(config_general.COMMODITY),
+        ),
+        index=False,
     )
     logger.info(f"df_hyper shape: {df_hyper.shape}")
-    logger.info("Successfully enriched hyper with record id!")
+    logger.info("Successfully enriched hyper with new columns!")
 
 
 async def download_report(record_id: str, save_path: str, semaphore: asyncio.Semaphore):
@@ -183,7 +198,7 @@ async def download_all_reports(df_hyper: pd.DataFrame, max_concurrent_requests: 
     # Create download tasks for records with 43-101 data source and not yet downloaded
     for idx, row in df_hyper.iterrows():
         if (
-            row[MinModHyperCols.DATA_SOURCE.value] == DataSource.API_CDR_LAND.value
+            row[MinModHyperCols.DATA_SOURCE.value] == DataSource.REPORTS_43_101.value
             and not row[MinModHyperCols.DOWNLOADED_PDF.value]
         ):
             record_id = row[MinModHyperCols.RECORD_VALUE.value]
@@ -209,7 +224,10 @@ def download_reports_main(max_concurrent_requests: int = 10):
     """
     # Load report metadata
     df_hyper = pd.read_csv(
-        os.path.join(MINMOD_DIR, enriched_hyper_reponse_file(COMMODITY))
+        os.path.join(
+            config_general.MINMOD_DIR,
+            config_general.enriched_hyper_reponse_file(config_general.COMMODITY),
+        )
     )
 
     # Download all reports concurrently
@@ -221,10 +239,15 @@ def download_reports_main(max_concurrent_requests: int = 10):
     # logger.info summary and save updated DataFrame
     logger.info(df_hyper[MinModHyperCols.DOWNLOADED_PDF.value].value_counts())
     df_hyper.to_csv(
-        os.path.join(MINMOD_DIR, enriched_hyper_reponse_file(COMMODITY)), index=False
+        os.path.join(
+            config_general.MINMOD_DIR,
+            config_general.enriched_hyper_reponse_file(config_general.COMMODITY),
+        ),
+        index=False,
     )
 
 
-download_hyper_csv()
-enrich_hyper_w_record_id()
-download_reports_main()
+if __name__ == "__main__":
+    download_hyper_csv()
+    enrich_hyper_w_record_id()
+    download_reports_main()
