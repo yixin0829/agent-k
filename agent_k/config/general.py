@@ -27,6 +27,7 @@ MRDS_URL = "https://mrdata.usgs.gov/mrds/mrds-csv.zip"
 ZIP_PATH = os.path.join(RAW_DIR, "mrds.zip")
 EVAL_DIR = os.path.join(DATA_DIR, "eval")
 
+# Note: Commodity is used for naming files and defining the scope of the data
 COMMODITY = "nickel"
 
 
@@ -38,3 +39,8 @@ def hyper_reponse_file(commodity: str):
 def enriched_hyper_reponse_file(commodity: str):
     """Returns the filename for the enriched hyper response CSV file."""
     return f"minmod_hyper_response_enriched_{commodity}.csv"
+
+
+def eval_set_matched_based_file(commodity: str):
+    """Returns the filename for the matched-based eval set file."""
+    return f"eval_set_matched_based_{commodity}.jsonl"

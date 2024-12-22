@@ -95,10 +95,16 @@ def enrich_hyper_w_record_id():
     # [Unnamed Prospect](https://minmod.isi.edu/resource/dedup_site__doi-org-10-5066-p9htergk__13368) -> DOI
     # [Minago Nickel Mine](https://minmod.isi.edu/resource/dedup_site__api-cdr-land-v1-docs-documents__020ad3e9246df19d58b68751eb9e1e49bf8631d31c70d9737647bfab306354fa0c) -> 43-101
     for ds in DataSource:
+        ds_pattern = ds.name.lower().replace("_", "-")
         ds_mask = df_hyper[MinModHyperCols.MINERAL_SITE_NAME.value].str.contains(
-            ds.name.lower().replace("_", "-")
+            ds_pattern
         )
         df_hyper.loc[ds_mask, MinModHyperCols.DATA_SOURCE.value] = ds.value
+    # Set data source to OTHER if not found in the enum
+    df_hyper.loc[
+        df_hyper[MinModHyperCols.DATA_SOURCE.value].isna(),
+        MinModHyperCols.DATA_SOURCE.value,
+    ] = DataSource.OTHER.value
 
     url_pattern = r"(https?://[^\s\)]+)"
     df_hyper.loc[:, MinModHyperCols.SOURCE_VALUE.value] = df_hyper[

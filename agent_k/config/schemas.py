@@ -28,8 +28,20 @@ class DataSource(Enum):
     """
     The names of the data sources are used for regex matching. Do not change them.
     """
+
+    OTHER = "MRDATA_OTHER"
     DOI_ORG = "DOI"
-    MRDATA_USGS_GOV_MRDS = "MRDS"
+    MRDATA_USGS_GOV_MRDS = "MRDATA_MRDS"
     API_CDR_LAND = "43-101"
-    MRDATA_USGS_GOV = "MRDS_OTHER"
     W3ID_ORG_USGS = "W3ID"
+
+
+class QATemplateType(Enum):
+    SINGLE_STATE_OR_PROVINCE = "single_state_or_province"
+    SINGLE_COUNTRY = "single_country"
+    SINGLE_DEPOSIT_TYPE = "single_deposit_type"
+    SINGLE_DEPOSIT_ENVIRONMENT = "single_deposit_environment"
+    MULTIPLE_STATE_OR_PROVINCE = "multiple_state_or_province"
+    MULTIPLE_COUNTRY = "multiple_country"
+    MULTIPLE_DEPOSIT_TYPE = "multiple_deposit_type"
+    MULTIPLE_DEPOSIT_ENVIRONMENT = "multiple_deposit_environment"
