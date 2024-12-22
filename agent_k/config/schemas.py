@@ -25,8 +25,11 @@ class MinModHyperCols(ListableClass):
 
 
 class DataSource(Enum):
+    """
+    The names of the data sources are used for regex matching. Do not change them.
+    """
     DOI_ORG = "DOI"
     MRDATA_USGS_GOV_MRDS = "MRDS"
-    REPORTS_43_101 = "43-101"
+    API_CDR_LAND = "43-101"
     MRDATA_USGS_GOV = "MRDS_OTHER"
     W3ID_ORG_USGS = "W3ID"

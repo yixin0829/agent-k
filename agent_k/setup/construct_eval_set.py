@@ -9,6 +9,7 @@ Each line is a JSON object with the following fields:
     - "sql" (str): the SQL query to answer the question
     - "selected_columns" (list of str): the columns that are selected
     - "filter_conditions" (list of dicts): the conditions to filter the data
+    - "data_source" (list of str): the corresponding data sources (e.g. 43-101, MRDS, etc.) for each record in the answer
 """
 
 import os
@@ -72,9 +73,13 @@ def single_state_or_province_qa_template(
     answer = df_hyper[
         df_hyper[MinModHyperCols.STATE_OR_PROVINCE.value] == state_or_province
     ][selected_columns].values.tolist()
+    data_source = df_hyper[
+        df_hyper[MinModHyperCols.STATE_OR_PROVINCE.value] == state_or_province
+    ][MinModHyperCols.DATA_SOURCE.value].values.tolist()
     return (
         f"What are all the mineral sites located in {state_or_province}, {country}? Report {selected_columns_str}.",
         answer,
+        data_source,
     )
 
 
@@ -93,9 +98,13 @@ def single_country_qa_template(
     answer = df_hyper[df_hyper[MinModHyperCols.COUNTRY.value] == country][
         selected_columns
     ].values.tolist()
+    data_source = df_hyper[df_hyper[MinModHyperCols.COUNTRY.value] == country][
+        MinModHyperCols.DATA_SOURCE.value
+    ].values.tolist()
     return (
         f"What are all the mineral sites located in {country}? Report {selected_columns_str}.",
         answer,
+        data_source,
     )
 
 
@@ -114,9 +123,13 @@ def single_deposit_type_qa_template(
     answer = df_hyper[
         df_hyper[MinModHyperCols.TOP_1_DEPOSIT_TYPE.value] == deposit_type
     ][selected_columns].values.tolist()
+    data_source = df_hyper[
+        df_hyper[MinModHyperCols.TOP_1_DEPOSIT_TYPE.value] == deposit_type
+    ][MinModHyperCols.DATA_SOURCE.value].values.tolist()
     return (
         f"What are all the mineral sites with a deposit type of {deposit_type}? Report {selected_columns_str}.",
         answer,
+        data_source,
     )
 
 
@@ -135,9 +148,14 @@ def single_deposit_environment_qa_template(
     answer = df_hyper[
         df_hyper[MinModHyperCols.TOP_1_DEPOSIT_ENVIRONMENT.value] == deposit_environment
     ][selected_columns].values.tolist()
+    data_source = df_hyper[
+        df_hyper[MinModHyperCols.TOP_1_DEPOSIT_ENVIRONMENT.value]
+        == deposit_environment
+    ][MinModHyperCols.DATA_SOURCE.value].values.tolist()
     return (
         f"What are all the mineral sites with a deposit environment of {deposit_environment}? Report {selected_columns_str}.",
         answer,
+        data_source,
     )
 
 
@@ -165,9 +183,13 @@ def multiple_state_or_province_qa_template(
     answer = df_hyper[
         df_hyper[MinModHyperCols.STATE_OR_PROVINCE.value].isin(state_or_provinces)
     ][selected_columns].values.tolist()
+    data_source = df_hyper[
+        df_hyper[MinModHyperCols.STATE_OR_PROVINCE.value].isin(state_or_provinces)
+    ][MinModHyperCols.DATA_SOURCE.value].values.tolist()
     return (
         f"What are all the mineral sites located in {state_or_provinces_str}? Report {selected_columns_str}.",
         answer,
+        data_source,
     )
 
 
@@ -193,9 +215,13 @@ def multiple_country_qa_template(
     answer = df_hyper[df_hyper[MinModHyperCols.COUNTRY.value].isin(countries)][
         selected_columns
     ].values.tolist()
+    data_source = df_hyper[df_hyper[MinModHyperCols.COUNTRY.value].isin(countries)][
+        MinModHyperCols.DATA_SOURCE.value
+    ].values.tolist()
     return (
         f"What are all the mineral sites located in {countries_str}? Report {selected_columns_str}.",
         answer,
+        data_source,
     )
 
 
@@ -223,9 +249,13 @@ def multiple_deposit_type_qa_template(
     answer = df_hyper[
         df_hyper[MinModHyperCols.TOP_1_DEPOSIT_TYPE.value].isin(deposit_types)
     ][selected_columns].values.tolist()
+    data_source = df_hyper[
+        df_hyper[MinModHyperCols.TOP_1_DEPOSIT_TYPE.value].isin(deposit_types)
+    ][MinModHyperCols.DATA_SOURCE.value].values.tolist()
     return (
         f"What are all the mineral sites with a deposit type of {deposit_types_str}? Report {selected_columns_str}.",
         answer,
+        data_source,
     )
 
 
@@ -257,9 +287,15 @@ def multiple_deposit_environment_qa_template(
             deposit_environments
         )
     ][selected_columns].values.tolist()
+    data_source = df_hyper[
+        df_hyper[MinModHyperCols.TOP_1_DEPOSIT_ENVIRONMENT.value].isin(
+            deposit_environments
+        )
+    ][MinModHyperCols.DATA_SOURCE.value].values.tolist()
     return (
         f"What are all the mineral sites with a deposit environment of {deposit_environments_str}? Report {selected_columns_str}.",
         answer,
+        data_source,
     )
 
 
@@ -273,7 +309,7 @@ def construct_eval_set():
     # Select 43-101 and MRDS data sources
     df_hyper = df_hyper[
         df_hyper[MinModHyperCols.DATA_SOURCE.value].isin(
-            [DataSource.MRDATA_USGS_GOV_MRDS.value, DataSource.REPORTS_43_101.value]
+            [DataSource.MRDATA_USGS_GOV_MRDS.value, DataSource.API_CDR_LAND.value]
         )
     ]
 
@@ -297,6 +333,7 @@ def construct_eval_set():
             "sql": "",
             "selected_columns": [],
             "filter_conditions": [],
+            "data_source": [],
         },
     }
 
@@ -390,9 +427,11 @@ def construct_eval_set():
         # Generate questions using templates
         json_qa_pair = deepcopy(json_template)
         json_qa_pair["qid"] = str(uuid.uuid4())
-        json_qa_pair["question"], json_qa_pair["answer"] = qa_templates[
-            "single_state_or_province"
-        ](df_hyper, state_or_province, selected_columns)
+        json_qa_pair["question"], json_qa_pair["answer"], json_qa_pair["metadata"][
+            "data_source"
+        ] = qa_templates["single_state_or_province"](
+            df_hyper, state_or_province, selected_columns
+        )
         json_qa_pair["metadata"]["question_category"] = "match-based (single-value)"
         json_qa_pair["metadata"]["sql"] = (
             f"SELECT {', '.join(selected_columns)} FROM df_hyper WHERE {MinModHyperCols.STATE_OR_PROVINCE.value} = '{state_or_province}'"
@@ -409,9 +448,9 @@ def construct_eval_set():
 
         json_qa_pair = deepcopy(json_template)
         json_qa_pair["qid"] = str(uuid.uuid4())
-        json_qa_pair["question"], json_qa_pair["answer"] = qa_templates[
-            "single_country"
-        ](df_hyper, country, selected_columns)
+        json_qa_pair["question"], json_qa_pair["answer"], json_qa_pair["metadata"][
+            "data_source"
+        ] = qa_templates["single_country"](df_hyper, country, selected_columns)
         json_qa_pair["metadata"]["question_category"] = "match-based (single-value)"
         json_qa_pair["metadata"]["sql"] = (
             f"SELECT {', '.join(selected_columns)} FROM df_hyper WHERE {MinModHyperCols.COUNTRY.value} = '{country}'"
@@ -426,9 +465,9 @@ def construct_eval_set():
 
         json_qa_pair = deepcopy(json_template)
         json_qa_pair["qid"] = str(uuid.uuid4())
-        json_qa_pair["question"], json_qa_pair["answer"] = qa_templates[
-            "single_deposit_type"
-        ](df_hyper, deposit_type, selected_columns)
+        json_qa_pair["question"], json_qa_pair["answer"], json_qa_pair["metadata"][
+            "data_source"
+        ] = qa_templates["single_deposit_type"](df_hyper, deposit_type, selected_columns)
         json_qa_pair["metadata"]["question_category"] = "match-based (single-value)"
         json_qa_pair["metadata"]["sql"] = (
             f"SELECT {', '.join(selected_columns)} FROM df_hyper WHERE {MinModHyperCols.TOP_1_DEPOSIT_TYPE.value} = '{deposit_type}'"
@@ -445,9 +484,11 @@ def construct_eval_set():
 
         json_qa_pair = deepcopy(json_template)
         json_qa_pair["qid"] = str(uuid.uuid4())
-        json_qa_pair["question"], json_qa_pair["answer"] = qa_templates[
-            "single_deposit_environment"
-        ](df_hyper, deposit_environment, selected_columns)
+        json_qa_pair["question"], json_qa_pair["answer"], json_qa_pair["metadata"][
+            "data_source"
+        ] = qa_templates["single_deposit_environment"](
+            df_hyper, deposit_environment, selected_columns
+        )
         json_qa_pair["metadata"]["question_category"] = "match-based (single-value)"
         json_qa_pair["metadata"]["sql"] = (
             f"SELECT {', '.join(selected_columns)} FROM df_hyper WHERE {MinModHyperCols.TOP_1_DEPOSIT_ENVIRONMENT.value} = '{deposit_environment}'"
@@ -464,9 +505,11 @@ def construct_eval_set():
 
         json_qa_pair = deepcopy(json_template)
         json_qa_pair["qid"] = str(uuid.uuid4())
-        json_qa_pair["question"], json_qa_pair["answer"] = qa_templates[
-            "multiple_state_or_province"
-        ](df_hyper, state_or_provinces, selected_columns)
+        json_qa_pair["question"], json_qa_pair["answer"], json_qa_pair["metadata"][
+            "data_source"
+        ] = qa_templates["multiple_state_or_province"](
+            df_hyper, state_or_provinces, selected_columns
+        )
         json_qa_pair["metadata"]["question_category"] = "match-based (multiple-value)"
         json_qa_pair["metadata"]["sql"] = (
             f"SELECT {', '.join(selected_columns)} FROM df_hyper WHERE {MinModHyperCols.STATE_OR_PROVINCE.value} IN ({', '.join(f"'{sop}'" for sop in state_or_provinces)})"
@@ -483,9 +526,9 @@ def construct_eval_set():
 
         json_qa_pair = deepcopy(json_template)
         json_qa_pair["qid"] = str(uuid.uuid4())
-        json_qa_pair["question"], json_qa_pair["answer"] = qa_templates[
-            "multiple_country"
-        ](df_hyper, countries, selected_columns)
+        json_qa_pair["question"], json_qa_pair["answer"], json_qa_pair["metadata"][
+            "data_source"
+        ] = qa_templates["multiple_country"](df_hyper, countries, selected_columns)
         json_qa_pair["metadata"]["question_category"] = "match-based (multiple-value)"
         json_qa_pair["metadata"]["sql"] = (
             f"SELECT {', '.join(selected_columns)} FROM df_hyper WHERE {MinModHyperCols.COUNTRY.value} IN ({', '.join(f"'{c}'" for c in countries)})"
@@ -500,9 +543,11 @@ def construct_eval_set():
 
         json_qa_pair = deepcopy(json_template)
         json_qa_pair["qid"] = str(uuid.uuid4())
-        json_qa_pair["question"], json_qa_pair["answer"] = qa_templates[
-            "multiple_deposit_type"
-        ](df_hyper, deposit_types, selected_columns)
+        json_qa_pair["question"], json_qa_pair["answer"], json_qa_pair["metadata"][
+            "data_source"
+        ] = qa_templates["multiple_deposit_type"](
+            df_hyper, deposit_types, selected_columns
+        )
         json_qa_pair["metadata"]["question_category"] = "match-based (multiple-value)"
         json_qa_pair["metadata"]["sql"] = (
             f"SELECT {', '.join(selected_columns)} FROM df_hyper WHERE {MinModHyperCols.TOP_1_DEPOSIT_TYPE.value} IN ({', '.join(f"'{dt}'" for dt in deposit_types)})"
@@ -519,9 +564,11 @@ def construct_eval_set():
 
         json_qa_pair = deepcopy(json_template)
         json_qa_pair["qid"] = str(uuid.uuid4())
-        json_qa_pair["question"], json_qa_pair["answer"] = qa_templates[
-            "multiple_deposit_environment"
-        ](df_hyper, deposit_environments, selected_columns)
+        json_qa_pair["question"], json_qa_pair["answer"], json_qa_pair["metadata"][
+            "data_source"
+        ] = qa_templates["multiple_deposit_environment"](
+            df_hyper, deposit_environments, selected_columns
+        )
         json_qa_pair["metadata"]["question_category"] = "match-based (multiple-value)"
         json_qa_pair["metadata"]["sql"] = (
             f"SELECT {', '.join(selected_columns)} FROM df_hyper WHERE {MinModHyperCols.TOP_1_DEPOSIT_ENVIRONMENT.value} IN ({', '.join(f"'{de}'" for de in deposit_environments)})"

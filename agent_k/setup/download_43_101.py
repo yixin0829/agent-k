@@ -111,7 +111,7 @@ def enrich_hyper_w_record_id():
     # Check if PDF report with record value exist in data/raw/43-101
     df_hyper[MinModHyperCols.DOWNLOADED_PDF.value] = False
     for idx, row in df_hyper.iterrows():
-        if row[MinModHyperCols.DATA_SOURCE.value] == DataSource.REPORTS_43_101.value:
+        if row[MinModHyperCols.DATA_SOURCE.value] == DataSource.API_CDR_LAND.value:
             record_id = row[MinModHyperCols.RECORD_VALUE.value]
             if os.path.exists(
                 os.path.join(config_general.REPORTS_DIR, f"{record_id}.pdf")
@@ -198,7 +198,7 @@ async def download_all_reports(df_hyper: pd.DataFrame, max_concurrent_requests: 
     # Create download tasks for records with 43-101 data source and not yet downloaded
     for idx, row in df_hyper.iterrows():
         if (
-            row[MinModHyperCols.DATA_SOURCE.value] == DataSource.REPORTS_43_101.value
+            row[MinModHyperCols.DATA_SOURCE.value] == DataSource.API_CDR_LAND.value
             and not row[MinModHyperCols.DOWNLOADED_PDF.value]
         ):
             record_id = row[MinModHyperCols.RECORD_VALUE.value]
