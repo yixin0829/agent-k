@@ -13,17 +13,19 @@ Each line is a JSON object with the following fields:
 """
 
 import os
-import pandas as pd
-from agent_k.config.schemas import MinModHyperCols, DataSource, QATemplateType
-from dataclasses import dataclass
-import agent_k.config.general as config_general
 import random
 import uuid
-from loguru import logger
-import simplejson as json
 from copy import deepcopy
-from agent_k.utils.general import sample_values
+from dataclasses import dataclass
 from typing import Callable
+
+import pandas as pd
+import simplejson as json
+from loguru import logger
+
+import agent_k.config.general as config_general
+from agent_k.config.schemas import DataSource, MinModHyperCols, QATemplateType
+from agent_k.utils.general import sample_values
 
 
 # QA template returns a tuple of (question, answer: list[list])

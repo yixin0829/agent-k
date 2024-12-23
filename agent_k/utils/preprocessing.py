@@ -53,7 +53,7 @@ def preprocess_ms_name(ms_name: str) -> str:
 # Preprocess the mineral site names
 def preprocess_ms_names(ms_list: list[str]) -> list[str]:
     ms_processed = []
-    for i, ms_name in enumerate(ms_list):
+    for _i, ms_name in enumerate(ms_list):
         ms_processed.append(preprocess_ms_name(ms_name))
     # Deduplicate the list
     ms_processed = list(set(ms_processed))

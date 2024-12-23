@@ -2,10 +2,12 @@
 https://github.com/DARPA-CRITICALMAAS/ta2-minmod-dashboard/blob/main/models/ms.py
 """
 
-import pandas as pd
-from agent_k.utils import dataservice_utils
 import asyncio
+
+import pandas as pd
+
 from agent_k.config.general import API_ENDPOINT
+from agent_k.utils import dataservice_utils
 
 
 class MineralSite:

@@ -2,12 +2,14 @@
 https://github.com/DARPA-CRITICALMAAS/ta2-minmod-dashboard/blob/main/helpers/dataservice_utils.py
 """
 
-import requests
-from agent_k.config.general import API_ENDPOINT
-import aiohttp
 import asyncio
 import time
+
+import aiohttp
+import requests
 from loguru import logger
+
+from agent_k.config.general import API_ENDPOINT
 
 
 def fetch_api_data(path, ssl_flag=True, headers=None, params=None):

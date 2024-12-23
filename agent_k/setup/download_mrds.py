@@ -1,9 +1,11 @@
 import os
-import httpx
 import shutil
+
+import httpx
 from loguru import logger
 from tqdm import tqdm
-from agent_k.config.general import DATA_DIR, RAW_DIR, MRDS_URL, ZIP_PATH, MRDS_DIR
+
+from agent_k.config.general import DATA_DIR, MRDS_DIR, MRDS_URL, RAW_DIR, ZIP_PATH
 
 
 def download_file(url, path):

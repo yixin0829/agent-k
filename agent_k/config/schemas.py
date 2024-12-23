@@ -1,5 +1,6 @@
-from agent_k.utils.listable_class import ListableClass
 from enum import Enum
+
+from agent_k.utils.listable_class import ListableClass
 
 
 class MinModHyperCols(ListableClass):

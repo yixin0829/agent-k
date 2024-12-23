@@ -3,17 +3,19 @@
 2. Download 43-101 PDF reports from the CDR API.
 """
 
+import asyncio
 import os
+import warnings
+
 import httpx
 import pandas as pd
-from tqdm import tqdm
-import warnings
-from agent_k.utils.minmod_sparql import run_minmod_query
-from agent_k.config.schemas import MinModHyperCols, DataSource
-import asyncio
-from agent_k.utils.ms_model import MineralSite
-import agent_k.config.general as config_general
 from loguru import logger
+from tqdm import tqdm
+
+import agent_k.config.general as config_general
+from agent_k.config.schemas import DataSource, MinModHyperCols
+from agent_k.utils.minmod_sparql import run_minmod_query
+from agent_k.utils.ms_model import MineralSite
 
 warnings.filterwarnings("ignore")
 tqdm.pandas()
