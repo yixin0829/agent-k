@@ -11,13 +11,16 @@ dependencies = [
     "httpx>=0.28.1",
     "loguru>=0.7.3",
     "markitdown>=0.0.1a2",
+    "openai>=1.58.1",
     "pandas>=2.2.3",
+    "psycopg2-binary>=2.9.10",
     "simplejson>=3.19.3",
     "tqdm>=4.67.1",
 ]
 
 [dependency-groups]
 dev = [
+    "ipykernel>=6.29.5",
     "pre-commit>=4.0.1",
     "python-dotenv>=1.0.1",
     "ruff>=0.8.3",
