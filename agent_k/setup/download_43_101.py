@@ -14,14 +14,13 @@ from tqdm import tqdm
 
 import agent_k.config.general as config_general
 from agent_k.config.schemas import DataSource, MinModHyperCols
-from agent_k.utils.minmod_sparql import run_minmod_query
 from agent_k.utils.ms_model import MineralSite
 
 warnings.filterwarnings("ignore")
 tqdm.pandas()
 
 
-def download_hyper_csv():
+def download_minmod_hyper_csv():
     # Create directories if they don't exist
     if not os.path.exists(config_general.DATA_DIR):
         os.makedirs(config_general.DATA_DIR)
@@ -66,18 +65,7 @@ def download_hyper_csv():
     logger.info("Download complete!")
 
 
-def download_minmod_site_record_id():
-    query = """SELECT DISTINCT ?ms ?source ?record
-    WHERE {
-        ?ms a :MineralSite ; :source_id ?source ; :record_id ?record .
-    }"""
-
-    run_minmod_query(
-        query, values=True, csv_path="data/raw/minmod/minmod_sites_record_id.csv"
-    )
-
-
-def enrich_hyper_w_record_id():
+def enrich_minmod_hyper():
     df_hyper = pd.read_csv(
         os.path.join(
             config_general.MINMOD_DIR,
@@ -116,13 +104,13 @@ def enrich_hyper_w_record_id():
         df_hyper[MinModHyperCols.SOURCE_VALUE.value].str.split("__").str[-1]
     )
 
-    # Check if PDF report with record value exist in data/raw/43-101
+    # Check if PDF report with record value exist in CDR_REPORTS_DIR
     df_hyper[MinModHyperCols.DOWNLOADED_PDF.value] = False
     for idx, row in df_hyper.iterrows():
         if row[MinModHyperCols.DATA_SOURCE.value] == DataSource.API_CDR_LAND.value:
             record_id = row[MinModHyperCols.RECORD_VALUE.value]
             if os.path.exists(
-                os.path.join(config_general.REPORTS_DIR, f"{record_id}.pdf")
+                os.path.join(config_general.CDR_REPORTS_DIR, f"{record_id}.pdf")
             ):
                 df_hyper.loc[idx, MinModHyperCols.DOWNLOADED_PDF.value] = True
 
@@ -212,7 +200,9 @@ async def download_all_reports(df_hyper: pd.DataFrame, max_concurrent_requests: 
             record_id = row[MinModHyperCols.RECORD_VALUE.value]
             task = asyncio.create_task(
                 download_report(
-                    record_id, save_path="data/raw/43-101", semaphore=semaphore
+                    record_id,
+                    save_path=config_general.CDR_REPORTS_DIR,
+                    semaphore=semaphore,
                 )
             )
             tasks.append((task, idx))
@@ -256,6 +246,6 @@ def download_reports_main(max_concurrent_requests: int = 10):
 
 
 if __name__ == "__main__":
-    download_hyper_csv()
-    enrich_hyper_w_record_id()
+    download_minmod_hyper_csv()
+    enrich_minmod_hyper()
     download_reports_main()

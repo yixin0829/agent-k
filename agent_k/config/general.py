@@ -21,11 +21,12 @@ PROVENANCE_ENDPOINT = "/docs/documents/q/provenance/url"  # for querying record 
 # Data directories
 DATA_DIR = "data"
 RAW_DIR = os.path.join(DATA_DIR, "raw")
-MINMOD_DIR = os.path.join(RAW_DIR, "minmod")
-REPORTS_DIR = os.path.join(RAW_DIR, "43-101")
-MRDS_DIR = os.path.join(RAW_DIR, "mrds")
-MRDS_URL = "https://mrdata.usgs.gov/mrds/mrds-csv.zip"
+ALL_SOURCES_DIR = os.path.join(RAW_DIR, "all_sources")
+CDR_REPORTS_DIR = os.path.join(ALL_SOURCES_DIR, "43-101")
+MRDS_DIR = os.path.join(ALL_SOURCES_DIR, "mrds")
 ZIP_PATH = os.path.join(RAW_DIR, "mrds.zip")
+MRDS_URL = "https://mrdata.usgs.gov/mrds/mrds-csv.zip"
+MINMOD_DIR = os.path.join(RAW_DIR, "minmod")
 EVAL_DIR = os.path.join(DATA_DIR, "eval")
 
 # Note: Commodity is used for naming files and defining the scope of the data
