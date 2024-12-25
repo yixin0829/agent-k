@@ -1,7 +1,12 @@
+"""
+Download MRDS data and filter for current commodity.
+"""
+
 import os
 import shutil
 
 import httpx
+import pandas as pd
 from loguru import logger
 from tqdm import tqdm
 
@@ -18,6 +23,33 @@ def download_file(url, path):
             for data in r.iter_bytes():
                 p_bar.update(len(data))
                 f.write(data)
+
+
+def process_mrds(mrds_file_path: str):
+    df = pd.read_csv(mrds_file_path)
+    # Create temp columns for all commodity columns to lists
+    for col in ["commod1", "commod2", "commod3"]:
+        df[col + "_temp"] = df[col].apply(
+            lambda x: x.split(",") if isinstance(x, str) and x else []
+        )
+    # Create a temporary column and concatenate all commodity columns into a single column
+    df["commodity_all_temp"] = (
+        df["commod1_temp"] + df["commod2_temp"] + df["commod3_temp"]
+    )
+    # Filter for rows where commodity_all contains config_general.COMMODITY
+    df = df[
+        df["commodity_all_temp"].apply(
+            lambda x: config_general.COMMODITY in str(x).lower()
+        )
+    ]
+    # Drop the temporary columns
+    df = df.drop(
+        columns=["commodity_all_temp", "commod1_temp", "commod2_temp", "commod3_temp"]
+    )
+    df.to_csv(
+        os.path.join(config_general.MRDS_DIR, f"mrds_{config_general.COMMODITY}.csv"),
+        index=False,
+    )
 
 
 if __name__ == "__main__":
@@ -38,6 +70,15 @@ if __name__ == "__main__":
     logger.info("Extracting zip file...")
     shutil.unpack_archive(config_general.ZIP_PATH, config_general.MRDS_DIR)
 
-    # Clean up by removing the zip file
-    os.remove(config_general.ZIP_PATH)
+    # Process the MRDS data
+    logger.info(
+        "Processing MRDS data to filter for current commodity (current commodity: {})...".format(
+            config_general.COMMODITY
+        )
+    )
+    process_mrds(os.path.join(config_general.MRDS_DIR, "mrds.csv"))
+
+    # Clean up by removing the zip file if it exists
+    if os.path.exists(config_general.ZIP_PATH):
+        os.remove(config_general.ZIP_PATH)
     logger.info("Download and extraction complete!")

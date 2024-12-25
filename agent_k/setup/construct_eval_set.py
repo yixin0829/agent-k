@@ -27,6 +27,9 @@ import agent_k.config.general as config_general
 from agent_k.config.schemas import DataSource, MinModHyperCols, QATemplateType
 from agent_k.utils.general import sample_values
 
+# Set random seed for reproducibility
+random.seed(42)
+
 
 # QA template returns a tuple of (question, answer: list[list])
 def single_state_or_province_qa_template(
@@ -339,7 +342,7 @@ def construct_eval_set_matched_based():
     # Select 43-101 and MRDS data sources
     df_hyper = df_hyper[
         df_hyper[MinModHyperCols.DATA_SOURCE.value].isin(
-            [DataSource.MRDATA_USGS_GOV_MRDS.value, DataSource.API_CDR_LAND.value]
+            [DataSource.MRDATA_USGS_GOV.value, DataSource.API_CDR_LAND.value]
         )
     ]
 

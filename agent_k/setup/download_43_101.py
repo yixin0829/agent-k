@@ -1,5 +1,5 @@
 """
-1. Fetch deduplicated nickel mineral site entities from the MinMod API.
+1. Fetch deduplicated mineral site entities for the current commodity from the MinMod API.
 2. Download 43-101 PDF reports from the CDR API.
 """
 

@@ -67,7 +67,7 @@ for i in {1..30}; do
         echo "  Password: ${POSTGRES_PASSWORD}"
 
         echo "Loading MRDS data into PostgreSQL..."
-        python -m agent_k.utils.load_mrds
+        python -m agent_k.setup.load_mrds
         exit 0
     fi
     sleep 1

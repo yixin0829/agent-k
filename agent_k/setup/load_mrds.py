@@ -1,23 +1,28 @@
+"""
+Load MRDS data filtered for current commodity into PostgreSQL database.
+"""
+
 import os
 
 import pandas as pd
 from loguru import logger
 from psycopg2 import Error as PostgresError
 
-from agent_k.config.general import MRDS_DIR, mrds_dtype
+import agent_k.config.general as config_general
 from agent_k.utils.db_utils import get_db_connection, insert_df, run_query
 
 
 def load_mrds_to_postgres():
-    """Load MRDS data into PostgreSQL database."""
     conn = None
     success = False
 
     try:
-        # 1. Read MRDS CSV file
-        mrds_file = os.path.join(MRDS_DIR, "mrds.csv")
+        # 1. Read MRDS CSV file (filtered for current commodity)
+        mrds_file = os.path.join(
+            config_general.MRDS_DIR, f"mrds_{config_general.COMMODITY}.csv"
+        )
         logger.info(f"Reading MRDS data from {mrds_file}")
-        df = pd.read_csv(mrds_file, dtype=mrds_dtype)
+        df = pd.read_csv(mrds_file, dtype=config_general.mrds_dtype)
 
         # 2. Connect to PostgreSQL
         conn = get_db_connection()
@@ -50,7 +55,7 @@ def load_mrds_to_postgres():
         logger.info("Created MRDS table successfully")
 
         # 4. Insert data
-        insert_df(conn, "mrds", df, chunk_size=10000)
+        insert_df(conn, "mrds", df, chunk_size=1000)
         logger.info("Inserted MRDS data successfully")
 
         # 5. Verify data
