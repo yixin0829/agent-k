@@ -11,7 +11,7 @@ DB_AGENT_SYSTEM_PROMPT_V2 = """You are a helpful SQL agent. Given a question, yo
 1. list_tables(): List all tables in the database.
 2. list_columns(table: str): List all columns in a given table.
 3. list_column_unique_values(column: str, table: str): List all unique values for a given column.
-4. get_table_metadata(table: str): Get the detailed metadata of a given table and column descriptions.
+4. list_columns_with_details(table: str): Get the detailed metadata of a given table and column descriptions.
 5. run_query(query: str): Run a SQL query and return the result.
 
 If some requested columns in the question are not available, leave them as NULL columns in the SQL query.

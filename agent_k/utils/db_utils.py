@@ -122,7 +122,7 @@ class PostgresDB:
             cur.execute(f"SELECT DISTINCT {column} FROM {schema}.{table}")
             return [row[0] for row in cur.fetchall()]
 
-    def get_table_metadata(self, table: str, schema: str = "public") -> str:
+    def list_columns_with_details(self, table: str, schema: str = "public") -> str:
         """Return a string description of the table. Mock method for now."""
         # Read all files in a directory recursively
         all_file_paths = {}
@@ -236,4 +236,4 @@ class PostgresDB:
 #         print("-"*100)
 #         print(db.list_column_unique_values("country", "mrds_nickel"))
 #         print("-"*100)
-#         print(db.list_table_metadata("mrds_nickel"))
+#         print(db.list_columns_with_details("mrds_nickel"))
