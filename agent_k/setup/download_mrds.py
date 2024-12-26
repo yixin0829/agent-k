@@ -25,8 +25,8 @@ def download_file(url, path):
                 f.write(data)
 
 
-def process_mrds(mrds_file_path: str):
-    df = pd.read_csv(mrds_file_path)
+def process_mrds(mrds_all_file_path: str, commodity: str):
+    df = pd.read_csv(mrds_all_file_path)
     # Create temp columns for all commodity columns to lists
     for col in ["commod1", "commod2", "commod3"]:
         df[col + "_temp"] = df[col].apply(
@@ -36,18 +36,14 @@ def process_mrds(mrds_file_path: str):
     df["commodity_all_temp"] = (
         df["commod1_temp"] + df["commod2_temp"] + df["commod3_temp"]
     )
-    # Filter for rows where commodity_all contains config_general.COMMODITY
-    df = df[
-        df["commodity_all_temp"].apply(
-            lambda x: config_general.COMMODITY in str(x).lower()
-        )
-    ]
+    # Filter for rows where commodity_all contains commodity
+    df = df[df["commodity_all_temp"].apply(lambda x: commodity in str(x).lower())]
     # Drop the temporary columns
     df = df.drop(
         columns=["commodity_all_temp", "commod1_temp", "commod2_temp", "commod3_temp"]
     )
     df.to_csv(
-        os.path.join(config_general.MRDS_DIR, f"mrds_{config_general.COMMODITY}.csv"),
+        os.path.join(config_general.MRDS_DIR, f"mrds_{commodity}.csv"),
         index=False,
     )
 
@@ -72,11 +68,12 @@ if __name__ == "__main__":
 
     # Process the MRDS data
     logger.info(
-        "Processing MRDS data to filter for current commodity (current commodity: {})...".format(
-            config_general.COMMODITY
-        )
+        f"Processing MRDS data to filter for current commodity: {config_general.COMMODITY}..."
     )
-    process_mrds(os.path.join(config_general.MRDS_DIR, "mrds.csv"))
+    process_mrds(
+        mrds_all_file_path=os.path.join(config_general.MRDS_DIR, "mrds.csv"),
+        commodity=config_general.COMMODITY,
+    )
 
     # Clean up by removing the zip file if it exists
     if os.path.exists(config_general.ZIP_PATH):

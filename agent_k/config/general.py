@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 
 from dotenv import load_dotenv
 
@@ -46,6 +47,12 @@ def enriched_hyper_reponse_file(commodity: str):
 def eval_set_matched_based_file(commodity: str):
     """Returns the filename for the matched-based eval set file."""
     return f"eval_set_matched_based_{commodity}.jsonl"
+
+
+def eval_results_file(commodity: str):
+    """Returns the filename for the eval results file."""
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    return f"eval_results_{commodity}_{timestamp}.csv"
 
 
 mrds_dtype = {
@@ -96,3 +103,15 @@ mrds_dtype = {
     "discr": "category",
     "score": "category",
 }
+
+# Agent cache directory
+AGENT_CACHE_DIR = os.path.join(DATA_DIR, "agent_cache")
+
+# Autogen config
+AUTOGEN_CONFIG_LIST = [
+    {
+        "model": "gpt-4o-mini",
+        "temperature": 0,
+        "api_key": os.environ.get("OPENAI_API_KEY"),
+    }
+]
