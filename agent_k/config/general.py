@@ -25,6 +25,7 @@ RAW_DIR = os.path.join(DATA_DIR, "raw")
 ALL_SOURCES_DIR = os.path.join(RAW_DIR, "all_sources")
 CDR_REPORTS_DIR = os.path.join(ALL_SOURCES_DIR, "43-101")
 MRDS_DIR = os.path.join(ALL_SOURCES_DIR, "mrds")
+DUCKDB_DB_PATH = os.path.join(ALL_SOURCES_DIR, "minmod.duckdb")
 ZIP_PATH = os.path.join(RAW_DIR, "mrds.zip")
 MRDS_URL = "https://mrdata.usgs.gov/mrds/mrds-csv.zip"
 MINMOD_DIR = os.path.join(RAW_DIR, "minmod")
@@ -63,54 +64,52 @@ mrds_dtype = {
     "site_name": str,
     "latitude": float,
     "longitude": float,
-    "region": "category",
-    "country": "category",
-    "state": "category",
-    "county": "category",
-    "com_type": "category",
-    "commod1": "category",
-    "commod2": "category",
-    "commod3": "category",
+    "region": str,
+    "country": str,
+    "state": str,
+    "county": str,
+    "com_type": str,
+    "commod1": str,
+    "commod2": str,
+    "commod3": str,
     "oper_type": "category",
-    "dep_type": "category",
+    "dep_type": str,
     "prod_size": "category",
-    "dev_stat": "category",
-    "ore": "category",
-    "gangue": "category",
-    "other_matl": "category",
-    "orebody_fm": "category",
-    "work_type": "category",
-    "model": "category",
-    "alteration": "category",
-    "conc_proc": "category",
-    "names": "category",
-    "ore_ctrl": "category",
-    "reporter": "category",
-    "hrock_unit": "category",
-    "hrock_type": "category",
-    "arock_unit": "category",
-    "arock_type": "category",
-    "structure": "category",
-    "tectonic": "category",
-    "ref": "category",
+    "dev_stat": str,
+    "ore": str,
+    "gangue": str,
+    "other_matl": str,
+    "orebody_fm": str,
+    "work_type": str,
+    "model": str,
+    "alteration": str,
+    "conc_proc": str,
+    "names": str,
+    "ore_ctrl": str,
+    "reporter": str,
+    "hrock_unit": str,
+    "hrock_type": str,
+    "arock_unit": str,
+    "arock_type": str,
+    "structure": str,
+    "tectonic": str,
+    "ref": str,
     "yfp_ba": "category",
-    "yr_fst_prd": "category",
+    "yr_fst_prd": str,
     "ylp_ba": "category",
-    "yr_lst_prd": "category",
+    "yr_lst_prd": str,
     "dy_ba": "category",
-    "disc_yr": "category",
-    "prod_yrs": "category",
-    "discr": "category",
+    "disc_yr": str,
+    "prod_yrs": str,
+    "discr": str,
     "score": "category",
 }
 
-# Agent cache directory
+# Autogen settings
 AGENT_CACHE_DIR = os.path.join(DATA_DIR, "agent_cache")
-
-# Autogen config
 AUTOGEN_CONFIG_LIST = [
     {
-        "model": "gpt-4o-mini",
+        "model": "gpt-4o",
         "temperature": 0,
         "api_key": os.environ.get("OPENAI_API_KEY"),
     }

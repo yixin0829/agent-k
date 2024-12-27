@@ -113,14 +113,16 @@ def eval_db_agent(dev_mode: bool = False):
         with open(result_path) as f:
             agent_result = json.load(f)
         agent_df = pd.DataFrame(agent_result, columns=selected_cols)
+        # Note: Deduplicate the agent result from MRDS data otherwise we seen > 1 recall as the
+        # inner join will return multiple rows.
+        agent_df.drop_duplicates(inplace=True)
 
         # Convert answer to DataFrame for comparison (filter by data source)
         answer_df = pd.DataFrame(answer, columns=selected_cols)
         answer_df["data_source"] = data_source
         answer_df = answer_df[
-            answer_df["data_source"] == DataSource.MRDATA_USGS_GOV.value
-        ]
-        answer_df.drop(columns=["data_source"], inplace=True)
+            answer_df["data_source"].eq(DataSource.MRDATA_USGS_GOV.value)
+        ].drop(columns=["data_source"])
 
         # Calculate metrics
         try:
@@ -176,5 +178,4 @@ def eval_db_agent(dev_mode: bool = False):
 
 
 if __name__ == "__main__":
-    # eval_db_agent(dev_mode=True)
-    eval_db_agent()
+    eval_db_agent(dev_mode=False)

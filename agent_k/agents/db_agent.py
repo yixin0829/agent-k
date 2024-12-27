@@ -7,7 +7,7 @@ from loguru import logger
 
 import agent_k.config.general as config_general
 import agent_k.config.prompts as config_prompts
-from agent_k.utils.db_utils import PostgresDB
+from agent_k.utils.db_utils import DuckDBWrapper
 
 
 @dataclass
@@ -19,8 +19,8 @@ class Tool:
 def list_tables(
     reflection: Annotated[str, "Think about why you need to list all tables."],
 ) -> list[str]:
-    with PostgresDB() as db:
-        return db.list_tables()
+    with DuckDBWrapper(database=config_general.DUCKDB_DB_PATH) as db:
+        return f"Tables in the database: {db.list_tables()}"
 
 
 def list_columns(
@@ -29,8 +29,9 @@ def list_columns(
     ],
     table: Annotated[str, "The table to list columns from"],
 ) -> list[str]:
-    with PostgresDB() as db:
-        return db.list_columns(table)
+    with DuckDBWrapper(database=config_general.DUCKDB_DB_PATH) as db:
+        columns = db.list_columns(table)
+        return f"Columns in the table {table}: {columns}"
 
 
 def list_column_unique_values(
@@ -40,18 +41,20 @@ def list_column_unique_values(
     column: Annotated[str, "The column to list unique values from"],
     table: Annotated[str, "The table where the column is located"],
 ) -> list[str]:
-    with PostgresDB() as db:
-        return db.list_column_unique_values(column, table)
+    with DuckDBWrapper(database=config_general.DUCKDB_DB_PATH) as db:
+        unique_values = db.list_column_unique_values(column, table)
+        return f"Unique values in the column {column} of the table {table}: {unique_values}"
 
 
-def list_columns_with_details(
+def get_table_details(
     reflection: Annotated[
         str, "Think about why you need to list columns with more details."
     ],
     table: Annotated[str, "The table to list columns with details from"],
 ) -> str:
-    with PostgresDB() as db:
-        return db.list_columns_with_details(table)
+    with DuckDBWrapper(database=config_general.DUCKDB_DB_PATH) as db:
+        details = db.get_table_details(table)
+        return f"Details of the table {table}: {details}"
 
 
 def run_query(
@@ -60,7 +63,7 @@ def run_query(
     ],
     query: Annotated[str, "The SQL query to run"],
 ) -> dict[str, Any]:
-    with PostgresDB() as db:
+    with DuckDBWrapper(database=config_general.DUCKDB_DB_PATH) as db:
         execution_status, message, df = db.run_query(query)
         return {
             "execution_status": execution_status,
@@ -136,9 +139,9 @@ def construct_db_agent() -> tuple[ConversableAgent, UserProxyAgent]:
             function=list_column_unique_values,
             desc="List all unique values in a given column.",
         ),
-        "list_columns_with_details": Tool(
-            function=list_columns_with_details,
-            desc="List all columns with more details in a given table. Call this tool when list_columns is called and the column definition is not clear enough to generate a good SQL query.",
+        "get_table_details": Tool(
+            function=get_table_details,
+            desc="Get the detailed description of a given table and columns.",
         ),
         "run_query": Tool(
             function=run_query,
