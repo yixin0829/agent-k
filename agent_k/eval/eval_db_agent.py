@@ -1,13 +1,17 @@
 import json
 import os
 from dataclasses import dataclass, field
+from datetime import datetime
 
+import autogen
+import autogen.runtime_logging
 import pandas as pd
 
 import agent_k.config.general as config_general
 from agent_k.agents.db_agent import construct_db_agent
 from agent_k.config.logger import logger
 from agent_k.config.schemas import DataSource
+from agent_k.utils.general import load_list_to_df
 
 
 @dataclass
@@ -26,11 +30,7 @@ class EvalReport:
     row_f1: float = field(default=0, metadata={"description": "F1 score for all rows"})
 
     def __str__(self):
-        return (
-            f"QID: {self.qid}\n"
-            f"Question: {self.question}\n"
-            f"EM: {self.row_em_score:.2f}, Precision: {self.row_precision:.2f}, Recall: {self.row_recall:.2f}, F1: {self.row_f1:.2f}"
-        )
+        return f"EM: {self.row_em_score:.2f}, Precision: {self.row_precision:.2f}, Recall: {self.row_recall:.2f}, F1: {self.row_f1:.2f}"
 
     def to_dict(self):
         return {
@@ -74,7 +74,8 @@ def eval_db_agent(full_eval: bool = False):
             qa_pair["metadata"]["selected_columns"],
             qa_pair["metadata"]["data_source"],
         )
-        logger.info(f"Sampling question: {qid}, {question}")
+        logger.info(f"{qid=}")
+        logger.info(f"{question=}")
 
         # Get initial file count
         if not os.path.exists(config_general.AGENT_CACHE_DIR):
@@ -87,8 +88,16 @@ def eval_db_agent(full_eval: bool = False):
         else:
             initial_files = set(os.listdir(config_general.AGENT_CACHE_DIR))
 
+        # Start autogen logging
+        autogen_logging_session_id = autogen.runtime_logging.start(
+            logger_type="file",
+            config={"filename": f"runtime_{datetime.now().strftime('%Y-%m-%d')}.log"},
+        )
+        logger.info(f"{autogen_logging_session_id=}")
         # Run the agent
         user_proxy.initiate_chat(db_agent, message=question, max_turns=10)
+        # Stop autogen logging
+        autogen.runtime_logging.stop()
 
         # Get new files created
         current_files = set(os.listdir(config_general.AGENT_CACHE_DIR))
@@ -115,28 +124,26 @@ def eval_db_agent(full_eval: bool = False):
             os.path.join(config_general.AGENT_CACHE_DIR, latest_file), result_path
         )
 
-        # Read the agent generated result
+        # Read the agent generated result from the cache
         with open(result_path) as f:
             agent_result = json.load(f)
-        agent_df = pd.DataFrame(agent_result, columns=selected_cols)
-        # Note: Deduplicate the agent result from MRDS data otherwise we seen > 1 recall as the
-        # inner join will return multiple rows.
+        agent_df = load_list_to_df(agent_result, selected_cols=selected_cols)
+        # Note: Deduplicate the agent result from MRDS data otherwise see > 1 recall
         agent_df.drop_duplicates(inplace=True)
 
-        # Convert answer to DataFrame for comparison (filter by data source)
-        answer_df = pd.DataFrame(answer, columns=selected_cols)
+        # Prepare answer DataFrame for comparison (filter by MRDS data source)
+        answer_df = load_list_to_df(answer, selected_cols=selected_cols)
         answer_df["data_source"] = data_source
         answer_df = answer_df[
             answer_df["data_source"].eq(DataSource.MRDATA_USGS_GOV.value)
         ].drop(columns=["data_source"])
 
-        # Calculate metrics
+        # Calculate eval metrics
         try:
             common_rows = pd.merge(agent_df, answer_df, how="inner", on=selected_cols)
         except Exception as e:
-            logger.error(
-                f"Error merging dataframes: {e}. Debugging info: {agent_df}, {answer_df}"
-            )
+            logger.error(f"Error merging dataframes: {e}.")
+            logger.debug(f"Debugging info:\n{agent_df}\n{answer_df}")
             common_rows = pd.DataFrame()
 
         precision = len(common_rows) / len(agent_df) if len(agent_df) > 0 else 0
@@ -186,4 +193,4 @@ def eval_db_agent(full_eval: bool = False):
 
 
 if __name__ == "__main__":
-    eval_db_agent(full_eval=True)
+    eval_db_agent(full_eval=False)

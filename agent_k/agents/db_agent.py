@@ -150,8 +150,7 @@ def construct_db_agent() -> tuple[ConversableAgent, UserProxyAgent]:
             tool.function, caller=db_agent, executor=user_proxy, description=tool.desc
         )
 
-    # Check if the tools are registered
-    # Under the hood, the tools are registered in JSON schema format like function_calls
-    logger.debug(db_agent.llm_config["tools"])
+    # Check if the tools are registered. Under the hood, the tools are registered in JSON schema format like function_calls
+    logger.debug(f"Tools registered: {db_agent.llm_config['tools']}")
 
     return db_agent, user_proxy

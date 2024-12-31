@@ -1,6 +1,7 @@
 data/
 .ruff_cache/
 .logs/
+autogen_logs/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
