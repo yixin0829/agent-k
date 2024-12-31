@@ -109,7 +109,7 @@ mrds_dtype = {
 AGENT_CACHE_DIR = os.path.join(DATA_DIR, "agent_cache")
 AUTOGEN_CONFIG_LIST = [
     {
-        "model": "gpt-4o",
+        "model": "gpt-4o-mini",
         "temperature": 0,
         "api_key": os.environ.get("OPENAI_API_KEY"),
     }

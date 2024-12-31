@@ -101,7 +101,7 @@ class DuckDBWrapper:
 
                 if output_dir:
                     os.makedirs(output_dir, exist_ok=True)
-                    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+                    timestamp = datetime.now().strftime("%y-%m-%d_%H-%M-%S")
                     file_path = os.path.join(output_dir, f"{timestamp}.json")
                     df.to_json(file_path, orient="values")
                     return (

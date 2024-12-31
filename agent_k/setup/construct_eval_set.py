@@ -1,5 +1,6 @@
 """
 Construct the evaluation set for the MinMod agent and save it to JSONL format.
+
 Each line is a JSON object with the following fields:
 - "qid" (str): the ID of the mineral site
 - "question" (str): the question to ask the agent
@@ -10,6 +11,15 @@ Each line is a JSON object with the following fields:
     - "selected_columns" (list of str): the columns that are selected
     - "filter_conditions" (list of dicts): the conditions to filter the data
     - "data_source" (list of str): the corresponding data sources (e.g. 43-101, MRDS, etc.) for each record in the answer
+
+Currently, the evaluation set is constructed by sampling columns to report in the question and filter values.
+    We sample 1 to (all relevant columns + 1) columns to report.
+        For each columns_to_report, there are 8 question templates. For each template, we sample 1-3 filter values.
+            In total, there are 6 * 8 = 48 QA pairs in the evaluation set.
+
+We validate the QA pairs to ensure quality:
+    1. Answer must have more than 1 record
+    2. Answer must have more than 1 unique data source (i.e. both 43-101 and MRDS data sources)
 """
 
 import os
@@ -429,14 +439,11 @@ def construct_eval_set_matched_based():
         return True
 
     qa_pairs: list[dict] = []
-    for selected_columns_count in range(1, len(RELEVANT_COLUMN_CANDIDATES) + 1):
-        # Sample columns to report in the question
-        if selected_columns_count == 0:
-            selected_columns = MUST_HAVE_COLUMN
-        else:
-            selected_columns = MUST_HAVE_COLUMN + random.sample(
-                RELEVANT_COLUMN_CANDIDATES, random.randint(1, selected_columns_count)
-            )
+    for report_columns_count in range(1, len(RELEVANT_COLUMN_CANDIDATES) + 1):
+        # Sample columns to report in the question (from 1 to all relevant columns + 1)
+        reported_columns = MUST_HAVE_COLUMN + random.sample(
+            RELEVANT_COLUMN_CANDIDATES, report_columns_count
+        )
 
         # Sample filter value arguments for each template type
         qa_to_sample_values_args_mapping = {
@@ -453,7 +460,7 @@ def construct_eval_set_matched_based():
             QATemplateType.SINGLE_DEPOSIT_ENVIRONMENT.value: SampleValuesArgs(
                 df=df_hyper, column=MinModHyperCols.TOP_1_DEPOSIT_ENVIRONMENT.value, n=1
             ),
-            # Sample multiple filter value arguments
+            # Sample multiple filter value arguments (2-3 values)
             QATemplateType.MULTIPLE_STATE_OR_PROVINCE.value: SampleValuesArgs(
                 df=df_hyper, column=MinModHyperCols.STATE_OR_PROVINCE.value, n=(2, 3)
             ),
@@ -489,7 +496,7 @@ def construct_eval_set_matched_based():
                             template_type.value
                         ].to_dict()
                     ),
-                    selected_columns=selected_columns,
+                    selected_columns=reported_columns,
                 )
                 # Validate the QA pair to ensure quality
                 validated = validate_qa_pair(qa_pair)

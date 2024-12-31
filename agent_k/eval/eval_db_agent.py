@@ -12,8 +12,8 @@ from agent_k.config.schemas import DataSource
 
 @dataclass
 class EvalReport:
-    qid: str = field(default="", metadata={"description": "Question ID"})
-    question: str = field(default="", metadata={"description": "Question"})
+    qid: str = field(default="Unknown", metadata={"description": "Question ID"})
+    question: str = field(default="Unknown", metadata={"description": "Question"})
     row_em_score: float = field(
         default=0, metadata={"description": "Exact match score for all rows"}
     )
@@ -44,10 +44,10 @@ class EvalReport:
         }
 
 
-def eval_db_agent(dev_mode: bool = False):
+def eval_db_agent(full_eval: bool = False):
     """
     Evaluate the DB agent with the eval set.
-    If dev_mode is True, only evaluate the first 2 questions.
+    If full_eval is True, evaluate all questions.
     """
     # Construct the DB agent and user proxy agent
     db_agent, user_proxy = construct_db_agent()
@@ -65,7 +65,7 @@ def eval_db_agent(dev_mode: bool = False):
 
     eval_results = []
     for i, qa_pair in enumerate(eval_set):
-        if i > 1 and dev_mode:
+        if i > 1 and not full_eval:
             break
         logger.info(f"Evaluating question {i+1} of {len(eval_set)}")
         qid, question, answer, selected_cols, data_source = (
@@ -100,14 +100,21 @@ def eval_db_agent(dev_mode: bool = False):
             eval_results.append(EvalReport())
             continue
 
-        # Get the latest created file
+        # Get the latest created file name
         latest_file = max(
             new_files,
             key=lambda f: os.path.getctime(
                 os.path.join(config_general.AGENT_CACHE_DIR, f)
             ),
         )
-        result_path = os.path.join(config_general.AGENT_CACHE_DIR, latest_file)
+        # Rename the file by appending qid to the filename
+        # TODO: Figure out a better way to pass the pid from the agent
+        result_path = os.path.join(
+            config_general.AGENT_CACHE_DIR, f"{latest_file.split('.')[0]}_{qid}.json"
+        )
+        os.rename(
+            os.path.join(config_general.AGENT_CACHE_DIR, latest_file), result_path
+        )
 
         # Read the agent generated result
         with open(result_path) as f:
@@ -128,7 +135,9 @@ def eval_db_agent(dev_mode: bool = False):
         try:
             common_rows = pd.merge(agent_df, answer_df, how="inner", on=selected_cols)
         except Exception as e:
-            logger.error(f"Error merging dataframes: {e}")
+            logger.error(
+                f"Error merging dataframes: {e}. Debugging info: {agent_df}, {answer_df}"
+            )
             common_rows = pd.DataFrame()
 
         precision = len(common_rows) / len(agent_df) if len(agent_df) > 0 else 0
@@ -178,4 +187,4 @@ def eval_db_agent(dev_mode: bool = False):
 
 
 if __name__ == "__main__":
-    eval_db_agent(dev_mode=False)
+    eval_db_agent(full_eval=True)

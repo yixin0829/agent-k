@@ -46,14 +46,14 @@ def list_column_unique_values(
         return f"Unique values in the column {column} of the table {table}: {unique_values}"
 
 
-def get_table_details(
+def list_columns_with_details(
     reflection: Annotated[
         str, "Think about why you need to list columns with more details."
     ],
     table: Annotated[str, "The table to list columns with details from"],
 ) -> str:
     with DuckDBWrapper(database=config_general.DUCKDB_DB_PATH) as db:
-        details = db.get_table_details(table)
+        details = db.list_columns_with_details(table)
         return f"Details of the table {table}: {details}"
 
 
@@ -95,7 +95,7 @@ def construct_db_agent() -> tuple[ConversableAgent, UserProxyAgent]:
     """Construct and configure a database agent and user proxy agent.
 
     This function creates and configures two agents:
-    1. A database agent that can execute SQL queries and gather schema information
+    1. A database agent that can generate SQL queries and gather schema information using tools
     2. A user proxy agent that executes the tools on behalf of the DB agent
 
     The DB agent is configured with:
@@ -128,33 +128,30 @@ def construct_db_agent() -> tuple[ConversableAgent, UserProxyAgent]:
     )
 
     # Register tools in both db_agent (caller) and user_proxy (executor)
-    tool_registry = {
-        "list_tables": Tool(
-            function=list_tables, desc="List all tables in the database."
-        ),
-        "list_columns": Tool(
-            function=list_columns, desc="List all columns in a given table."
-        ),
-        "list_column_unique_values": Tool(
+    tool_registry = [
+        Tool(function=list_tables, desc="List all tables in the database."),
+        Tool(function=list_columns, desc="List all columns in a given table."),
+        Tool(
             function=list_column_unique_values,
             desc="List all unique values in a given column.",
         ),
-        "get_table_details": Tool(
-            function=get_table_details,
-            desc="Get the detailed description of a given table and columns.",
+        Tool(
+            function=list_columns_with_details,
+            desc="Get the detailed description of columns in a given table.",
         ),
-        "run_query": Tool(
+        Tool(
             function=run_query,
             desc="Run a SQL query and return the result (execution status, message, and jsonified dataframe).",
         ),
-    }
+    ]
 
-    for _tool_name, tool in tool_registry.items():
+    for tool in tool_registry:
         register_function(
             tool.function, caller=db_agent, executor=user_proxy, description=tool.desc
         )
 
-    # Check if the tools are registered (JSON schema format)
+    # Check if the tools are registered
+    # Under the hood, the tools are registered in JSON schema format like function_calls
     logger.debug(db_agent.llm_config["tools"])
 
     return db_agent, user_proxy
