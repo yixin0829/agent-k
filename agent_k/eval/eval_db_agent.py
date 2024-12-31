@@ -3,10 +3,10 @@ import os
 from dataclasses import dataclass, field
 
 import pandas as pd
-from loguru import logger
 
 import agent_k.config.general as config_general
 from agent_k.agents.db_agent import construct_db_agent
+from agent_k.config.logger import logger
 from agent_k.config.schemas import DataSource
 
 
@@ -26,11 +26,10 @@ class EvalReport:
     row_f1: float = field(default=0, metadata={"description": "F1 score for all rows"})
 
     def __str__(self):
-        indent = "\t" * 8
         return (
             f"QID: {self.qid}\n"
-            f"{indent}Question: {self.question}\n"
-            f"{indent}EM: {self.row_em_score:.2f}, Precision: {self.row_precision:.2f}, Recall: {self.row_recall:.2f}, F1: {self.row_f1:.2f}"
+            f"Question: {self.question}\n"
+            f"EM: {self.row_em_score:.2f}, Precision: {self.row_precision:.2f}, Recall: {self.row_recall:.2f}, F1: {self.row_f1:.2f}"
         )
 
     def to_dict(self):

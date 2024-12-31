@@ -7,10 +7,10 @@ import shutil
 
 import httpx
 import pandas as pd
-from loguru import logger
 from tqdm import tqdm
 
 import agent_k.config.general as config_general
+from agent_k.config.logger import logger
 
 
 def download_file(url, path):

@@ -17,9 +17,9 @@ from typing import Dict, List, Optional, Tuple
 
 import duckdb
 import pandas as pd
-from loguru import logger
 
 import agent_k.config.general as config_general
+from agent_k.config.logger import logger
 
 
 class DuckDBWrapper:

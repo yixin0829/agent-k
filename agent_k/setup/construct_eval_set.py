@@ -31,9 +31,9 @@ from typing import Callable
 
 import pandas as pd
 import simplejson as json
-from loguru import logger
 
 import agent_k.config.general as config_general
+from agent_k.config.logger import logger
 from agent_k.config.schemas import DataSource, MinModHyperCols, QATemplateType
 from agent_k.utils.general import sample_values
 

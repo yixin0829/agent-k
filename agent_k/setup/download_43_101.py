@@ -9,10 +9,10 @@ import warnings
 
 import httpx
 import pandas as pd
-from loguru import logger
 from tqdm import tqdm
 
 import agent_k.config.general as config_general
+from agent_k.config.logger import logger
 from agent_k.config.schemas import DataSource, MinModHyperCols
 from agent_k.utils.ms_model import MineralSite
 

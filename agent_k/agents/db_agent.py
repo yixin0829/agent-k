@@ -3,10 +3,10 @@ from dataclasses import dataclass
 from typing import Annotated, Any, Callable
 
 from autogen import ConversableAgent, UserProxyAgent, register_function
-from loguru import logger
 
 import agent_k.config.general as config_general
 import agent_k.config.prompts as config_prompts
+from agent_k.config.logger import logger
 from agent_k.utils.db_utils import DuckDBWrapper
 
 

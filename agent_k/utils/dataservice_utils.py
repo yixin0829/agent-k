@@ -7,9 +7,9 @@ import time
 
 import aiohttp
 import requests
-from loguru import logger
 
 from agent_k.config.general import API_ENDPOINT
+from agent_k.config.logger import logger
 
 
 def fetch_api_data(path, ssl_flag=True, headers=None, params=None):

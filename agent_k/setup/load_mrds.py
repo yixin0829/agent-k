@@ -5,9 +5,9 @@ Load MRDS data filtered for current commodity into DuckDB database.
 import os
 
 import pandas as pd
-from loguru import logger
 
 import agent_k.config.general as config_general
+from agent_k.config.logger import logger
 from agent_k.utils.db_utils import DuckDBWrapper
 
 
