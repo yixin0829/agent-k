@@ -2,6 +2,7 @@ import random
 
 import pandas as pd
 
+from agent_k.config.logger import logger
 from agent_k.config.schemas import MinModHyperCols
 
 
@@ -39,9 +40,16 @@ def load_list_to_df(data: list[list[str]], selected_cols: list[str]) -> pd.DataF
     Returns:
         DataFrame with selected columns and type conversion.
     """
-    df = pd.DataFrame(data, columns=selected_cols, dtype="object")
+    # TODO: address the ValueError during agent runtime (e.g. check columns in the generated SQL = columns in the question)
+    try:
+        df = pd.DataFrame(data, columns=selected_cols, dtype="object")
+    except ValueError as e:
+        logger.error(f"Error loading data to DataFrame: {e}")
+        logger.error("Returning empty DataFrame as a fallback")
+        logger.debug(f"Debugging info:\n{data}\n{selected_cols}")
+        return pd.DataFrame()
 
-    # Convert columns to float
+    # Convert certain columns to float for easy merge
     for col in selected_cols:
         if col in [MinModHyperCols.TOTAL_GRADE, MinModHyperCols.TOTAL_TONNAGE]:
             df[col] = pd.to_numeric(df[col], errors="coerce")

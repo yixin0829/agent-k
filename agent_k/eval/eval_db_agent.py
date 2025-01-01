@@ -10,7 +10,7 @@ import pandas as pd
 import agent_k.config.general as config_general
 from agent_k.agents.db_agent import construct_db_agent
 from agent_k.config.logger import logger
-from agent_k.config.schemas import DataSource
+from agent_k.config.schemas import DataSource, MinModHyperCols
 from agent_k.utils.general import load_list_to_df
 
 
@@ -28,9 +28,21 @@ class EvalReport:
         default=0, metadata={"description": "Recall score for all rows"}
     )
     row_f1: float = field(default=0, metadata={"description": "F1 score for all rows"})
+    ms_em_score: float = field(
+        default=0, metadata={"description": "Exact match score for mineral site name"}
+    )
+    ms_precision: float = field(
+        default=0, metadata={"description": "Precision score for mineral site name"}
+    )
+    ms_recall: float = field(
+        default=0, metadata={"description": "Recall score for mineral site name"}
+    )
+    ms_f1: float = field(
+        default=0, metadata={"description": "F1 score for mineral site name"}
+    )
 
     def __str__(self):
-        return f"EM: {self.row_em_score:.2f}, Precision: {self.row_precision:.2f}, Recall: {self.row_recall:.2f}, F1: {self.row_f1:.2f}"
+        return f"EM: {self.row_em_score:.2f}, Precision: {self.row_precision:.2f}, Recall: {self.row_recall:.2f}, F1: {self.row_f1:.2f}, MS EM: {self.ms_em_score:.2f}, MS Precision: {self.ms_precision:.2f}, MS Recall: {self.ms_recall:.2f}, MS F1: {self.ms_f1:.2f}"
 
     def to_dict(self):
         return {
@@ -40,6 +52,10 @@ class EvalReport:
             "row_precision": self.row_precision,
             "row_recall": self.row_recall,
             "row_f1": self.row_f1,
+            "ms_em_score": self.ms_em_score,
+            "ms_precision": self.ms_precision,
+            "ms_recall": self.ms_recall,
+            "ms_f1": self.ms_f1,
         }
 
 
@@ -55,7 +71,7 @@ def eval_db_agent(full_eval: bool = False):
     with open(
         os.path.join(
             config_general.EVAL_DIR,
-            config_general.eval_set_matched_based_file(config_general.COMMODITY),
+            config_general.eval_set_matched_based_file(config_general.COMMODITY, "v1"),
         ),
         "r",
     ) as f:
@@ -64,7 +80,7 @@ def eval_db_agent(full_eval: bool = False):
 
     eval_results = []
     for i, qa_pair in enumerate(eval_set):
-        if i > 1 and not full_eval:
+        if i > 0 and not full_eval:
             break
         logger.info(f"Evaluating question {i+1} of {len(eval_set)}")
         qid, question, answer, selected_cols, data_source = (
@@ -95,9 +111,14 @@ def eval_db_agent(full_eval: bool = False):
         )
         logger.info(f"{autogen_logging_session_id=}")
         # Run the agent
-        user_proxy.initiate_chat(db_agent, message=question, max_turns=10)
+        chat_result = user_proxy.initiate_chat(
+            db_agent,
+            message=question,
+            max_turns=10,
+        )
         # Stop autogen logging
         autogen.runtime_logging.stop()
+        logger.info(f"The cost of the chat: {chat_result.cost}")
 
         # Get new files created
         current_files = set(os.listdir(config_general.AGENT_CACHE_DIR))
@@ -155,6 +176,19 @@ def eval_db_agent(full_eval: bool = False):
         )
         exact_match = 1.0 if agent_df.equals(answer_df) else 0.0
 
+        # Calculate mineral site name metrics
+        agent_df_ms = agent_df[MinModHyperCols.MINERAL_SITE_NAME.value].to_list()
+        answer_df_ms = answer_df[MinModHyperCols.MINERAL_SITE_NAME.value].to_list()
+        common_ms = set(agent_df_ms) & set(answer_df_ms)
+        ms_precision = len(common_ms) / len(agent_df_ms) if len(agent_df_ms) > 0 else 0
+        ms_recall = len(common_ms) / len(answer_df_ms) if len(answer_df_ms) > 0 else 0
+        ms_f1 = (
+            (2 * (ms_precision * ms_recall) / (ms_precision + ms_recall))
+            if (ms_precision + ms_recall) > 0
+            else 0
+        )
+        ms_em_score = 1.0 if agent_df_ms == answer_df_ms else 0.0
+
         eval_report = EvalReport(
             qid=qid,
             question=question,
@@ -162,6 +196,10 @@ def eval_db_agent(full_eval: bool = False):
             row_precision=precision,
             row_recall=recall,
             row_f1=f1,
+            ms_em_score=ms_em_score,
+            ms_precision=ms_precision,
+            ms_recall=ms_recall,
+            ms_f1=ms_f1,
         )
         eval_results.append(eval_report)
 
@@ -173,12 +211,20 @@ def eval_db_agent(full_eval: bool = False):
     avg_precision = sum(r.row_precision for r in eval_results) / len(eval_results)
     avg_recall = sum(r.row_recall for r in eval_results) / len(eval_results)
     avg_f1 = sum(r.row_f1 for r in eval_results) / len(eval_results)
+    avg_ms_em = sum(r.ms_em_score for r in eval_results) / len(eval_results)
+    avg_ms_precision = sum(r.ms_precision for r in eval_results) / len(eval_results)
+    avg_ms_recall = sum(r.ms_recall for r in eval_results) / len(eval_results)
+    avg_ms_f1 = sum(r.ms_f1 for r in eval_results) / len(eval_results)
 
     logger.info("Overall evaluation metrics:")
     logger.info(f"Average Exact Match: {avg_em:.2f}")
     logger.info(f"Average Precision: {avg_precision:.2f}")
     logger.info(f"Average Recall: {avg_recall:.2f}")
     logger.info(f"Average F1: {avg_f1:.2f}")
+    logger.info(f"Average MS EM: {avg_ms_em:.2f}")
+    logger.info(f"Average MS Precision: {avg_ms_precision:.2f}")
+    logger.info(f"Average MS Recall: {avg_ms_recall:.2f}")
+    logger.info(f"Average MS F1: {avg_ms_f1:.2f}")
     logger.info("=" * 100)
 
     # Save the evaluation results to a CSV file
@@ -193,4 +239,4 @@ def eval_db_agent(full_eval: bool = False):
 
 
 if __name__ == "__main__":
-    eval_db_agent(full_eval=False)
+    eval_db_agent(full_eval=True)

@@ -45,9 +45,9 @@ def enriched_hyper_reponse_file(commodity: str):
     return f"minmod_hyper_response_enriched_{commodity}.csv"
 
 
-def eval_set_matched_based_file(commodity: str):
+def eval_set_matched_based_file(commodity: str, version: str = "vX"):
     """Returns the filename for the matched-based eval set file."""
-    return f"eval_set_matched_based_{commodity}.jsonl"
+    return f"eval_set_matched_based_{commodity}_{version}.jsonl"
 
 
 def eval_results_file(commodity: str):

@@ -87,7 +87,9 @@ def check_termination(msg: dict):
         return False
 
     obj = json.loads(json_str)
-    # logger.debug(f"Termination check obj['execution_status']: {obj['execution_status']}")
+    logger.debug(
+        f"Termination check obj['execution_status']: {obj['execution_status']}"
+    )
     return obj["execution_status"]
 
 
