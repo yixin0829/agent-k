@@ -239,4 +239,4 @@ def eval_db_agent(full_eval: bool = False):
 
 
 if __name__ == "__main__":
-    eval_db_agent(full_eval=True)
+    eval_db_agent(full_eval=False)
