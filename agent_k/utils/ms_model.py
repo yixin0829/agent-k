@@ -6,7 +6,6 @@ import asyncio
 
 import pandas as pd
 
-from agent_k.config.general import API_ENDPOINT
 from agent_k.utils import dataservice_utils
 
 
@@ -43,8 +42,8 @@ class MineralSite:
             raise Exception("No Data Available")
 
         self.df = self.clean_df(self.df)
-        self.deposit_types = self.df["Top 1 Deposit Type"].drop_duplicates().to_list()
-        self.country = self.df["Country"].drop_duplicates().to_list()
+        self.deposit_types = self.df["top_1_deposit_type"].drop_duplicates().to_list()
+        self.country = self.df["country"].drop_duplicates().to_list()
 
     def load_data_cache(self):
         data_list = sorted(self.data_cache.keys())
@@ -70,11 +69,12 @@ class MineralSite:
 
             combined_data = {}
             combined_data["ms"] = "/".join(
-                [API_ENDPOINT.split("/api")[0], "resource", data["id"]]
+                ["https://minmod.isi.edu/derived", "resource", data["id"]]
             )
             combined_data["ms_name"] = data["name"]
             combined_data["ms_type"] = data["type"]
             combined_data["ms_rank"] = data["rank"]
+            combined_data["ms_sites"] = [site["id"] for site in data["sites"]]
 
             # Location details
             if (
@@ -155,21 +155,22 @@ class MineralSite:
 
         # rename columns
         col_names = {
-            "ms": "Mineral Site URI",
-            "ms_name": "Mineral Site Name",
-            "ms_type": "Mineral Site Type",
-            "ms_rank": "Mineral Site Rank",
-            "country": "Country",
-            "state_or_province": "State/Province",
-            "lat": "Latitude",
-            "lon": "Longitude",
-            "total_tonnage": "Total Tonnage",
-            "total_grade": "Total Grade",
-            "top1_deposit_name": "Top 1 Deposit Type",
-            "top1_deposit_group": "Top Deposit Group",
-            "top1_deposit_environment": "Top 1 Deposit Environment",
-            "top1_deposit_confidence": "Top 1 Deposit Classification Confidence",
-            "top1_deposit_source": "Top 1 Deposit Classification Confidence",
+            "ms": "mineral_site_uri",
+            "ms_name": "mineral_site_name",
+            "ms_type": "mineral_site_type",
+            "ms_rank": "mineral_site_rank",
+            "ms_sites": "sites",
+            "country": "country",
+            "state_or_province": "state_or_province",
+            "lat": "latitude",
+            "lon": "longitude",
+            "total_tonnage": "total_tonnage",
+            "total_grade": "total_grade",
+            "top1_deposit_name": "top_1_deposit_type",
+            "top1_deposit_group": "top1_deposit_group",
+            "top1_deposit_environment": "top_1_deposit_environment",
+            "top1_deposit_confidence": "top_1_deposit_classification_confidence",
+            "top1_deposit_source": "top_1_deposit_classification_source",
         }
 
         df_selected = df_selected.rename(columns=col_names)
@@ -180,13 +181,8 @@ class MineralSite:
                 return ms_name[0]
             return ms_name
 
-        df_selected["Mineral Site Name"] = df_selected["Mineral Site Name"].apply(
+        df_selected["mineral_site_name"] = df_selected["mineral_site_name"].apply(
             clean_names
         )
 
-        df_selected["Mineral Site Name"] = df_selected.apply(
-            lambda row: f"[{row['Mineral Site Name']}]({row['Mineral Site URI']})",
-            axis=1,
-        )
-        df_selected = df_selected.drop(["Mineral Site URI"], axis=1)
         return df_selected

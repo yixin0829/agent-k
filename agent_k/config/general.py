@@ -6,7 +6,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # MinMod API endpoint
-API_ENDPOINT = "https://minmod.isi.edu/api/v1"
+MINMOD_API_URL = "https://minmod.isi.edu/api/v1"
+DEDUP_MINERAL_SITES_ENDPOINT = "/dedup-mineral-sites"
 
 # Read ENV variables
 API_USR_NAME: str = os.getenv("API_CDR_USR_NAME")

@@ -1,9 +1,24 @@
 import random
 
+import httpx
 import pandas as pd
+from tqdm import tqdm
 
 from agent_k.config.logger import logger
 from agent_k.config.schemas import MinModHyperCols
+
+
+def download_file(url, path):
+    client = httpx.Client(verify=False)
+    with client.stream("GET", url) as r:
+        size = int(r.headers.get("content-length", 0)) or None
+        with (
+            tqdm(total=size, unit="iB", unit_scale=True) as p_bar,
+            open(path, "wb") as f,
+        ):
+            for data in r.iter_bytes():
+                p_bar.update(len(data))
+                f.write(data)
 
 
 def sample_values(df: pd.DataFrame, column: str, n: int | tuple = 1) -> str | list[str]:

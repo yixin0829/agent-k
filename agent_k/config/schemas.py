@@ -4,37 +4,44 @@ from agent_k.utils.listable_class import ListableClass
 
 
 class MinModHyperCols(ListableClass):
+    MINERAL_SITE_URI = "mineral_site_uri"
     MINERAL_SITE_NAME = "mineral_site_name"
     MINERAL_SITE_TYPE = "mineral_site_type"
     MINERAL_SITE_RANK = "mineral_site_rank"
+    SITES = "sites"
     COUNTRY = "country"
     STATE_OR_PROVINCE = "state_or_province"
     LATITUDE = "latitude"
     LONGITUDE = "longitude"
     TOP_1_DEPOSIT_TYPE = "top_1_deposit_type"
-    TOP_DEPOSIT_GROUP = "top_deposit_group"
+    TOP1_DEPOSIT_GROUP = "top1_deposit_group"
     TOP_1_DEPOSIT_ENVIRONMENT = "top_1_deposit_environment"
     TOP_1_DEPOSIT_CLASSIFICATION_CONFIDENCE = "top_1_deposit_classification_confidence"
-    TOTAL_GRADE = "total_grade"  # Unit %
-    TOTAL_TONNAGE = "total_tonnage"  # Unit MM tonnes
+    TOP_1_DEPOSIT_CLASSIFICATION_SOURCE = "top_1_deposit_classification_source"
+    TOTAL_GRADE = "total_grade"
+    TOTAL_TONNAGE = "total_tonnage"
 
     # Enriched columns
     DATA_SOURCE = "data_source"  # The source of the data see DataSource enum
-    SOURCE_VALUE = "source_value"  # The value of the source
     RECORD_VALUE = "record_value"  # The value of the record
     DOWNLOADED_PDF = "downloaded_pdf"  # Whether the PDF has been downloaded
 
 
 class DataSource(Enum):
     """
-    The names of the data sources are used for regex matching. Do not change them.
+    Data sources used for mineral site extraction.
+    Note: The names of the data sources are used for regex matching. Do not change them.
     """
 
-    OTHER = "OTHER"
-    DOI_ORG = "DOI"
-    MRDATA_USGS_GOV = "MRDS"
-    API_CDR_LAND = "43-101"
-    W3ID_ORG_USGS = "W3ID"
+    DOI_ORG = "DOI"  # Mineral sites extracted from academic papers
+    MRDATA_USGS_GOV = "MRDS"  # Mineral sites extracted from MRDS
+    API_CDR_LAND = (
+        "43-101"  # Mineral sites extracted from 43-101 reports using CDR Land
+    )
+    W3ID_ORG_USGS = (
+        "W3ID"  # Mineral sites extracted from 43-101 reports using Zotero (old, ignore)
+    )
+    OTHER = "OTHER"  # Mineral sites extracted from other sources
 
 
 class QATemplateType(Enum):

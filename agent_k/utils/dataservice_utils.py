@@ -8,7 +8,7 @@ import time
 import aiohttp
 import requests
 
-from agent_k.config.general import API_ENDPOINT
+from agent_k.config.general import MINMOD_API_URL
 from agent_k.config.logger import logger
 
 
@@ -24,7 +24,7 @@ def fetch_api_data(path, ssl_flag=True, headers=None, params=None):
     """
     try:
         # Construct the full URL
-        url = f"{API_ENDPOINT.rstrip('/')}/{path.lstrip('/')}"
+        url = f"{MINMOD_API_URL.rstrip('/')}/{path.lstrip('/')}"
 
         # Make the GET request
         response = requests.get(url, params=params, headers=headers, verify=ssl_flag)
@@ -72,7 +72,7 @@ async def fetch_json(session, url, params=None):
 
 # Async function to fetch data from all URLs
 async def fetch_all(requests):
-    requests = [(API_ENDPOINT + url, params) for url, params in requests]
+    requests = [(MINMOD_API_URL + url, params) for url, params in requests]
     connector = aiohttp.TCPConnector(ssl=False)  # Disable SSL verification
     async with aiohttp.ClientSession(connector=connector) as session:
         tasks = [fetch_json(session, url, params) for url, params in requests]
@@ -80,6 +80,6 @@ async def fetch_all(requests):
 
 
 if __name__ == "__main__":
-    swagger_url = API_ENDPOINT + "/mineral_site_grade_and_tonnage/zinc"
+    swagger_url = MINMOD_API_URL + "/mineral_site_grade_and_tonnage/zinc"
     swagger_data = fetch_api_data(swagger_url, False)
     print(swagger_data)

@@ -5,24 +5,11 @@ Download MRDS data and filter for current commodity.
 import os
 import shutil
 
-import httpx
 import pandas as pd
-from tqdm import tqdm
 
 import agent_k.config.general as config_general
 from agent_k.config.logger import logger
-
-
-def download_file(url, path):
-    with httpx.stream("GET", url) as r:
-        size = int(r.headers.get("content-length", 0)) or None
-        with (
-            tqdm(total=size, unit="iB", unit_scale=True) as p_bar,
-            open(path, "wb") as f,
-        ):
-            for data in r.iter_bytes():
-                p_bar.update(len(data))
-                f.write(data)
+from agent_k.utils.general import download_file
 
 
 def process_mrds(mrds_all_file_path: str, commodity: str):

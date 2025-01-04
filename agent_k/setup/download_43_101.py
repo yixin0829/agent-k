@@ -14,7 +14,6 @@ from tqdm import tqdm
 import agent_k.config.general as config_general
 from agent_k.config.logger import logger
 from agent_k.config.schemas import DataSource, MinModHyperCols
-from agent_k.setup.download_hyper import download_minmod_hyper_csv, enrich_minmod_hyper
 
 warnings.filterwarnings("ignore")
 tqdm.pandas()
@@ -60,35 +59,39 @@ async def download_report(record_id: str, save_path: str, semaphore: asyncio.Sem
             return False
 
 
-async def download_all_reports(df_hyper: pd.DataFrame, max_concurrent_requests: int):
+async def download_all_reports(
+    unique_43_101_record_ids: list[str], max_concurrent_requests: int
+):
     """
     Downloads all PDF reports referenced in the provided DataFrame concurrently.
+
+    Args:
+        unique_43_101_record_ids: List of unique 43-101 report record IDs
+        max_concurrent_requests: Maximum number of concurrent downloads
+
+    Returns:
+        List of tuples containing (record ID (str), download result (bool))
     """
     # Create semaphore to limit concurrent downloads
     semaphore = asyncio.Semaphore(max_concurrent_requests)
     tasks = []
 
     # Create download tasks for records with 43-101 data source and not yet downloaded
-    for idx, row in df_hyper.iterrows():
-        if (
-            row[MinModHyperCols.DATA_SOURCE.value] == DataSource.API_CDR_LAND.value
-            and not row[MinModHyperCols.DOWNLOADED_PDF.value]
-        ):
-            record_id = row[MinModHyperCols.RECORD_VALUE.value]
-            task = asyncio.create_task(
-                download_report(
-                    record_id,
-                    save_path=config_general.CDR_REPORTS_DIR,
-                    semaphore=semaphore,
-                )
+    for record_id in unique_43_101_record_ids:
+        task = asyncio.create_task(
+            download_report(
+                record_id,
+                save_path=config_general.CDR_REPORTS_DIR,
+                semaphore=semaphore,
             )
-            tasks.append((task, idx))
+        )
+        tasks.append((task, record_id))
 
     # Wait for all downloads to complete
     results = []
-    for task, idx in tasks:
+    for task, record_id in tasks:
         result: bool = await task
-        results.append((idx, result))
+        results.append((record_id, result))
 
     return results
 
@@ -105,14 +108,34 @@ def download_reports_main(max_concurrent_requests: int = 10):
         )
     )
 
-    # Download all reports concurrently
-    results = asyncio.run(download_all_reports(df_hyper, max_concurrent_requests))
+    # Filter for unique and not yet downloaded 43-101 report record IDs
+    df_hyper_43_101 = df_hyper[
+        (df_hyper[MinModHyperCols.DATA_SOURCE.value] == DataSource.API_CDR_LAND.value)
+        & (not df_hyper[MinModHyperCols.DOWNLOADED_PDF.value])
+    ]
+    unique_43_101_record_ids = df_hyper_43_101[
+        MinModHyperCols.RECORD_VALUE.value
+    ].unique()
 
-    for idx, success in results:
-        df_hyper.loc[idx, MinModHyperCols.DOWNLOADED_PDF.value] = success
+    # Download all reports concurrently
+    results = asyncio.run(
+        download_all_reports(unique_43_101_record_ids, max_concurrent_requests)
+    )
+
+    # Filter for successful downloads record IDs
+    successful_downloads = [record_id for record_id, success in results if success]
+
+    # Update DataFrame with successful downloads
+    df_hyper.loc[
+        df_hyper[MinModHyperCols.RECORD_VALUE.value].isin(successful_downloads),
+        MinModHyperCols.DOWNLOADED_PDF.value,
+    ] = True
 
     # logger.info summary and save updated DataFrame
-    logger.info(df_hyper[MinModHyperCols.DOWNLOADED_PDF.value].value_counts())
+    logger.info(
+        "Summarize unique 43-101 reports downloaded:\n"
+        f"{df_hyper.drop_duplicates(subset=[MinModHyperCols.RECORD_VALUE.value])[MinModHyperCols.DOWNLOADED_PDF.value].value_counts()}"
+    )
     df_hyper.to_csv(
         os.path.join(
             config_general.MINMOD_DIR,
@@ -123,6 +146,4 @@ def download_reports_main(max_concurrent_requests: int = 10):
 
 
 if __name__ == "__main__":
-    download_minmod_hyper_csv()
-    enrich_minmod_hyper()
     download_reports_main()
