@@ -35,7 +35,7 @@ def process_mrds(mrds_all_file_path: str, commodity: str):
     )
 
 
-if __name__ == "__main__":
+def download_mrds_main():
     if not os.path.exists(config_general.DATA_DIR):
         os.makedirs(config_general.DATA_DIR)
     if not os.path.exists(config_general.RAW_DIR):
@@ -66,3 +66,7 @@ if __name__ == "__main__":
     if os.path.exists(config_general.ZIP_PATH):
         os.remove(config_general.ZIP_PATH)
     logger.info("Download and extraction complete!")
+
+
+if __name__ == "__main__":
+    download_mrds_main()
