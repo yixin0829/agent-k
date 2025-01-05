@@ -103,7 +103,7 @@ def download_reports_main(max_concurrent_requests: int = 10):
     # Load report metadata
     df_hyper = pd.read_csv(
         os.path.join(
-            config_general.MINMOD_DIR,
+            config_general.GROUND_TRUTH_DIR,
             config_general.enriched_hyper_reponse_file(config_general.COMMODITY),
         )
     )
@@ -111,7 +111,7 @@ def download_reports_main(max_concurrent_requests: int = 10):
     # Filter for unique and not yet downloaded 43-101 report record IDs
     df_hyper_43_101 = df_hyper[
         (df_hyper[MinModHyperCols.DATA_SOURCE.value] == DataSource.API_CDR_LAND.value)
-        & (not df_hyper[MinModHyperCols.DOWNLOADED_PDF.value])
+        & (~df_hyper[MinModHyperCols.DOWNLOADED_PDF.value])
     ]
     unique_43_101_record_ids = df_hyper_43_101[
         MinModHyperCols.RECORD_VALUE.value
@@ -138,7 +138,7 @@ def download_reports_main(max_concurrent_requests: int = 10):
     )
     df_hyper.to_csv(
         os.path.join(
-            config_general.MINMOD_DIR,
+            config_general.GROUND_TRUTH_DIR,
             config_general.enriched_hyper_reponse_file(config_general.COMMODITY),
         ),
         index=False,

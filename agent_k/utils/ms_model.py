@@ -1,5 +1,5 @@
 """
-https://github.com/DARPA-CRITICALMAAS/ta2-minmod-dashboard/blob/main/models/ms.py
+Adapted from: https://github.com/DARPA-CRITICALMAAS/ta2-minmod-dashboard/blob/main/models/ms.py
 """
 
 import asyncio
@@ -69,7 +69,7 @@ class MineralSite:
 
             combined_data = {}
             combined_data["ms"] = "/".join(
-                ["https://minmod.isi.edu/derived", "resource", data["id"]]
+                ["https://minmod.isi.edu/derived", data["id"]]
             )
             combined_data["ms_name"] = data["name"]
             combined_data["ms_type"] = data["type"]

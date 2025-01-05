@@ -15,8 +15,8 @@ def download_minmod_hyper_csv():
         os.makedirs(config_general.DATA_DIR)
     if not os.path.exists(config_general.RAW_DIR):
         os.makedirs(config_general.RAW_DIR)
-    if not os.path.exists(config_general.MINMOD_DIR):
-        os.makedirs(config_general.MINMOD_DIR)
+    if not os.path.exists(config_general.GROUND_TRUTH_DIR):
+        os.makedirs(config_general.GROUND_TRUTH_DIR)
 
     logger.info(f"Downloading MinMod {config_general.COMMODITY} sites data...")
     ms = MineralSite(commodity=config_general.COMMODITY)
@@ -38,7 +38,7 @@ def download_minmod_hyper_csv():
 
     df.to_csv(
         os.path.join(
-            config_general.MINMOD_DIR,
+            config_general.GROUND_TRUTH_DIR,
             config_general.hyper_reponse_file(config_general.COMMODITY),
         ),
         index=False,
@@ -50,7 +50,7 @@ def download_minmod_hyper_csv():
 def enrich_minmod_hyper():
     df_hyper = pd.read_csv(
         os.path.join(
-            config_general.MINMOD_DIR,
+            config_general.GROUND_TRUTH_DIR,
             config_general.hyper_reponse_file(config_general.COMMODITY),
         )
     )
@@ -123,7 +123,7 @@ def enrich_minmod_hyper():
 
     df_hyper.to_csv(
         os.path.join(
-            config_general.MINMOD_DIR,
+            config_general.GROUND_TRUTH_DIR,
             config_general.enriched_hyper_reponse_file(config_general.COMMODITY),
         ),
         index=False,

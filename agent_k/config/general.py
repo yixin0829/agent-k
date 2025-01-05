@@ -29,7 +29,7 @@ MRDS_DIR = os.path.join(ALL_SOURCES_DIR, "mrds")
 DUCKDB_DB_PATH = os.path.join(ALL_SOURCES_DIR, "minmod.duckdb")
 ZIP_PATH = os.path.join(RAW_DIR, "mrds.zip")
 MRDS_URL = "https://mrdata.usgs.gov/mrds/mrds-csv.zip"
-MINMOD_DIR = os.path.join(RAW_DIR, "minmod")
+GROUND_TRUTH_DIR = os.path.join(RAW_DIR, "ground_truth")
 EVAL_DIR = os.path.join(DATA_DIR, "eval")
 
 # Note: Commodity is used for naming files and defining the scope of the data

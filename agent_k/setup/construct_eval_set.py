@@ -15,7 +15,7 @@ Each line is a JSON object with the following fields:
 Currently, the evaluation set is constructed by sampling columns to report in the question and filter values.
     We sample 1 to (all relevant columns + 1) columns to report.
         For each columns_to_report, there are 8 question templates. For each template, we sample 1-3 filter values.
-            In total, there are 6 * 8 = 48 QA pairs in the evaluation set.
+            In total, there are (all relevant columns + 1) * 8 QA pairs in the evaluation set.
 
 We validate the QA pairs to ensure quality:
     1. Answer must have more than 1 record
@@ -44,7 +44,7 @@ random.seed(42)
 # QA template returns a tuple of (question, answer: list[list])
 def single_state_or_province_qa_template(
     df_hyper: pd.DataFrame, state_or_province: str, selected_columns: list[str]
-) -> tuple[str, list[list]]:
+) -> tuple[str, list[list], list[str]]:
     country = df_hyper[
         df_hyper[MinModHyperCols.STATE_OR_PROVINCE.value] == state_or_province
     ][MinModHyperCols.COUNTRY.value].values[0]
@@ -72,7 +72,7 @@ def single_state_or_province_qa_template(
 
 def single_country_qa_template(
     df_hyper: pd.DataFrame, country: str, selected_columns: list[str]
-) -> tuple[str, list[list]]:
+) -> tuple[str, list[list], list[str]]:
     selected_columns_str = ", ".join([rc.replace("_", " ") for rc in selected_columns])
     # Match the last comma in selected_columns_str and replace it with "and"
     selected_columns_str_parts = selected_columns_str.rsplit(",", 1)
@@ -97,7 +97,7 @@ def single_country_qa_template(
 
 def single_deposit_type_qa_template(
     df_hyper: pd.DataFrame, deposit_type: str, selected_columns: list[str]
-) -> tuple[str, list[list]]:
+) -> tuple[str, list[list], list[str]]:
     selected_columns_str = ", ".join([rc.replace("_", " ") for rc in selected_columns])
     # Match the last comma in selected_columns_str and replace it with "and"
     selected_columns_str_parts = selected_columns_str.rsplit(",", 1)
@@ -122,7 +122,7 @@ def single_deposit_type_qa_template(
 
 def single_deposit_environment_qa_template(
     df_hyper: pd.DataFrame, deposit_environment: str, selected_columns: list[str]
-) -> tuple[str, list[list]]:
+) -> tuple[str, list[list], list[str]]:
     selected_columns_str = ", ".join([rc.replace("_", " ") for rc in selected_columns])
     # Match the last comma in selected_columns_str and replace it with "and"
     selected_columns_str_parts = selected_columns_str.rsplit(",", 1)
@@ -147,7 +147,7 @@ def single_deposit_environment_qa_template(
 
 def multiple_state_or_province_qa_template(
     df_hyper: pd.DataFrame, state_or_provinces: list[str], selected_columns: list[str]
-) -> tuple[str, list[list]]:
+) -> tuple[str, list[list], list[str]]:
     state_or_provinces_str = ", ".join([sop for sop in state_or_provinces])
     # Match the last comma in state_or_provinces_str and replace it with "or"
     state_or_provinces_str_parts = state_or_provinces_str.rsplit(",", 1)
@@ -181,7 +181,7 @@ def multiple_state_or_province_qa_template(
 
 def multiple_country_qa_template(
     df_hyper: pd.DataFrame, countries: list[str], selected_columns: list[str]
-) -> tuple[str, list[list]]:
+) -> tuple[str, list[list], list[str]]:
     countries_str = ", ".join([c for c in countries])
     # Match the last comma in countries_str and replace it with "or"
     countries_str_parts = countries_str.rsplit(",", 1)
@@ -213,7 +213,7 @@ def multiple_country_qa_template(
 
 def multiple_deposit_type_qa_template(
     df_hyper: pd.DataFrame, deposit_types: list[str], selected_columns: list[str]
-) -> tuple[str, list[list]]:
+) -> tuple[str, list[list], list[str]]:
     deposit_types_str = ", ".join([dt for dt in deposit_types])
     # Match the last comma in deposit_types_str and replace it with "or"
     deposit_types_str_parts = deposit_types_str.rsplit(",", 1)
@@ -247,7 +247,7 @@ def multiple_deposit_type_qa_template(
 
 def multiple_deposit_environment_qa_template(
     df_hyper: pd.DataFrame, deposit_environments: list[str], selected_columns: list[str]
-) -> tuple[str, list[list]]:
+) -> tuple[str, list[list], list[str]]:
     deposit_environments_str = ", ".join([de for de in deposit_environments])
     # Match the last comma in deposit_environments_str and replace it with "or"
     deposit_environments_str_parts = deposit_environments_str.rsplit(",", 1)
@@ -314,14 +314,12 @@ RELEVANT_COLUMN_CANDIDATES = [
     MinModHyperCols.TOTAL_GRADE.value,
     MinModHyperCols.TOTAL_TONNAGE.value,
     MinModHyperCols.TOP_1_DEPOSIT_TYPE.value,
-    MinModHyperCols.TOP_1_DEPOSIT_ENVIRONMENT.value,
 ]
 
 FILTER_COLUMN_CANDIDATES = [
     MinModHyperCols.STATE_OR_PROVINCE.value,
     MinModHyperCols.COUNTRY.value,
     MinModHyperCols.TOP_1_DEPOSIT_TYPE.value,
-    MinModHyperCols.TOP_1_DEPOSIT_ENVIRONMENT.value,
 ]
 
 JSON_TEMPLATE = {
@@ -345,7 +343,7 @@ def construct_eval_set_matched_based():
     """
     df_hyper = pd.read_csv(
         os.path.join(
-            config_general.MINMOD_DIR,
+            config_general.GROUND_TRUTH_DIR,
             config_general.enriched_hyper_reponse_file(config_general.COMMODITY),
         )
     )
