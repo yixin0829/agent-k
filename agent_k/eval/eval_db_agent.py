@@ -156,7 +156,7 @@ def eval_db_agent(full_eval: bool = False):
         answer_df = load_list_to_df(answer, selected_cols=selected_cols)
         answer_df["data_source"] = data_source
         answer_df = answer_df[
-            answer_df["data_source"].eq(DataSource.MRDATA_USGS_GOV.value)
+            answer_df["data_source"].eq(DataSource.MRDATA_USGS_GOV_MRDS.value)
         ].drop(columns=["data_source"])
 
         # Calculate eval metrics

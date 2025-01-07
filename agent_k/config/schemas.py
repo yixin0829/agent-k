@@ -14,7 +14,7 @@ class MinModHyperCols(ListableClass):
     LATITUDE = "latitude"
     LONGITUDE = "longitude"
     TOP_1_DEPOSIT_TYPE = "top_1_deposit_type"
-    TOP1_DEPOSIT_GROUP = "top1_deposit_group"
+    TOP_1_DEPOSIT_GROUP = "top_1_deposit_group"
     TOP_1_DEPOSIT_ENVIRONMENT = "top_1_deposit_environment"
     TOP_1_DEPOSIT_CLASSIFICATION_CONFIDENCE = "top_1_deposit_classification_confidence"
     TOP_1_DEPOSIT_CLASSIFICATION_SOURCE = "top_1_deposit_classification_source"
@@ -29,19 +29,16 @@ class MinModHyperCols(ListableClass):
 
 class DataSource(Enum):
     """
-    Data sources used for mineral site extraction.
+    Data sources used for mineral site (MS) extraction.
     Note: The names of the data sources are used for regex matching. Do not change them.
     """
 
-    DOI_ORG = "DOI"  # Mineral sites extracted from academic papers
-    MRDATA_USGS_GOV = "MRDS"  # Mineral sites extracted from MRDS
-    API_CDR_LAND = (
-        "43-101"  # Mineral sites extracted from 43-101 reports using CDR Land
-    )
-    W3ID_ORG_USGS = (
-        "W3ID"  # Mineral sites extracted from 43-101 reports using Zotero (old, ignore)
-    )
-    OTHER = "OTHER"  # Mineral sites extracted from other sources
+    DOI_ORG = "DOI"  # MS extracted from academic papers
+    MRDATA_USGS_GOV = "MRDATA_OTHER"  # MS extracted from other datasets in USGS
+    MRDATA_USGS_GOV_MRDS = "MRDATA_MRDS"  # MS extracted from MRDS
+    API_CDR_LAND = "43-101"  # MS extracted from 43-101 reports using CDR Land
+    W3ID_ORG_USGS = "W3ID"  # MS extracted from 43-101 reports Zotero (old, ignore)
+    OTHER = "OTHER"  # MS extracted from other sources
 
 
 class QATemplateType(Enum):

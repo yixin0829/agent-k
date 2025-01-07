@@ -23,18 +23,8 @@ def download_minmod_hyper_csv():
     try:
         ms.init()
         df = ms.df
-        # Update deposit type options based on the selected commodity
-        deposit_options = [{"label": dt, "value": dt} for dt in ms.deposit_types]
-
-        # Update country options based on the selected commodity
-        country_options = [
-            {"label": country, "value": country} for country in ms.country
-        ]
-    except Exception:
-        return (
-            deposit_options,
-            country_options,
-        )
+    except Exception as e:
+        raise Exception("Failed to download MinMod hyper response CSV") from e
 
     df.to_csv(
         os.path.join(
@@ -48,6 +38,10 @@ def download_minmod_hyper_csv():
 
 
 def enrich_minmod_hyper():
+    """
+    Enrich with new columns see MinModHyperCols for more details.
+    Explode sites column to include multiple sources for each deduplicated mineral site.
+    """
     df_hyper = pd.read_csv(
         os.path.join(
             config_general.GROUND_TRUTH_DIR,

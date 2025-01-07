@@ -19,7 +19,7 @@ def load_mrds_to_duckdb():
         mrds_table_name = f"mrds_{config_general.COMMODITY}"
         mrds_file_path = os.path.join(config_general.MRDS_DIR, f"{mrds_table_name}.csv")
         logger.info(f"Reading MRDS data from {mrds_file_path}")
-        df = pd.read_csv(mrds_file_path, dtype=config_general.mrds_dtype)
+        df = pd.read_csv(mrds_file_path, dtype=config_general.MRDS_DTYPE)
         # 2. Use DuckDB with context manager and specified database file
         with DuckDBWrapper(database=config_general.DUCKDB_DB_PATH) as db:
             # 3. Create table and insert data

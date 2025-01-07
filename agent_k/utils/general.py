@@ -21,7 +21,9 @@ def download_file(url, path):
                 f.write(data)
 
 
-def sample_values(df: pd.DataFrame, column: str, n: int | tuple = 1) -> str | list[str]:
+def sample_values_from_df(
+    df: pd.DataFrame, column: str, n: int | tuple = 1
+) -> str | list[str]:
     """Sample non-Unknown, non-null values from a column in a dataframe.
 
     Args:

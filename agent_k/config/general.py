@@ -57,7 +57,7 @@ def eval_results_file(commodity: str):
     return f"eval_results_{commodity}_{timestamp}.csv"
 
 
-mrds_dtype = {
+MRDS_DTYPE = {
     "dep_id": str,
     "url": str,
     "mrds_id": str,

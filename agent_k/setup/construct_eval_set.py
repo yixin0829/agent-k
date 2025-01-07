@@ -35,13 +35,13 @@ import simplejson as json
 import agent_k.config.general as config_general
 from agent_k.config.logger import logger
 from agent_k.config.schemas import DataSource, MinModHyperCols, QATemplateType
-from agent_k.utils.general import sample_values
+from agent_k.utils.general import sample_values_from_df
 
 # Set random seed for reproducibility
-random.seed(42)
+# random.seed(42)
 
 
-# QA template returns a tuple of (question, answer: list[list])
+# QA template returns a tuple of (question, answer: list[list], data_source: list[str])
 def single_state_or_province_qa_template(
     df_hyper: pd.DataFrame, state_or_province: str, selected_columns: list[str]
 ) -> tuple[str, list[list], list[str]]:
@@ -305,7 +305,7 @@ class SampleValuesArgs:
         return {"df": self.df, "column": self.column, "n": self.n}
 
 
-MUST_HAVE_COLUMN = [MinModHyperCols.MINERAL_SITE_NAME.value]
+MUST_HAVE_COLUMN = [MinModHyperCols.RECORD_VALUE.value]
 
 # Evaluation set configuration
 RELEVANT_COLUMN_CANDIDATES = [
@@ -314,12 +314,16 @@ RELEVANT_COLUMN_CANDIDATES = [
     MinModHyperCols.TOTAL_GRADE.value,
     MinModHyperCols.TOTAL_TONNAGE.value,
     MinModHyperCols.TOP_1_DEPOSIT_TYPE.value,
+    # MinModHyperCols.TOP_1_DEPOSIT_ENVIRONMENT.value,
+    # MinModHyperCols.TOP_1_DEPOSIT_GROUP.value,
 ]
 
 FILTER_COLUMN_CANDIDATES = [
     MinModHyperCols.STATE_OR_PROVINCE.value,
     MinModHyperCols.COUNTRY.value,
     MinModHyperCols.TOP_1_DEPOSIT_TYPE.value,
+    # MinModHyperCols.TOP_1_DEPOSIT_ENVIRONMENT.value,
+    # MinModHyperCols.TOP_1_DEPOSIT_GROUP.value,
 ]
 
 JSON_TEMPLATE = {
@@ -350,7 +354,7 @@ def construct_eval_set_matched_based():
     # Select 43-101 and MRDS data sources
     df_hyper = df_hyper[
         df_hyper[MinModHyperCols.DATA_SOURCE.value].isin(
-            [DataSource.MRDATA_USGS_GOV.value, DataSource.API_CDR_LAND.value]
+            [DataSource.MRDATA_USGS_GOV_MRDS.value, DataSource.API_CDR_LAND.value]
         )
     ]
 
@@ -385,6 +389,38 @@ def construct_eval_set_matched_based():
         QATemplateType.MULTIPLE_COUNTRY.value: MinModHyperCols.COUNTRY.value,
         QATemplateType.MULTIPLE_DEPOSIT_TYPE.value: MinModHyperCols.TOP_1_DEPOSIT_TYPE.value,
         QATemplateType.MULTIPLE_DEPOSIT_ENVIRONMENT.value: MinModHyperCols.TOP_1_DEPOSIT_ENVIRONMENT.value,
+    }
+
+    # Sample filter value arguments for each template type
+    qa_to_sample_values_args_mapping = {
+        # Sample single filter value arguments
+        QATemplateType.SINGLE_STATE_OR_PROVINCE.value: SampleValuesArgs(
+            df=df_hyper, column=MinModHyperCols.STATE_OR_PROVINCE.value, n=1
+        ),
+        QATemplateType.SINGLE_COUNTRY.value: SampleValuesArgs(
+            df=df_hyper, column=MinModHyperCols.COUNTRY.value, n=1
+        ),
+        QATemplateType.SINGLE_DEPOSIT_TYPE.value: SampleValuesArgs(
+            df=df_hyper, column=MinModHyperCols.TOP_1_DEPOSIT_TYPE.value, n=1
+        ),
+        QATemplateType.SINGLE_DEPOSIT_ENVIRONMENT.value: SampleValuesArgs(
+            df=df_hyper, column=MinModHyperCols.TOP_1_DEPOSIT_ENVIRONMENT.value, n=1
+        ),
+        # Sample multiple filter value arguments (2-3 values)
+        QATemplateType.MULTIPLE_STATE_OR_PROVINCE.value: SampleValuesArgs(
+            df=df_hyper, column=MinModHyperCols.STATE_OR_PROVINCE.value, n=(2, 3)
+        ),
+        QATemplateType.MULTIPLE_COUNTRY.value: SampleValuesArgs(
+            df=df_hyper, column=MinModHyperCols.COUNTRY.value, n=(2, 3)
+        ),
+        QATemplateType.MULTIPLE_DEPOSIT_TYPE.value: SampleValuesArgs(
+            df=df_hyper, column=MinModHyperCols.TOP_1_DEPOSIT_TYPE.value, n=(2, 3)
+        ),
+        QATemplateType.MULTIPLE_DEPOSIT_ENVIRONMENT.value: SampleValuesArgs(
+            df=df_hyper,
+            column=MinModHyperCols.TOP_1_DEPOSIT_ENVIRONMENT.value,
+            n=(2, 3),
+        ),
     }
 
     # Helper function to create a QA pair for a given QA template type
@@ -437,49 +473,16 @@ def construct_eval_set_matched_based():
         return True
 
     qa_pairs: list[dict] = []
-    for report_columns_count in range(1, len(RELEVANT_COLUMN_CANDIDATES) + 1):
-        # Sample columns to report in the question (from 1 to all relevant columns + 1)
-        reported_columns = MUST_HAVE_COLUMN + random.sample(
-            RELEVANT_COLUMN_CANDIDATES, report_columns_count
-        )
-
-        # Sample filter value arguments for each template type
-        qa_to_sample_values_args_mapping = {
-            # Sample single filter value arguments
-            QATemplateType.SINGLE_STATE_OR_PROVINCE.value: SampleValuesArgs(
-                df=df_hyper, column=MinModHyperCols.STATE_OR_PROVINCE.value, n=1
-            ),
-            QATemplateType.SINGLE_COUNTRY.value: SampleValuesArgs(
-                df=df_hyper, column=MinModHyperCols.COUNTRY.value, n=1
-            ),
-            QATemplateType.SINGLE_DEPOSIT_TYPE.value: SampleValuesArgs(
-                df=df_hyper, column=MinModHyperCols.TOP_1_DEPOSIT_TYPE.value, n=1
-            ),
-            QATemplateType.SINGLE_DEPOSIT_ENVIRONMENT.value: SampleValuesArgs(
-                df=df_hyper, column=MinModHyperCols.TOP_1_DEPOSIT_ENVIRONMENT.value, n=1
-            ),
-            # Sample multiple filter value arguments (2-3 values)
-            QATemplateType.MULTIPLE_STATE_OR_PROVINCE.value: SampleValuesArgs(
-                df=df_hyper, column=MinModHyperCols.STATE_OR_PROVINCE.value, n=(2, 3)
-            ),
-            QATemplateType.MULTIPLE_COUNTRY.value: SampleValuesArgs(
-                df=df_hyper, column=MinModHyperCols.COUNTRY.value, n=(2, 3)
-            ),
-            QATemplateType.MULTIPLE_DEPOSIT_TYPE.value: SampleValuesArgs(
-                df=df_hyper, column=MinModHyperCols.TOP_1_DEPOSIT_TYPE.value, n=(2, 3)
-            ),
-            QATemplateType.MULTIPLE_DEPOSIT_ENVIRONMENT.value: SampleValuesArgs(
-                df=df_hyper,
-                column=MinModHyperCols.TOP_1_DEPOSIT_ENVIRONMENT.value,
-                n=(2, 3),
-            ),
-        }
-
-        # Create QA pairs for each template type
+    for relevant_columns_count in range(1, len(RELEVANT_COLUMN_CANDIDATES) + 1):
         for template_type in QATemplateType:
+            # Sample columns to report in the question. Must have at least 2 columns.
+            reported_columns = MUST_HAVE_COLUMN + random.sample(
+                RELEVANT_COLUMN_CANDIDATES, relevant_columns_count
+            )
+
             validated = False
             while not validated:
-                # Re-sample filter value if the QA pair is not valid
+                # Re-sample filter value(s) if the QA pair is not valid
                 qa_pair = create_qa_pair(
                     qa_template_key=template_type.value,
                     qa_template=qa_templates_to_func_mapping[template_type.value],
@@ -489,7 +492,7 @@ def construct_eval_set_matched_based():
                     filter_column=qa_templates_to_filter_column_mapping[
                         template_type.value
                     ],
-                    filter_value=sample_values(
+                    filter_value=sample_values_from_df(
                         **qa_to_sample_values_args_mapping[
                             template_type.value
                         ].to_dict()
