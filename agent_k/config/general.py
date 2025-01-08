@@ -5,6 +5,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Note: Commodity is used for naming files and defining the scope of the data
+COMMODITY = "nickel"
+
 # MinMod API endpoint
 MINMOD_API_URL = "https://minmod.isi.edu/api/v1"
 DEDUP_MINERAL_SITES_ENDPOINT = "/dedup-mineral-sites"
@@ -26,14 +29,11 @@ RAW_DIR = os.path.join(DATA_DIR, "raw")
 ALL_SOURCES_DIR = os.path.join(RAW_DIR, "all_sources")
 CDR_REPORTS_DIR = os.path.join(ALL_SOURCES_DIR, "43-101")
 MRDS_DIR = os.path.join(ALL_SOURCES_DIR, "mrds")
-DUCKDB_DB_PATH = os.path.join(ALL_SOURCES_DIR, "minmod.duckdb")
+DUCKDB_DB_PATH = os.path.join(ALL_SOURCES_DIR, "mrds.duckdb")
 ZIP_PATH = os.path.join(RAW_DIR, "mrds.zip")
 MRDS_URL = "https://mrdata.usgs.gov/mrds/mrds-csv.zip"
 GROUND_TRUTH_DIR = os.path.join(RAW_DIR, "ground_truth")
 EVAL_DIR = os.path.join(DATA_DIR, "eval")
-
-# Note: Commodity is used for naming files and defining the scope of the data
-COMMODITY = "nickel"
 
 
 def hyper_reponse_file(commodity: str):

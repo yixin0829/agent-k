@@ -14,6 +14,7 @@ dependencies = [
     "markitdown>=0.0.1a2",
     "openai>=1.58.1",
     "pandas>=2.2.3",
+    "pydantic>=2.10.4",
     "simplejson>=3.19.3",
     "tqdm>=4.67.1",
 ]

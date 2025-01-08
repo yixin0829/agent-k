@@ -1,11 +1,11 @@
 import json
 import os
-from dataclasses import dataclass, field
 from datetime import datetime
 
 import autogen
 import autogen.runtime_logging
 import pandas as pd
+from pydantic import BaseModel, Field
 
 import agent_k.config.general as config_general
 from agent_k.agents.db_agent import construct_db_agent
@@ -14,49 +14,29 @@ from agent_k.config.schemas import DataSource, MinModHyperCols
 from agent_k.utils.general import load_list_to_df
 
 
-@dataclass
-class EvalReport:
-    qid: str = field(default="Unknown", metadata={"description": "Question ID"})
-    question: str = field(default="Unknown", metadata={"description": "Question"})
-    row_em_score: float = field(
-        default=0, metadata={"description": "Exact match score for all rows"}
+class EvalReport(BaseModel):
+    qid: str = Field(default="Unknown", description="Question ID")
+    question: str = Field(default="Unknown", description="Question")
+    row_em_score: float = Field(default=0, description="Exact match score for all rows")
+    row_precision: float = Field(default=0, description="Precision score for all rows")
+    row_recall: float = Field(default=0, description="Recall score for all rows")
+    row_f1: float = Field(default=0, description="F1 score for all rows")
+    ms_em_score: float = Field(
+        default=0, description="Exact match score for mineral site name"
     )
-    row_precision: float = field(
-        default=0, metadata={"description": "Precision score for all rows"}
+    ms_precision: float = Field(
+        default=0, description="Precision score for mineral site name"
     )
-    row_recall: float = field(
-        default=0, metadata={"description": "Recall score for all rows"}
+    ms_recall: float = Field(
+        default=0, description="Recall score for mineral site name"
     )
-    row_f1: float = field(default=0, metadata={"description": "F1 score for all rows"})
-    ms_em_score: float = field(
-        default=0, metadata={"description": "Exact match score for mineral site name"}
-    )
-    ms_precision: float = field(
-        default=0, metadata={"description": "Precision score for mineral site name"}
-    )
-    ms_recall: float = field(
-        default=0, metadata={"description": "Recall score for mineral site name"}
-    )
-    ms_f1: float = field(
-        default=0, metadata={"description": "F1 score for mineral site name"}
-    )
+    ms_f1: float = Field(default=0, description="F1 score for mineral site name")
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"EM: {self.row_em_score:.2f}, Precision: {self.row_precision:.2f}, Recall: {self.row_recall:.2f}, F1: {self.row_f1:.2f}, MS EM: {self.ms_em_score:.2f}, MS Precision: {self.ms_precision:.2f}, MS Recall: {self.ms_recall:.2f}, MS F1: {self.ms_f1:.2f}"
 
-    def to_dict(self):
-        return {
-            "qid": self.qid,
-            "question": self.question,
-            "row_em_score": self.row_em_score,
-            "row_precision": self.row_precision,
-            "row_recall": self.row_recall,
-            "row_f1": self.row_f1,
-            "ms_em_score": self.ms_em_score,
-            "ms_precision": self.ms_precision,
-            "ms_recall": self.ms_recall,
-            "ms_f1": self.ms_f1,
-        }
+    def to_dict(self) -> dict:
+        return self.model_dump()
 
 
 def eval_db_agent(full_eval: bool = False):
@@ -71,7 +51,7 @@ def eval_db_agent(full_eval: bool = False):
     with open(
         os.path.join(
             config_general.EVAL_DIR,
-            config_general.eval_set_matched_based_file(config_general.COMMODITY, "v1"),
+            config_general.eval_set_matched_based_file(config_general.COMMODITY, "v3"),
         ),
         "r",
     ) as f:
@@ -82,6 +62,7 @@ def eval_db_agent(full_eval: bool = False):
     for i, qa_pair in enumerate(eval_set):
         if i > 0 and not full_eval:
             break
+
         logger.info(f"Evaluating question {i+1} of {len(eval_set)}")
         qid, question, answer, selected_cols, data_source = (
             qa_pair["qid"],
@@ -90,6 +71,12 @@ def eval_db_agent(full_eval: bool = False):
             qa_pair["metadata"]["selected_columns"],
             qa_pair["metadata"]["data_source"],
         )
+
+        logger.info(
+            "Hacky replacing 'record value' with 'dep id' for matching mrds data schema"
+        )
+        question = question.replace("record value", "dep id")
+
         logger.info(f"{qid=}")
         logger.info(f"{question=}")
 
@@ -149,8 +136,6 @@ def eval_db_agent(full_eval: bool = False):
         with open(result_path) as f:
             agent_result = json.load(f)
         agent_df = load_list_to_df(agent_result, selected_cols=selected_cols)
-        # Note: Deduplicate the agent result from MRDS data otherwise see > 1 recall
-        agent_df.drop_duplicates(inplace=True)
 
         # Prepare answer DataFrame for comparison (filter by MRDS data source)
         answer_df = load_list_to_df(answer, selected_cols=selected_cols)
@@ -176,9 +161,9 @@ def eval_db_agent(full_eval: bool = False):
         )
         exact_match = 1.0 if agent_df.equals(answer_df) else 0.0
 
-        # Calculate mineral site name metrics
-        agent_df_ms = agent_df[MinModHyperCols.MINERAL_SITE_NAME.value].to_list()
-        answer_df_ms = answer_df[MinModHyperCols.MINERAL_SITE_NAME.value].to_list()
+        # Calculate site-level metrics (we use record value for unique site identification)
+        agent_df_ms = agent_df[MinModHyperCols.RECORD_VALUE.value].to_list()
+        answer_df_ms = answer_df[MinModHyperCols.RECORD_VALUE.value].to_list()
         common_ms = set(agent_df_ms) & set(answer_df_ms)
         ms_precision = len(common_ms) / len(agent_df_ms) if len(agent_df_ms) > 0 else 0
         ms_recall = len(common_ms) / len(answer_df_ms) if len(answer_df_ms) > 0 else 0
@@ -227,15 +212,16 @@ def eval_db_agent(full_eval: bool = False):
     logger.info(f"Average MS F1: {avg_ms_f1:.2f}")
     logger.info("=" * 100)
 
-    # Save the evaluation results to a CSV file
-    eval_df = pd.DataFrame([r.to_dict() for r in eval_results])
-    eval_df.to_csv(
-        os.path.join(
-            config_general.EVAL_DIR,
-            config_general.eval_results_file(config_general.COMMODITY),
-        ),
-        index=False,
-    )
+    if full_eval:
+        # Save the evaluation results to a CSV file
+        eval_df = pd.DataFrame([r.to_dict() for r in eval_results])
+        eval_df.to_csv(
+            os.path.join(
+                config_general.EVAL_DIR,
+                config_general.eval_results_file(config_general.COMMODITY),
+            ),
+            index=False,
+        )
 
 
 if __name__ == "__main__":

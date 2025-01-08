@@ -19,6 +19,7 @@ dependencies = [
     { name = "markitdown" },
     { name = "openai" },
     { name = "pandas" },
+    { name = "pydantic" },
     { name = "simplejson" },
     { name = "tqdm" },
 ]
@@ -42,6 +43,7 @@ requires-dist = [
     { name = "markitdown", specifier = ">=0.0.1a2" },
     { name = "openai", specifier = ">=1.58.1" },
     { name = "pandas", specifier = ">=2.2.3" },
+    { name = "pydantic", specifier = ">=2.10.4" },
     { name = "simplejson", specifier = ">=3.19.3" },
     { name = "tqdm", specifier = ">=4.67.1" },
 ]

@@ -72,7 +72,7 @@ def run_query(
         }
 
 
-def check_termination(msg: dict):
+def check_termination(msg: dict) -> bool:
     """
     Terminate when the agent get a successful sql query execution status.
     """
@@ -90,7 +90,7 @@ def check_termination(msg: dict):
     logger.debug(
         f"Termination check obj['execution_status']: {obj['execution_status']}"
     )
-    return obj["execution_status"]
+    return bool(obj["execution_status"])
 
 
 def construct_db_agent() -> tuple[ConversableAgent, UserProxyAgent]:
@@ -156,3 +156,13 @@ def construct_db_agent() -> tuple[ConversableAgent, UserProxyAgent]:
     logger.debug(f"Tools registered: {db_agent.llm_config['tools']}")
 
     return db_agent, user_proxy
+
+
+if __name__ == "__main__":
+    # Demo Example
+    db_agent, user_proxy = construct_db_agent()
+    chat_result = user_proxy.initiate_chat(
+        db_agent,
+        message="What are all the mineral sites located in Sofala Province, Vietnam? Report record value and total grade.",
+        max_turns=10,
+    )

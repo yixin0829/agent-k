@@ -1,21 +1,11 @@
 """
 Construct the evaluation set for the MinMod agent and save it to JSONL format.
 
-Each line is a JSON object with the following fields:
-- "qid" (str): the ID of the mineral site
-- "question" (str): the question to ask the agent
-- "answer" (list of lists): the ground truth answer to the question
-- "metadata" (dict): the metadata of the mineral site
-    - "question_category" (str): the category of the question
-    - "sql" (str): the SQL query to answer the question
-    - "selected_columns" (list of str): the columns that are selected
-    - "filter_conditions" (list of dicts): the conditions to filter the data
-    - "data_source" (list of str): the corresponding data sources (e.g. 43-101, MRDS, etc.) for each record in the answer
-
-Currently, the evaluation set is constructed by sampling columns to report in the question and filter values.
-    We sample 1 to (all relevant columns + 1) columns to report.
-        For each columns_to_report, there are 8 question templates. For each template, we sample 1-3 filter values.
-            In total, there are (all relevant columns + 1) * 8 QA pairs in the evaluation set.
+Currently, the evaluation set is constructed by sampling columns to report and filter values.
+    We sample 1 to all_relevant_columns_count columns to report + record value column.
+        For each columns_to_report, there are 8 question templates with 4 different filter conditions.
+            For each template, we sample 1-3 filter values.
+                In total, there are all_relevant_columns_count * 8 QA pairs in the evaluation set.
 
 We validate the QA pairs to ensure quality:
     1. Answer must have more than 1 record
@@ -39,6 +29,33 @@ from agent_k.utils.general import sample_values_from_df
 
 # Set random seed for reproducibility
 # random.seed(42)
+
+MUST_HAVE_COLUMN = [MinModHyperCols.RECORD_VALUE.value]
+
+# Evaluation set configuration
+RELEVANT_COLUMN_CANDIDATES = [
+    MinModHyperCols.STATE_OR_PROVINCE.value,
+    MinModHyperCols.COUNTRY.value,
+    MinModHyperCols.TOTAL_GRADE.value,
+    MinModHyperCols.TOTAL_TONNAGE.value,
+    MinModHyperCols.TOP_1_DEPOSIT_TYPE.value,
+    # Ignore these columns for now as if they can be inferred from deposit type
+    # MinModHyperCols.TOP_1_DEPOSIT_ENVIRONMENT.value,
+    # MinModHyperCols.TOP_1_DEPOSIT_GROUP.value,
+]
+
+QA_JSONL_TEMPLATE = {
+    "qid": "",
+    "question": "",
+    "answer": [],
+    "metadata": {
+        "question_category": "",
+        "sql": "",
+        "selected_columns": [],
+        "filter_conditions": [],
+        "data_source": [],
+    },
+}
 
 
 # QA template returns a tuple of (question, answer: list[list], data_source: list[str])
@@ -305,41 +322,6 @@ class SampleValuesArgs:
         return {"df": self.df, "column": self.column, "n": self.n}
 
 
-MUST_HAVE_COLUMN = [MinModHyperCols.RECORD_VALUE.value]
-
-# Evaluation set configuration
-RELEVANT_COLUMN_CANDIDATES = [
-    MinModHyperCols.STATE_OR_PROVINCE.value,
-    MinModHyperCols.COUNTRY.value,
-    MinModHyperCols.TOTAL_GRADE.value,
-    MinModHyperCols.TOTAL_TONNAGE.value,
-    MinModHyperCols.TOP_1_DEPOSIT_TYPE.value,
-    # MinModHyperCols.TOP_1_DEPOSIT_ENVIRONMENT.value,
-    # MinModHyperCols.TOP_1_DEPOSIT_GROUP.value,
-]
-
-FILTER_COLUMN_CANDIDATES = [
-    MinModHyperCols.STATE_OR_PROVINCE.value,
-    MinModHyperCols.COUNTRY.value,
-    MinModHyperCols.TOP_1_DEPOSIT_TYPE.value,
-    # MinModHyperCols.TOP_1_DEPOSIT_ENVIRONMENT.value,
-    # MinModHyperCols.TOP_1_DEPOSIT_GROUP.value,
-]
-
-JSON_TEMPLATE = {
-    "qid": "",
-    "question": "",
-    "answer": [],
-    "metadata": {
-        "question_category": "",
-        "sql": "",
-        "selected_columns": [],
-        "filter_conditions": [],
-        "data_source": [],
-    },
-}
-
-
 def construct_eval_set_matched_based():
     """
     Construct the evaluation set for the MinMod agent and save it to JSONL format.
@@ -432,7 +414,7 @@ def construct_eval_set_matched_based():
         filter_value: str | list[str],
         selected_columns: list[str],
     ) -> dict:
-        json_qa_pair = deepcopy(JSON_TEMPLATE)
+        json_qa_pair = deepcopy(QA_JSONL_TEMPLATE)
         json_qa_pair["qid"] = str(uuid.uuid4())
         (
             json_qa_pair["question"],
