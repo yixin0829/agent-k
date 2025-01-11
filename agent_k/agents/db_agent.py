@@ -1,68 +1,83 @@
 import json
-from dataclasses import dataclass
-from typing import Annotated, Any, Callable
+from typing import Annotated, Any
 
-from autogen import ConversableAgent, UserProxyAgent, register_function
+from autogen_agentchat.agents import AssistantAgent
 
 import agent_k.config.general as config_general
 import agent_k.config.prompts as config_prompts
 from agent_k.config.logger import logger
+from autogen_agentchat.teams import RoundRobinGroupChat
+from autogen_agentchat.base import TaskResult
+from autogen_agentchat.conditions import TextMentionTermination
+from autogen_agentchat.ui import Console
 from agent_k.utils.db_utils import DuckDBWrapper
+from autogen_core import CancellationToken
+from autogen_agentchat.messages import TextMessage
+import asyncio
 
 
-@dataclass
-class Tool:
-    function: Callable
-    desc: str
-
-
-def list_tables(
+async def list_tables(
     reflection: Annotated[str, "Think about why you need to list all tables."],
 ) -> list[str]:
+    """
+    List all tables in the database.
+    """
     with DuckDBWrapper(database=config_general.DUCKDB_DB_PATH) as db:
         return f"Tables in the database: {db.list_tables()}"
 
 
-def list_columns(
+async def list_columns(
     reflection: Annotated[
         str, "Think about why you need to list columns for this given table."
     ],
     table: Annotated[str, "The table to list columns from"],
 ) -> list[str]:
+    """
+    List all columns in a given table.
+    """
     with DuckDBWrapper(database=config_general.DUCKDB_DB_PATH) as db:
         columns = db.list_columns(table)
         return f"Columns in the table {table}: {columns}"
 
 
-def list_column_unique_values(
+async def list_column_unique_values(
     reflection: Annotated[
         str, "Think about why you need to list unique values for this given column."
     ],
     column: Annotated[str, "The column to list unique values from"],
     table: Annotated[str, "The table where the column is located"],
 ) -> list[str]:
+    """
+    List all unique values in a given column.
+    """
     with DuckDBWrapper(database=config_general.DUCKDB_DB_PATH) as db:
         unique_values = db.list_column_unique_values(column, table)
         return f"Unique values in the column {column} of the table {table}: {unique_values}"
 
 
-def list_columns_with_details(
+async def list_columns_with_details(
     reflection: Annotated[
         str, "Think about why you need to list columns with more details."
     ],
     table: Annotated[str, "The table to list columns with details from"],
 ) -> str:
+    """
+    Get the detailed description of columns in a given table.
+    """
     with DuckDBWrapper(database=config_general.DUCKDB_DB_PATH) as db:
         details = db.list_columns_with_details(table)
         return f"Details of the table {table}: {details}"
 
 
-def run_query(
+async def run_query(
     reflection: Annotated[
         str, "Final check if the query is correct based on the previous tool calls."
     ],
     query: Annotated[str, "The SQL query to run"],
 ) -> dict[str, Any]:
+    """
+    Run a SQL query and return the result in a dictionary format (execution_status, message, and jsonified dataframe).
+    """
     with DuckDBWrapper(database=config_general.DUCKDB_DB_PATH) as db:
         execution_status, message, df = db.run_query(query)
         return {
@@ -72,97 +87,62 @@ def run_query(
         }
 
 
-def check_termination(msg: dict) -> bool:
+def construct_db_agent() -> AssistantAgent:
     """
-    Terminate when the agent get a successful sql query execution status.
+    Construct and configure a database agent.
     """
-    if "tool_responses" not in msg:
-        # If it's not a tool response, it's not the termination condition
-        return False
-
-    # This is the return value of the tool in string format
-    json_str = msg["tool_responses"][0]["content"]
-    if "execution_status" not in json_str:
-        # If it's not a tool response from run_query, it's not the termination condition
-        return False
-
-    obj = json.loads(json_str)
-    logger.debug(
-        f"Termination check obj['execution_status']: {obj['execution_status']}"
-    )
-    return bool(obj["execution_status"])
-
-
-def construct_db_agent() -> tuple[ConversableAgent, UserProxyAgent]:
-    """Construct and configure a database agent and user proxy agent.
-
-    This function creates and configures two agents:
-    1. A database agent that can generate SQL queries and gather schema information using tools
-    2. A user proxy agent that executes the tools on behalf of the DB agent
-
-    The DB agent is configured with:
-    - GPT-4 language model
-    - System prompt for SQL query generation
-    - Tool registration for database operations
-    - Automatic termination on successful query execution
-
-    The user proxy agent is configured with:
-    - Never ask for human input
-    - Automatic termination on successful query execution when the DB agent says 'TERMINATE'
-
-    Returns:
-        Tuple[ConversableAgent, UserProxyAgent]: The configured DB agent and user proxy agent
-    """
-    db_agent = ConversableAgent(
-        "db_agent",
-        llm_config={"config_list": config_general.AUTOGEN_CONFIG_LIST},
+    db_agent = AssistantAgent(
+        name="db_agent",
+        description="A database agent that can gather schema information using tools, generate SQL queries, and run SQL queries.",
+        model_client=config_general.OPENAI_MODEL_CLIENT,
         system_message=config_prompts.DB_AGENT_SYSTEM_PROMPT_V2,
-        is_termination_msg=check_termination,
-        human_input_mode="NEVER",
+        tools=[list_tables, list_columns, list_column_unique_values, list_columns_with_details, run_query],
     )
 
-    user_proxy = UserProxyAgent(
-        "user_proxy",
-        llm_config=None,
-        is_termination_msg=lambda msg: msg.get("content") is not None
-        and "terminate" in msg["content"].lower(),
-        human_input_mode="NEVER",
+    return db_agent
+
+
+async def demo_run_single_response() -> None:
+    """
+    This calls the agent with one user message to get one response only
+    """
+    db_agent:AssistantAgent = construct_db_agent()
+
+    response = await db_agent.on_messages(
+        [TextMessage(content="What are all the mineral sites located in Sofala Province, Vietnam? Report record value and total grade.", source="user")],
+        cancellation_token=CancellationToken(),
     )
+    print(response.inner_messages)
+    print("="*100)
+    print(response.chat_message)
 
-    # Register tools in both db_agent (caller) and user_proxy (executor)
-    tool_registry = [
-        Tool(function=list_tables, desc="List all tables in the database."),
-        Tool(function=list_columns, desc="List all columns in a given table."),
-        Tool(
-            function=list_column_unique_values,
-            desc="List all unique values in a given column.",
-        ),
-        Tool(
-            function=list_columns_with_details,
-            desc="Get the detailed description of columns in a given table.",
-        ),
-        Tool(
-            function=run_query,
-            desc="Run a SQL query and return the result (execution status, message, and jsonified dataframe).",
-        ),
-    ]
+async def demo_run_one_agent_team(observe_method: str = "console") -> None:
+    """
+    This runs the agent with a team of one agent to talk to itself
+    """
+    db_agent:AssistantAgent = construct_db_agent()
+    text_termination = TextMentionTermination("TERMINATE")
+    agent_team = RoundRobinGroupChat([db_agent], max_turns=10, termination_condition=text_termination)
+    task = "What are all the mineral sites located in Tasmania, Australia? Report mineral site name and state or province."
 
-    for tool in tool_registry:
-        register_function(
-            tool.function, caller=db_agent, executor=user_proxy, description=tool.desc
-        )
+    try:
+        await agent_team.reset()  # Reset the team for a new task.
+    except RuntimeError as e:
+        pass
 
-    # Check if the tools are registered. Under the hood, the tools are registered in JSON schema format like function_calls
-    logger.debug(f"Tools registered: {db_agent.llm_config['tools']}")
-
-    return db_agent, user_proxy
+    if observe_method == "console":
+        await Console(agent_team.run_stream(
+            task=task
+        ))
+    elif observe_method == "async":
+        async for message in agent_team.run_stream(
+            task=task
+        ):
+            if isinstance(message, TaskResult):
+                print("Stop Reason:", message.stop_reason)
+            else:
+                print(message)
 
 
 if __name__ == "__main__":
-    # Demo Example
-    db_agent, user_proxy = construct_db_agent()
-    chat_result = user_proxy.initiate_chat(
-        db_agent,
-        message="What are all the mineral sites located in Sofala Province, Vietnam? Report record value and total grade.",
-        max_turns=10,
-    )
+    asyncio.run(demo_run_one_agent_team())

@@ -7,7 +7,8 @@ requires-python = ">=3.12"
 dependencies = [
     "aiohttp>=3.11.10",
     "asyncio>=3.4.3",
-    "autogen-agentchat~=0.2",
+    "autogen-agentchat~=0.4",
+    "autogen-ext[openai]>=0.4.0",
     "duckdb>=1.1.3",
     "httpx>=0.28.1",
     "loguru>=0.7.3",
@@ -32,4 +33,4 @@ dev = [
 # flake8-bugbear (`B`)
 # isort ("I") rules
 # E302 blank-lines-top-level
-select = ["E4", "E7", "E9", "F", "B", "I", "E302"]
+select = ["E4", "E7", "E9", "F", "B", "I"]

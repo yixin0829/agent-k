@@ -1,6 +1,7 @@
 import os
 from datetime import datetime
 
+from autogen_ext.models.openai import OpenAIChatCompletionClient
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -108,10 +109,8 @@ MRDS_DTYPE = {
 
 # Autogen settings
 AGENT_CACHE_DIR = os.path.join(DATA_DIR, "agent_cache")
-AUTOGEN_CONFIG_LIST = [
-    {
-        "model": "gpt-4o-mini",
-        "temperature": 0,
-        "api_key": os.environ.get("OPENAI_API_KEY"),
-    }
-]
+OPENAI_MODEL_CLIENT = OpenAIChatCompletionClient(
+    model="gpt-4o-mini",
+    api_key=os.getenv("OPENAI_API_KEY"),
+)
+
