@@ -63,7 +63,7 @@ def load_list_to_df(data: list[list[str]], selected_cols: list[str]) -> pd.DataF
     except ValueError as e:
         logger.error(f"Error loading data to DataFrame: {e}")
         logger.error("Returning empty DataFrame as a fallback")
-        logger.debug(f"Debugging info:\n{data}\n{selected_cols}")
+        logger.debug(f"Debugging info:\n{data=}\n{selected_cols=}")
         return pd.DataFrame()
 
     # Convert certain columns to float for easy merge

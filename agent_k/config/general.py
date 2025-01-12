@@ -113,4 +113,3 @@ OPENAI_MODEL_CLIENT = OpenAIChatCompletionClient(
     model="gpt-4o-mini",
     api_key=os.getenv("OPENAI_API_KEY"),
 )
-

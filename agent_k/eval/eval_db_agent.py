@@ -1,14 +1,13 @@
+import asyncio
 import json
 import os
-from datetime import datetime
 
-import autogen
-import autogen.runtime_logging
 import pandas as pd
+from autogen_agentchat.ui import Console
 from pydantic import BaseModel, Field
 
 import agent_k.config.general as config_general
-from agent_k.agents.db_agent import construct_db_agent
+from agent_k.agents.db_agent import construct_db_agent_team, construct_swarm_team
 from agent_k.config.logger import logger
 from agent_k.config.schemas import DataSource, MinModHyperCols
 from agent_k.utils.general import load_list_to_df
@@ -39,19 +38,27 @@ class EvalReport(BaseModel):
         return self.model_dump()
 
 
-def eval_db_agent(full_eval: bool = False):
+async def eval_db_agent(
+    full_eval: bool = False, eval_set_version: str = "v3", team_type: str = "single"
+):
     """
     Evaluate the DB agent with the eval set.
     If full_eval is True, evaluate all questions.
     """
-    # Construct the DB agent and user proxy agent
-    db_agent, user_proxy = construct_db_agent()
+    if team_type == "single":
+        agent_team = construct_db_agent_team()
+    elif team_type == "swarm":
+        agent_team = construct_swarm_team()
+    else:
+        raise ValueError(f"Invalid team type: {team_type}")
 
     # Read the eval dataset
     with open(
         os.path.join(
             config_general.EVAL_DIR,
-            config_general.eval_set_matched_based_file(config_general.COMMODITY, "v3"),
+            config_general.eval_set_matched_based_file(
+                config_general.COMMODITY, eval_set_version
+            ),
         ),
         "r",
     ) as f:
@@ -91,21 +98,11 @@ def eval_db_agent(full_eval: bool = False):
         else:
             initial_files = set(os.listdir(config_general.AGENT_CACHE_DIR))
 
-        # Start autogen logging
-        autogen_logging_session_id = autogen.runtime_logging.start(
-            logger_type="file",
-            config={"filename": f"runtime_{datetime.now().strftime('%Y-%m-%d')}.log"},
-        )
-        logger.info(f"{autogen_logging_session_id=}")
-        # Run the agent
-        chat_result = user_proxy.initiate_chat(
-            db_agent,
-            message=question,
-            max_turns=10,
-        )
-        # Stop autogen logging
-        autogen.runtime_logging.stop()
-        logger.info(f"The cost of the chat: {chat_result.cost}")
+        try:
+            await agent_team.reset()  # Reset the team for a new task.
+        except RuntimeError:
+            pass
+        await Console(agent_team.run_stream(task=question))
 
         # Get new files created
         current_files = set(os.listdir(config_general.AGENT_CACHE_DIR))
@@ -162,8 +159,16 @@ def eval_db_agent(full_eval: bool = False):
         exact_match = 1.0 if agent_df.equals(answer_df) else 0.0
 
         # Calculate site-level metrics (we use record value for unique site identification)
-        agent_df_ms = agent_df[MinModHyperCols.RECORD_VALUE.value].to_list()
-        answer_df_ms = answer_df[MinModHyperCols.RECORD_VALUE.value].to_list()
+        agent_df_ms = (
+            agent_df[MinModHyperCols.RECORD_VALUE.value].to_list()
+            if MinModHyperCols.RECORD_VALUE.value in agent_df.columns
+            else []
+        )
+        answer_df_ms = (
+            answer_df[MinModHyperCols.RECORD_VALUE.value].to_list()
+            if MinModHyperCols.RECORD_VALUE.value in answer_df.columns
+            else []
+        )
         common_ms = set(agent_df_ms) & set(answer_df_ms)
         ms_precision = len(common_ms) / len(agent_df_ms) if len(agent_df_ms) > 0 else 0
         ms_recall = len(common_ms) / len(answer_df_ms) if len(answer_df_ms) > 0 else 0
@@ -225,4 +230,6 @@ def eval_db_agent(full_eval: bool = False):
 
 
 if __name__ == "__main__":
-    eval_db_agent(full_eval=False)
+    asyncio.run(
+        eval_db_agent(full_eval=True, eval_set_version="v3", team_type="single")
+    )
