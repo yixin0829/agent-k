@@ -46,9 +46,9 @@ async def eval_db_agent(
     If full_eval is True, evaluate all questions.
     """
     if team_type == "single":
-        agent_team = construct_db_agent_team()
+        team = construct_db_agent_team()
     elif team_type == "swarm":
-        agent_team = construct_swarm_team()
+        team = construct_swarm_team()
     else:
         raise ValueError(f"Invalid team type: {team_type}")
 
@@ -99,10 +99,10 @@ async def eval_db_agent(
             initial_files = set(os.listdir(config_general.AGENT_CACHE_DIR))
 
         try:
-            await agent_team.reset()  # Reset the team for a new task.
+            await team.reset()  # Reset the team for a new task.
         except RuntimeError:
             pass
-        await Console(agent_team.run_stream(task=question))
+        await Console(team.run_stream(task=question))
 
         # Get new files created
         current_files = set(os.listdir(config_general.AGENT_CACHE_DIR))

@@ -3,6 +3,7 @@ from datetime import datetime
 
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 from dotenv import load_dotenv
+from openai import AsyncClient
 
 load_dotenv()
 
@@ -113,3 +114,10 @@ OPENAI_MODEL_CLIENT = OpenAIChatCompletionClient(
     model="gpt-4o-mini",
     api_key=os.getenv("OPENAI_API_KEY"),
 )
+
+OPENAI_ASSISTANT_CLIENT = AsyncClient(
+    api_key=os.getenv("OPENAI_API_KEY"),
+    base_url="https://api.openai.com/v1",
+)
+
+OPENAI_ASSISTANT_MODEL = "gpt-4o-mini"
