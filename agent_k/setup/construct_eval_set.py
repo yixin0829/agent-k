@@ -84,7 +84,7 @@ def single_state_or_province_qa_template(
         f"What are all the mineral sites located in {state_or_province}, {country}? Report {selected_columns_str}.",
         answer,
         data_source,
-    )
+    )  # type: ignore[return-value]
 
 
 def single_country_qa_template(
@@ -109,7 +109,7 @@ def single_country_qa_template(
         f"What are all the mineral sites located in {country}? Report {selected_columns_str}.",
         answer,
         data_source,
-    )
+    )  # type: ignore[return-value]
 
 
 def single_deposit_type_qa_template(
@@ -134,7 +134,7 @@ def single_deposit_type_qa_template(
         f"What are all the mineral sites with a deposit type of {deposit_type}? Report {selected_columns_str}.",
         answer,
         data_source,
-    )
+    )  # type: ignore[return-value]
 
 
 def single_deposit_environment_qa_template(
@@ -159,7 +159,7 @@ def single_deposit_environment_qa_template(
         f"What are all the mineral sites with a deposit environment of {deposit_environment}? Report {selected_columns_str}.",
         answer,
         data_source,
-    )
+    )  # type: ignore[return-value]
 
 
 def multiple_state_or_province_qa_template(
@@ -193,7 +193,7 @@ def multiple_state_or_province_qa_template(
         f"What are all the mineral sites located in {state_or_provinces_str}? Report {selected_columns_str}.",
         answer,
         data_source,
-    )
+    )  # type: ignore[return-value]
 
 
 def multiple_country_qa_template(
@@ -225,7 +225,7 @@ def multiple_country_qa_template(
         f"What are all the mineral sites located in {countries_str}? Report {selected_columns_str}.",
         answer,
         data_source,
-    )
+    )  # type: ignore[return-value]
 
 
 def multiple_deposit_type_qa_template(
@@ -259,7 +259,7 @@ def multiple_deposit_type_qa_template(
         f"What are all the mineral sites with a deposit type of {deposit_types_str}? Report {selected_columns_str}.",
         answer,
         data_source,
-    )
+    )  # type: ignore[return-value]
 
 
 def multiple_deposit_environment_qa_template(
@@ -299,14 +299,14 @@ def multiple_deposit_environment_qa_template(
         f"What are all the mineral sites with a deposit environment of {deposit_environments_str}? Report {selected_columns_str}.",
         answer,
         data_source,
-    )
+    )  # type: ignore[return-value]
 
 
 @dataclass
 class FilterCondition:
     column: str
     operator: str
-    value: str
+    value: str | list[str]
 
     def to_dict(self):
         return {"column": self.column, "operator": self.operator, "value": self.value}

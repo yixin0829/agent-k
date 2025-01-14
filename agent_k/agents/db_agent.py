@@ -16,7 +16,7 @@ from agent_k.utils.db_utils import DuckDBWrapper
 
 async def list_tables(
     reflection: Annotated[str, "Think about why you need to list all tables."],
-) -> list[str]:
+) -> str:
     """
     List all tables in the database.
     """
@@ -29,7 +29,7 @@ async def list_columns(
         str, "Think about why you need to list columns for this given table."
     ],
     table: Annotated[str, "The table to list columns from"],
-) -> list[str]:
+) -> str:
     """
     List all columns in a given table.
     """
@@ -44,7 +44,7 @@ async def list_column_unique_values(
     ],
     column: Annotated[str, "The column to list unique values from"],
     table: Annotated[str, "The table where the column is located"],
-) -> list[str]:
+) -> str:
     """
     List all unique values in a given column.
     """

@@ -15,9 +15,9 @@ MINMOD_API_URL = "https://minmod.isi.edu/api/v1"
 DEDUP_MINERAL_SITES_ENDPOINT = "/dedup-mineral-sites"
 
 # Read ENV variables
-API_USR_NAME: str = os.getenv("API_CDR_USR_NAME")
-API_PASSWORD: str = os.getenv("API_CDR_PASSWORD")
-AUTH_TOKEN: str = os.getenv("API_CDR_AUTH_TOKEN")
+API_USR_NAME: str | None = os.getenv("API_CDR_USR_NAME")
+API_PASSWORD: str | None = os.getenv("API_CDR_PASSWORD")
+AUTH_TOKEN: str | None = os.getenv("API_CDR_AUTH_TOKEN")
 
 # CDR API
 API_CDR_LAND_URL = "https://api.cdr.land/v1"

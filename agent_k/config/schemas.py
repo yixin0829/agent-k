@@ -1,9 +1,7 @@
 from enum import Enum
 
-from agent_k.utils.listable_class import ListableClass
 
-
-class MinModHyperCols(ListableClass):
+class MinModHyperCols(Enum):
     MINERAL_SITE_URI = "mineral_site_uri"
     MINERAL_SITE_NAME = "mineral_site_name"
     MINERAL_SITE_TYPE = "mineral_site_type"

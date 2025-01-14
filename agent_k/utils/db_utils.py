@@ -49,7 +49,7 @@ class DuckDBWrapper:
         result = self.conn.sql("SHOW TABLES").fetchall()
         return [row[0] for row in result]
 
-    def list_columns(self, table: str) -> List[Dict[str, str]]:
+    def list_columns(self, table: str) -> List[Dict]:
         """List all columns and their types for a given table."""
         result = self.conn.sql(f"DESCRIBE {table}").df()
         return result.to_dict("records")
@@ -63,8 +63,8 @@ class DuckDBWrapper:
         """Mock function to return a string description of the table from markdown files."""
         all_file_paths = {}
         for root, _dirs, files in os.walk(os.path.join(config_general.ALL_SOURCES_DIR)):
-            for file in files:
-                all_file_paths[file] = os.path.join(root, file)
+            for f in files:
+                all_file_paths[f] = os.path.join(root, f)
 
         if f"{table}.md" in all_file_paths:
             with open(all_file_paths[f"{table}.md"], "r") as file:
