@@ -8,14 +8,12 @@ Agent-K is a powerful knowledge base agentic system that uses LLM agents to help
 - 🤖 OpenAI GPT-4 powered SQL assistance
 - 🔧 Automatic SQL error correction
 - 📊 Schema introspection and validation
-- 🐳 Easy PostgreSQL setup with Docker
-- 💾 Persistent data storage
+- 💾 Persistent data storage through DuckDB
 - 📝 CSV export support
 
 ## Prerequisites
 
 - Python 3.12+
-- Docker
 - OpenAI API key
 
 ## Installation
@@ -43,102 +41,38 @@ cp .env.example .env
 ```
 
 Edit `.env` with your settings:
-```env
-# PostgreSQL connection settings
-POSTGRES_DB=postgres
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
-POSTGRES_HOST=localhost
-POSTGRES_PORT=5432
 
-# OpenAI API key
-OPENAI_API_KEY=your_openai_api_key_here
-```
+## Data Setup
 
-## Starting PostgreSQL
+The project includes a comprehensive data setup process that handles all necessary data downloads and initialization. Run the following command to execute all setup steps:
 
-1. Start the PostgreSQL container:
 ```bash
-./agent_k/setup/start_postgres.sh
+python -m agent_k.setup.setup_all
 ```
 
-This will:
-- Create a Docker container named `agent_k_postgres`
-- Set up persistent storage
-- Configure PostgreSQL with your settings
-- Wait for the server to be ready
+This will execute the following steps in sequence:
 
-2. To stop PostgreSQL:
-```bash
-./agent_k/setup/stop_postgres.sh
-```
+1. **MRDS Data**: Downloads and filters Mineral Resources Data System (MRDS) data for the configured commodity
+2. **DuckDB Integration**: Loads the filtered MRDS data into DuckDB for efficient querying
+3. **MinMod Hyper Data**: Downloads and enriches MinMod Hyper data (ground truth dataset)
+4. **43-101 Reports**: Downloads 43-101 mineral reports in PDF format concurrently
+5. **Evaluation Dataset**: Constructs an match-based question eval dataset in JSONL format
+
+The setup process is configurable through environment variables. Ensure your `.env` file includes the necessary commodity settings before running the setup.
 
 ## Using the Database Agent
 
 Here's a simple example of using the database agent:
 
-```python
-from agent_k.agents.db_agent import DatabaseAgent
-
-# Initialize the agent
-agent = DatabaseAgent(
-    model="gpt-4-1106-preview",  # OpenAI model to use
-    temperature=0,               # Lower values = more deterministic
-    max_retries=3,              # Number of retry attempts for failed queries
-    output_dir="data/query_results"  # Where to save query results
-)
-
-# Connect to PostgreSQL
-agent.connect(
-    dbname="postgres",
-    user="postgres",
-    password="postgres",
-    host="localhost",
-    port="5432"
-)
-
-# Execute a query
-result = agent.execute("SELECT * FROM customers")
-print(f"Success: {result['success']}")
-print(f"Message: {result['message']}")
-print(f"Data: {result['data']}")
-```
-
-### Error Correction Example
-
-The agent can automatically fix SQL errors:
-
-```python
-# This query has errors
-wrong_query = """
-SELECT customer_name, SUM(total_amount)  -- wrong column name
-FROM customers
-JOIN orders ON customers.id = orders.customer_id  -- wrong column name
-GROUP BY customer_name
-"""
-
-result = agent.execute(wrong_query)
-print(f"Corrected query: {result.get('corrected_query')}")
-```
-
-### Running the Demo
-
-A complete demo script is included:
-
 ```bash
-python -m agent_k.examples.db_agent_demo
+python -m agent_k.agents.db_agent
 ```
-
-This will:
-1. Set up sample tables (customers, orders, order_items)
-2. Insert test data
-3. Run example queries
-4. Demonstrate error correction
 
 ## Development
 
 - Code style: We use `ruff` for linting
-- Pre-commit hooks: Run `pre-commit install` to set up
+- Type checking: We use `mypy` for type checking
+- Pre-commit hooks: Run `pre-commit install` to set up and `pre-commit run --all-files` to run all hooks before committing
 - Python version: Make sure to use Python 3.12+
 
 ## Contributing
