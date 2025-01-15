@@ -60,3 +60,23 @@ Feedback: The SQL query is incorrect because the result is empty.
 
 If the SQL query is correct, say 'APPROVE'. If the SQL query is incorrect, give the feedback and say 'REJECT' and handoff to the SQL agent for correction.
 """
+
+ENTITY_EXTRACTION_SYSTEM_PROMPT = """You are a helpful entity extraction agent. Given a question, your goal is to extract the relevant entities needed to answer the question. Return your response in a JSON format."""
+
+ENTITY_EXTRACTION_USER_PROMPT = """Question: What are all the mineral sites located in Tasmania, Australia? Report mineral site name and state or province.
+Reflection: The question asks for mineral site names are located in a specific state or province. The relevant entities are mineral_site_name, state_or_province, and country.
+JSON response: {{"entities": [{{"entity_name": "mineral_site_name", "entity_description": "The name of the mineral site", "entity_data_type": "str"}}, {{"entity_name": "state_or_province", "entity_description": "The state or province of the mineral site located in", "entity_data_type": "str"}}, {{"entity_name": "country", "entity_description": "The country of the mineral site located in", "entity_data_type": "str"}}], "entities_description": "The relevant entities needed to answer a given question"}}
+
+Question: What are all the mineral sites with a deposit environment of Metamorphic, Regional metasomatic or Erosional? Report mineral site name and country.
+Reflection: The question asks for mineral site names with a specific deposit environment. Country is also a relevant entity for reporting. The relevant entities are mineral_site_name, top_1_deposit_environment, and country.
+JSON response: {{"entities": [{{"entity_name": "mineral_site_name", "entity_description": "The name of the mineral site", "entity_data_type": "str"}}, {{"entity_name": "top_1_deposit_environment", "entity_description": "The top 1 deposit environment of the mineral site", "entity_data_type": "str"}}, {{"entity_name": "country", "entity_description": "The country of the mineral site located in", "entity_data_type": "str"}}], "entities_description": "The relevant entities needed to answer a given question"}}
+
+Question: What are all the mineral sites with a deposit type of Komatiite nickel-copper-PGE? Report mineral site name, state or province, country, total tonnage, top 1 deposit environment and top 1 deposit type.
+Reflection: The question asks for mineral site names with a specific deposit type. State or province, country, total tonnage, top 1 deposit environment and top 1 deposit type are also relevant entities for reporting. The relevant entities are mineral_site_name, state_or_province, country, total_tonnage, top_1_deposit_environment, and top_1_deposit_type.
+JSON response: {{"entities": [{{"entity_name": "mineral_site_name", "entity_description": "The name of the mineral site", "entity_data_type": "str"}}, {{"entity_name": "state_or_province", "entity_description": "The state or province of the mineral site located in", "entity_data_type": "str"}}, {{"entity_name": "country", "entity_description": "The country of the mineral site located in", "entity_data_type": "str"}}, {{"entity_name": "total_tonnage", "entity_description": "The total tonnage of the mineral site in million tonnes", "entity_data_type": "float"}}, {{"entity_name": "top_1_deposit_environment", "entity_description": "The top 1 deposit environment of the mineral site", "entity_data_type": "str"}}, {{"entity_name": "top_1_deposit_type", "entity_description": "The top 1 deposit type of the mineral site", "entity_data_type": "str"}}], "entities_description": "The relevant entities needed to answer a given question"}}
+
+Question: {question}
+"""
+
+
+PDF_AGENT_SYSTEM_PROMPT = """You are a helpful PDF assistant that extracts information from PDF files. First, identify the main mineral site this NI 43-101 report is about. Then, extract the tonnage data for all mineral resources and reserves with the original unit used in the report. Finally, aggregate the tonnage data to calculate the total tonnage (in million tonnes) for the site using addition and convert_tonnage_to_mt tools. Once you have the total tonnage, return the information in a JSON format with the following keys: 'status', 'site_name', 'total_tonnage', 'unit'. For example, {'status': 'TERMINATE', 'site_name': 'Site A', 'total_tonnage': 1000, 'unit': 'million tonnes'}. Do not include any other information in the returned JSON."""

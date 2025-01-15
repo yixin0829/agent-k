@@ -1,5 +1,7 @@
 from enum import Enum
 
+from pydantic import BaseModel, Field
+
 
 class MinModHyperCols(Enum):
     MINERAL_SITE_URI = "mineral_site_uri"
@@ -48,3 +50,15 @@ class QATemplateType(Enum):
     MULTIPLE_COUNTRY = "multiple_country"
     MULTIPLE_DEPOSIT_TYPE = "multiple_deposit_type"
     MULTIPLE_DEPOSIT_ENVIRONMENT = "multiple_deposit_environment"
+
+
+class MinModEntity(BaseModel):
+    entity_name: str = Field(..., description="The name of the entity")
+    entity_description: str = Field(..., description="The description of the entity")
+    entity_data_type: str = Field(..., description="python data type of the entity")
+
+
+class RelevantEntities(BaseModel):
+    entities: list[MinModEntity] = Field(
+        ..., description="The relevant entities needed to answer a given question"
+    )
