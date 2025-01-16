@@ -4,38 +4,12 @@ import os
 
 import pandas as pd
 from autogen_agentchat.ui import Console
-from pydantic import BaseModel, Field
 
 import agent_k.config.general as config_general
 from agent_k.agents.db_agent import construct_db_agent_team, construct_swarm_team
 from agent_k.config.logger import logger
-from agent_k.config.schemas import DataSource, MinModHyperCols
+from agent_k.config.schemas import DataSource, EvalReport, MinModHyperCols
 from agent_k.utils.general import load_list_to_df
-
-
-class EvalReport(BaseModel):
-    qid: str = Field(default="Unknown", description="Question ID")
-    question: str = Field(default="Unknown", description="Question")
-    row_em_score: float = Field(default=0, description="Exact match score for all rows")
-    row_precision: float = Field(default=0, description="Precision score for all rows")
-    row_recall: float = Field(default=0, description="Recall score for all rows")
-    row_f1: float = Field(default=0, description="F1 score for all rows")
-    ms_em_score: float = Field(
-        default=0, description="Exact match score for mineral site name"
-    )
-    ms_precision: float = Field(
-        default=0, description="Precision score for mineral site name"
-    )
-    ms_recall: float = Field(
-        default=0, description="Recall score for mineral site name"
-    )
-    ms_f1: float = Field(default=0, description="F1 score for mineral site name")
-
-    def __str__(self) -> str:
-        return f"EM: {self.row_em_score:.2f}, Precision: {self.row_precision:.2f}, Recall: {self.row_recall:.2f}, F1: {self.row_f1:.2f}, MS EM: {self.ms_em_score:.2f}, MS Precision: {self.ms_precision:.2f}, MS Recall: {self.ms_recall:.2f}, MS F1: {self.ms_f1:.2f}"
-
-    def to_dict(self) -> dict:
-        return self.model_dump()
 
 
 async def eval_db_agent(
@@ -88,15 +62,15 @@ async def eval_db_agent(
         logger.info(f"{question=}")
 
         # Get initial file count
-        if not os.path.exists(config_general.AGENT_CACHE_DIR):
+        if not os.path.exists(config_general.DB_AGENT_CACHE_DIR):
             logger.warning(
-                f"Agent cache directory not found: {config_general.AGENT_CACHE_DIR}"
+                f"Agent cache directory not found: {config_general.DB_AGENT_CACHE_DIR}"
             )
             logger.info("Create a new agent cache directory")
-            os.makedirs(config_general.AGENT_CACHE_DIR, exist_ok=True)
+            os.makedirs(config_general.DB_AGENT_CACHE_DIR, exist_ok=True)
             initial_files = set()
         else:
-            initial_files = set(os.listdir(config_general.AGENT_CACHE_DIR))
+            initial_files = set(os.listdir(config_general.DB_AGENT_CACHE_DIR))
 
         try:
             await team.reset()  # Reset the team for a new task.
@@ -105,7 +79,7 @@ async def eval_db_agent(
         await Console(team.run_stream(task=question))
 
         # Get new files created
-        current_files = set(os.listdir(config_general.AGENT_CACHE_DIR))
+        current_files = set(os.listdir(config_general.DB_AGENT_CACHE_DIR))
         new_files = current_files - initial_files
 
         if not new_files:
@@ -117,16 +91,16 @@ async def eval_db_agent(
         latest_file = max(
             new_files,
             key=lambda f: os.path.getctime(
-                os.path.join(config_general.AGENT_CACHE_DIR, f)
+                os.path.join(config_general.DB_AGENT_CACHE_DIR, f)
             ),
         )
         # Rename the file by appending qid to the filename
         # TODO: Figure out a better way to pass the pid from the agent
         result_path = os.path.join(
-            config_general.AGENT_CACHE_DIR, f"{latest_file.split('.')[0]}_{qid}.json"
+            config_general.DB_AGENT_CACHE_DIR, f"{latest_file.split('.')[0]}_{qid}.json"
         )
         os.rename(
-            os.path.join(config_general.AGENT_CACHE_DIR, latest_file), result_path
+            os.path.join(config_general.DB_AGENT_CACHE_DIR, latest_file), result_path
         )
 
         # Read the agent generated result from the cache

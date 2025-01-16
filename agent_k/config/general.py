@@ -108,8 +108,9 @@ MRDS_DTYPE = {
     "score": "category",
 }
 
-# Autogen settings
 AGENT_CACHE_DIR = os.path.join(DATA_DIR, "agent_cache")
+# Autogen settings
+DB_AGENT_CACHE_DIR = os.path.join(AGENT_CACHE_DIR, "db_agent")
 OPENAI_MODEL_CLIENT = OpenAIChatCompletionClient(
     model="gpt-4o-mini",
     api_key=os.getenv("OPENAI_API_KEY"),
@@ -121,3 +122,5 @@ OPENAI_ASSISTANT_CLIENT = AsyncClient(
 )
 
 OPENAI_ASSISTANT_MODEL = "gpt-4o-mini"
+
+PDF_AGENT_CACHE_DIR = os.path.join(AGENT_CACHE_DIR, "pdf_agent")

@@ -79,4 +79,9 @@ Question: {question}
 """
 
 
-PDF_AGENT_SYSTEM_PROMPT = """You are a helpful PDF assistant that extracts information from PDF files. First, identify the main mineral site this NI 43-101 report is about. Then, extract the tonnage data for all mineral resources and reserves with the original unit used in the report. Finally, aggregate the tonnage data to calculate the total tonnage (in million tonnes) for the site using addition and convert_tonnage_to_mt tools. Once you have the total tonnage, return the information in a JSON format with the following keys: 'status', 'site_name', 'total_tonnage', 'unit'. For example, {'status': 'TERMINATE', 'site_name': 'Site A', 'total_tonnage': 1000, 'unit': 'million tonnes'}. Do not include any other information in the returned JSON."""
+PDF_AGENT_SYSTEM_PROMPT = """You are a helpful PDF assistant that extracts information from PDF files. First, identify the main mineral site name this NI 43-101 report is about. Then, extract the relevant entities about the mineral site. Return your response in a JSON format."""
+
+PDF_AGENT_USER_PROMPT = """Extract the relevant entities about the mineral site based on the JSON schema.
+JSON schema: {relevant_entities_json_schema}
+Return your response in a JSON format that complies with the JSON schema.
+"""

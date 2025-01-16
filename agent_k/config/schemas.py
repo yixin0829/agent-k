@@ -62,3 +62,46 @@ class RelevantEntities(BaseModel):
     entities: list[MinModEntity] = Field(
         ..., description="The relevant entities needed to answer a given question"
     )
+
+
+class RelevantEntitiesPredefined(BaseModel):
+    mineral_site_name: str = Field(..., description="The name of the mineral site")
+    state_or_province: str = Field(
+        ..., description="The state or province of the mineral site"
+    )
+    country: str = Field(..., description="The country of the mineral site")
+    total_grade: float = Field(
+        "Not Found", description="The total grade of the mineral site in decimal format"
+    )
+    total_tonnage: float = Field(
+        "Not Found",
+        description="The total tonnage of the mineral site in million tonnes",
+    )
+    top_1_deposit_type: str = Field(
+        "Not Found", description="The most likely deposit type of the mineral site"
+    )
+
+
+class EvalReport(BaseModel):
+    qid: str = Field(default="Unknown", description="Question ID")
+    question: str = Field(default="Unknown", description="Question")
+    row_em_score: float = Field(default=0, description="Exact match score for all rows")
+    row_precision: float = Field(default=0, description="Precision score for all rows")
+    row_recall: float = Field(default=0, description="Recall score for all rows")
+    row_f1: float = Field(default=0, description="F1 score for all rows")
+    ms_em_score: float = Field(
+        default=0, description="Exact match score for mineral site name"
+    )
+    ms_precision: float = Field(
+        default=0, description="Precision score for mineral site name"
+    )
+    ms_recall: float = Field(
+        default=0, description="Recall score for mineral site name"
+    )
+    ms_f1: float = Field(default=0, description="F1 score for mineral site name")
+
+    def __str__(self) -> str:
+        return f"EM: {self.row_em_score:.2f}, Precision: {self.row_precision:.2f}, Recall: {self.row_recall:.2f}, F1: {self.row_f1:.2f}, MS EM: {self.ms_em_score:.2f}, MS Precision: {self.ms_precision:.2f}, MS Recall: {self.ms_recall:.2f}, MS F1: {self.ms_f1:.2f}"
+
+    def to_dict(self) -> dict:
+        return self.model_dump()

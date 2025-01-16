@@ -84,7 +84,7 @@ class DuckDBWrapper:
             raise
 
     def run_query(
-        self, query: str, output_dir: Optional[str] = config_general.AGENT_CACHE_DIR
+        self, query: str, output_dir: Optional[str] = config_general.DB_AGENT_CACHE_DIR
     ) -> Tuple[bool, str, Optional[pd.DataFrame]]:
         """
         Execute a SQL query and optionally save results to a JSON file.
