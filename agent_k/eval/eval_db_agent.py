@@ -9,6 +9,7 @@ import agent_k.config.general as config_general
 from agent_k.agents.db_agent import construct_db_agent_team, construct_swarm_team
 from agent_k.config.logger import logger
 from agent_k.config.schemas import DataSource, EvalReport, MinModHyperCols
+from agent_k.utils.eval_helper import load_eval_set
 from agent_k.utils.general import load_list_to_df
 
 
@@ -26,18 +27,7 @@ async def eval_db_agent(
     else:
         raise ValueError(f"Invalid team type: {team_type}")
 
-    # Read the eval dataset
-    with open(
-        os.path.join(
-            config_general.EVAL_DIR,
-            config_general.eval_set_matched_based_file(
-                config_general.COMMODITY, eval_set_version
-            ),
-        ),
-        "r",
-    ) as f:
-        eval_set = [json.loads(line) for line in f]
-        logger.info(f"Eval set loaded: {len(eval_set)} questions")
+    eval_set = load_eval_set(eval_set_version)
 
     eval_results = []
     for i, qa_pair in enumerate(eval_set):
