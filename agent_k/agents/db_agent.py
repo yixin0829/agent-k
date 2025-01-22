@@ -8,10 +8,20 @@ from autogen_agentchat.messages import TextMessage
 from autogen_agentchat.teams import RoundRobinGroupChat, Swarm
 from autogen_agentchat.ui import Console
 from autogen_core import CancellationToken
+from openai import OpenAI
+from pydantic import BaseModel, Field
 
 import agent_k.config.general as config_general
 import agent_k.config.prompts as config_prompts
 from agent_k.utils.db_utils import DuckDBWrapper
+
+client = OpenAI()
+
+
+class ResolvedFilterValues(BaseModel):
+    similar_values: list[str] = Field(
+        description="The similar filter values (e.g. ['Canada', 'CA', 'Canada, CA'])"
+    )
 
 
 async def list_tables(
@@ -42,14 +52,14 @@ async def list_column_unique_values(
     reflection: Annotated[
         str, "Think about why you need to list unique values for this given column."
     ],
-    column: Annotated[str, "The column to list unique values from"],
     table: Annotated[str, "The table where the column is located"],
+    column: Annotated[str, "The column to list unique values from"],
 ) -> str:
     """
     List all unique values in a given column.
     """
     with DuckDBWrapper(database=config_general.DUCKDB_DB_PATH) as db:
-        unique_values = db.list_column_unique_values(column, table)
+        unique_values = db.list_column_unique_values(table, column)
         return f"Unique values in the column {column} of the table {table}: {unique_values}"
 
 
@@ -65,6 +75,33 @@ async def list_columns_with_details(
     with DuckDBWrapper(database=config_general.DUCKDB_DB_PATH) as db:
         details = db.list_columns_with_details(table)
         return f"Details of the table {table}:\n{details}"
+
+
+async def resolve_filter_conditions(
+    reflection: Annotated[
+        str, "Think about why you need to resolve filter conditions."
+    ],
+    table: Annotated[str, "The table where the filter conditions are located"],
+    filter_column: Annotated[str, "The column to resolve filter conditions from"],
+    filter_values: Annotated[list[str], "The filter values to resolve"],
+) -> str:
+    """Resolve filter conditions for a given column. e.g. country = 'USA' -> country IN ('USA', 'United States')"""
+    with DuckDBWrapper(database=config_general.DUCKDB_DB_PATH) as db:
+        col_unique_values = db.list_column_unique_values(table, filter_column)
+        similar_values = []
+        for filter_value in filter_values:
+            prompt = f"Given the filter value {filter_value} for unique values in the filter column {filter_column}, find all all values similar to the filter value. Unique values: {col_unique_values}.\nReturn the similar values in JSON format."
+            completion = client.beta.chat.completions.parse(
+                model="gpt-4o-mini",
+                messages=[{"role": "user", "content": prompt}],
+                response_format=ResolvedFilterValues,
+            )
+            result = completion.choices[0].message.parsed
+            similar_values.extend(result.similar_values)
+
+        print(similar_values)
+
+        return f"Similar filter values for the filter column {filter_column} in the table {table}: {similar_values}. Expand the filter conditions in SQL query using these similar values (e.g. country = 'USA' -> country IN ('USA', 'United States'))"
 
 
 async def run_query(
@@ -99,6 +136,7 @@ def construct_db_agent() -> AssistantAgent:
             list_columns,
             list_column_unique_values,
             list_columns_with_details,
+            resolve_filter_conditions,
             run_query,
         ],
     )
@@ -197,3 +235,4 @@ async def demo_run_one_agent_team(observe_method: str = "console") -> None:
 
 if __name__ == "__main__":
     asyncio.run(demo_run_one_agent_team())
+    # asyncio.run(resolve_filter_conditions("Think about why you need to resolve filter conditions.", "ni_43_101", "country", ["USA"]))

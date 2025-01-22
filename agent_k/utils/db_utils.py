@@ -54,7 +54,7 @@ class DuckDBWrapper:
         result = self.conn.sql(f"DESCRIBE {table}").df()
         return result.to_dict("records")
 
-    def list_column_unique_values(self, column: str, table: str) -> List[str]:
+    def list_column_unique_values(self, table: str, column: str) -> List[str]:
         """List all unique values for a given column."""
         result = self.conn.sql(f"SELECT DISTINCT {column} FROM {table}").fetchall()
         return [row[0] for row in result]

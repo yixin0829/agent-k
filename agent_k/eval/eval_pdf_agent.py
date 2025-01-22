@@ -219,4 +219,4 @@ async def eval_pdf_agent(full_eval: bool = False, eval_set_version: str = "v3"):
 
 if __name__ == "__main__":
     load_latest_extraction_to_duckdb()
-    asyncio.run(eval_pdf_agent(full_eval=False, eval_set_version="v3"))
+    asyncio.run(eval_pdf_agent(full_eval=True, eval_set_version="v3"))
