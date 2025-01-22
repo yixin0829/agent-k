@@ -71,7 +71,7 @@ async def run_query(
     reflection: Annotated[
         str, "Final check if the query is correct based on the previous tool calls."
     ],
-    query: Annotated[str, "The SQL query to run"],
+    query: Annotated[str, "The final checked SQL query to run"],
 ) -> dict[str, Any]:
     """
     Run a SQL query and return the result in a dictionary format (execution_status, message, and jsonified dataframe).
