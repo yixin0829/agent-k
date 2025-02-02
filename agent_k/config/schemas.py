@@ -65,20 +65,29 @@ class RelevantEntities(BaseModel):
 
 
 class RelevantEntitiesPredefined(BaseModel):
-    mineral_site_name: str = Field(..., description="The name of the mineral site")
-    state_or_province: str = Field(
-        ..., description="The state or province of the mineral site"
+    mineral_site_name: str = Field(
+        ..., description="The name of the mineral site that the report is about"
     )
-    country: str = Field(..., description="The country of the mineral site")
+    state_or_province: str = Field(
+        ..., description="The state or province where the mineral site is located"
+    )
+    country: str = Field(
+        ..., description="The country where the mineral site is located"
+    )
     total_grade: float = Field(
-        "Not Found", description="The total grade of the mineral site in decimal format"
+        "Not Found",
+        description="The total grade of all the nickel deposits in decimal format",
     )
     total_tonnage: float = Field(
         "Not Found",
-        description="The total tonnage of the mineral site in million tonnes",
+        description="The total tonnage of all the nickel deposits in million tonnes",
     )
     top_1_deposit_type: str = Field(
         "Not Found", description="The most likely deposit type of the mineral site"
+    )
+    top_1_deposit_environment: str = Field(
+        "Not Found",
+        description="The most likely deposit environment of the mineral site",
     )
 
 

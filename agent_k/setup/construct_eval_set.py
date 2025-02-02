@@ -465,6 +465,11 @@ def construct_eval_set_matched_based():
             validated = False
             while not validated:
                 # Re-sample filter value(s) if the QA pair is not valid
+                sample_filter_values = sample_values_from_df(
+                    **qa_to_sample_values_args_mapping[template_type.value].to_dict()
+                )
+
+                # Create a QA pair (i.e. one JSON object in the JSONL file)
                 qa_pair = create_qa_pair(
                     qa_template_key=template_type.value,
                     qa_template=qa_templates_to_func_mapping[template_type.value],
@@ -474,13 +479,10 @@ def construct_eval_set_matched_based():
                     filter_column=qa_templates_to_filter_column_mapping[
                         template_type.value
                     ],
-                    filter_value=sample_values_from_df(
-                        **qa_to_sample_values_args_mapping[
-                            template_type.value
-                        ].to_dict()
-                    ),
+                    filter_value=sample_filter_values,
                     selected_columns=reported_columns,
                 )
+
                 # Validate the QA pair to ensure quality
                 validated = validate_qa_pair(qa_pair)
                 if not validated:

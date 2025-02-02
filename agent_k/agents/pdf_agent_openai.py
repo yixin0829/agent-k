@@ -1,9 +1,12 @@
 import builtins
 import json
 import os
+import pickle
+from collections import defaultdict
 from datetime import datetime
 from typing import Any
 
+import numpy as np
 import pandas as pd
 from openai import OpenAI
 from pydantic import Field, create_model
@@ -11,7 +14,12 @@ from pydantic import Field, create_model
 import agent_k.config.general as config_general
 import agent_k.config.prompts as config_prompts
 from agent_k.config.logger import logger
-from agent_k.config.schemas import RelevantEntities, RelevantEntitiesPredefined
+from agent_k.config.schemas import (
+    DataSource,
+    MinModHyperCols,
+    RelevantEntities,
+    RelevantEntitiesPredefined,
+)
 from agent_k.setup.load_43_101 import list_43_101_reports
 
 client = OpenAI()
@@ -29,6 +37,7 @@ def parse_json_code_block(assistant_response: str) -> dict[str, Any]:
         return json.loads(json_code_block)
     except Exception as e:
         logger.error(f"Failed to parse JSON code block: {e}")
+        logger.error(f"Assistant response: \n```\n{assistant_response}\n```")
         return {}
 
 
@@ -151,6 +160,127 @@ def extract_from_pdf(
     return parse_json_code_block(message_content.value)
 
 
+def cosine_similarity(a: list[float], b: list[float]) -> float:
+    """Compute the cosine similarity between two vectors."""
+    a = np.array(a)
+    b = np.array(b)
+    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+
+
+def resolve_entities(entities: dict[str, Any]) -> dict[str, Any]:
+    """
+    Resolve the entities from the PDF agent extraction by comparing embeddings.
+    Uses cached embeddings for entity candidates to improve performance.
+    """
+    logger.info("Resolving entities")
+    df_hyper = pd.read_csv(
+        os.path.join(
+            config_general.GROUND_TRUTH_DIR,
+            config_general.enriched_hyper_reponse_file(config_general.COMMODITY),
+        )
+    )
+    # Select 43-101 and MRDS data sources
+    df_hyper = df_hyper[
+        df_hyper[MinModHyperCols.DATA_SOURCE.value].isin(
+            [DataSource.MRDATA_USGS_GOV_MRDS.value, DataSource.API_CDR_LAND.value]
+        )
+    ]
+    entities_to_resolve = [
+        MinModHyperCols.MINERAL_SITE_NAME.value,
+        MinModHyperCols.STATE_OR_PROVINCE.value,
+        MinModHyperCols.COUNTRY.value,
+        MinModHyperCols.TOP_1_DEPOSIT_TYPE.value,
+        MinModHyperCols.TOP_1_DEPOSIT_ENVIRONMENT.value,
+    ]
+
+    # Get unique candidates and their embeddings for each entity type
+    entity_candidates = defaultdict(list)
+    entity_embeddings = defaultdict(list)
+    entity_embeddings_file = os.path.join(
+        config_general.PDF_AGENT_CACHE_DIR, "entity_embeddings.pkl"
+    )
+    entity_candidates_file = os.path.join(
+        config_general.PDF_AGENT_CACHE_DIR, "entity_candidates.pkl"
+    )
+    if os.path.exists(entity_embeddings_file) and os.path.exists(
+        entity_candidates_file
+    ):
+        logger.info("Loading entity embeddings and candidates from cache")
+        with open(entity_embeddings_file, "rb") as f:
+            entity_embeddings = pickle.load(f)
+        with open(entity_candidates_file, "rb") as f:
+            entity_candidates = pickle.load(f)
+    else:
+        logger.info("Computing entity embeddings and candidates")
+        for entity in entities_to_resolve:
+            unique_values = (
+                df_hyper[
+                    ~df_hyper[entity].isin(["Unknown"]) & ~df_hyper[entity].isna()
+                ][entity]
+                .unique()
+                .tolist()
+            )
+            entity_candidates[entity] = unique_values
+
+            # Pre-compute embeddings for all candidates
+            unique_values = [str(v) for v in unique_values]
+            BATCH_SIZE = 2048
+            for i in range(0, len(unique_values), BATCH_SIZE):
+                batch = unique_values[i : i + BATCH_SIZE]
+                candidate_embeddings = client.embeddings.create(
+                    input=batch,
+                    model="text-embedding-3-small",
+                ).data
+                entity_embeddings[entity].extend(
+                    [c.embedding for c in candidate_embeddings]
+                )
+
+        # Save entity embeddings and candidates
+        logger.info("Saving entity embeddings and candidates to cache")
+        with open(entity_embeddings_file, "wb") as f:
+            pickle.dump(entity_embeddings, f)
+        with open(entity_candidates_file, "wb") as f:
+            pickle.dump(entity_candidates, f)
+
+    # Resolve entities using cached embeddings
+    resolved_entities = {}
+    for entity_name, entity_value in entities.items():
+        if entity_name not in entities_to_resolve or not entity_value:
+            resolved_entities[entity_name] = entity_value
+            continue
+
+        # Get embedding for the entity value
+        value_embedding = (
+            client.embeddings.create(
+                input=str(entity_value),
+                model="text-embedding-3-small",
+            )
+            .data[0]
+            .embedding
+        )
+
+        # Calculate similarities using cached candidate embeddings
+        similarities = [
+            cosine_similarity(value_embedding, candidate_emb)
+            for candidate_emb in entity_embeddings[entity_name]
+        ]
+
+        # Find most similar candidate
+        max_sim_idx = np.argmax(similarities)
+        max_sim = similarities[max_sim_idx]
+
+        # Only use candidate if similarity is above threshold
+        logger.info(
+            f"Resolved {entity_name} from '{entity_value}' to '{entity_candidates[entity_name][max_sim_idx]}' with similarity {max_sim}"
+        )
+        resolved_entities[entity_name + "_resolved"] = entity_candidates[entity_name][
+            max_sim_idx
+        ]
+        resolved_entities[entity_name + "_similarity"] = max_sim
+
+    return resolved_entities
+
+
 def extract_from_all_pdfs(
     mineral_report_dir: str = config_general.CDR_REPORTS_DIR, full_eval: bool = False
 ) -> pd.DataFrame:
@@ -159,7 +289,7 @@ def extract_from_all_pdfs(
     """
     pdf_paths = []
     for i, pdf_path in enumerate(os.listdir(mineral_report_dir)):
-        if i > 0 and not full_eval:
+        if i > 2 and not full_eval:
             break
         pdf_paths.append(os.path.join(mineral_report_dir, pdf_path))
 
@@ -170,6 +300,8 @@ def extract_from_all_pdfs(
             pdf_path, RelevantEntitiesPredefined.model_json_schema()
         )
         if entities:
+            resolved_entities = resolve_entities(entities)
+            entities.update(resolved_entities)
             entities.update({"cdr_record_id": pdf_path.split("/")[-1].split(".")[0]})
             data_rows.append(entities)
         else:
@@ -177,6 +309,9 @@ def extract_from_all_pdfs(
             continue
 
     df = pd.DataFrame(data_rows)
+
+    # Replace the "Not Found" values with None
+    df = df.replace("Not Found", None)
 
     if not os.path.exists(config_general.PDF_AGENT_CACHE_DIR):
         logger.info(f"Creating directory {config_general.PDF_AGENT_CACHE_DIR}")
@@ -195,6 +330,7 @@ def extract_from_all_pdfs(
 
 
 if __name__ == "__main__":
+    # Example: Single extraction
     questions = [
         "What are all the mineral sites with a deposit type of U-M intrusion nickel-copper-PGE? Report mineral site name, state or province, country, top 1 deposit type, total grade and total tonnage."
     ]
@@ -208,3 +344,6 @@ if __name__ == "__main__":
                 pdf_path,
                 relevant_entities,
             )
+
+    # Example: Batch extraction
+    # extract_from_all_pdfs(full_eval=False)
