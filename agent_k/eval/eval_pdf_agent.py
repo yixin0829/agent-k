@@ -23,14 +23,36 @@ def load_latest_extraction_to_duckdb():
     """
 
     # Read the latest extraction results based on the file creation time
-    for file in os.listdir(config_general.PDF_AGENT_CACHE_DIR):
-        if file.startswith("pdf_agent_extraction_") and file.endswith(".csv"):
-            latest_file = os.path.join(config_general.PDF_AGENT_CACHE_DIR, file)
-            break
+    csv_files = [
+        f
+        for f in os.listdir(config_general.PDF_AGENT_CACHE_DIR)
+        if f.startswith("pdf_agent_extraction_") and f.endswith(".csv")
+    ]
+    if not csv_files:
+        raise FileNotFoundError(
+            f"No extraction CSV files found in {config_general.PDF_AGENT_CACHE_DIR}"
+        )
+
+    latest_file = os.path.join(
+        config_general.PDF_AGENT_CACHE_DIR,
+        max(
+            csv_files,
+            key=lambda f: os.path.getctime(
+                os.path.join(config_general.PDF_AGENT_CACHE_DIR, f)
+            ),
+        ),
+    )
+
     if not os.path.exists(latest_file):
         raise FileNotFoundError(
             f"No extraction results found in {config_general.PDF_AGENT_CACHE_DIR}"
         )
+
+    # Ask user to confirm the file
+    logger.info(f"Latest PDF agent extraction file: {latest_file}")
+    user_input = input("Do you want to load the file? (y/n) ")
+    if user_input != "y":
+        raise ValueError("User did not confirm the file")
 
     df = pd.read_csv(latest_file)
     logger.info(f"Loaded {len(df)} records from {latest_file}")
@@ -54,17 +76,17 @@ async def eval_pdf_agent(full_eval: bool = False, eval_set_version: str = "v3"):
     eval_set = load_eval_set(eval_set_version)
 
     eval_results = []
-    for i, qa_pair in enumerate(eval_set):
+    for i, eval_qa_pair in enumerate(eval_set):
         if i > 0 and not full_eval:
             break
 
         logger.info(f"Evaluating question {i+1} of {len(eval_set)}")
         qid, question, answer, selected_cols, data_source = (
-            qa_pair["qid"],
-            qa_pair["question"],
-            qa_pair["answer"],
-            qa_pair["metadata"]["selected_columns"],
-            qa_pair["metadata"]["data_source"],
+            eval_qa_pair["qid"],
+            eval_qa_pair["question"],
+            eval_qa_pair["answer"],
+            eval_qa_pair["metadata"]["selected_columns"],
+            eval_qa_pair["metadata"]["data_source"],
         )
 
         logger.info(f"{qid=}")

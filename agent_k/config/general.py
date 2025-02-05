@@ -110,7 +110,9 @@ MRDS_DTYPE = {
 
 AGENT_CACHE_DIR = os.path.join(DATA_DIR, "agent_cache")
 # Autogen settings
-DB_AGENT_CACHE_DIR = os.path.join(AGENT_CACHE_DIR, "db_agent")
+DB_AGENT_CACHE_DIR = os.path.join(
+    AGENT_CACHE_DIR, "db_agent", datetime.now().strftime("%y-%m-%d_%H-%M-%S")
+)
 OPENAI_MODEL_CLIENT = OpenAIChatCompletionClient(
     model="gpt-4o-mini",
     api_key=os.getenv("OPENAI_API_KEY"),

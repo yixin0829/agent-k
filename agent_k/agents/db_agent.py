@@ -136,6 +136,8 @@ def construct_db_agent() -> AssistantAgent:
             list_columns,
             list_column_unique_values,
             list_columns_with_details,
+            # Resolve filter conditions during query can cause hallucination (high recall but low precision)
+            # e.g. country = 'A' -> country IN ('A', 'Something else')
             resolve_filter_conditions,
             run_query,
         ],

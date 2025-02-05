@@ -4,6 +4,7 @@ import os
 import pickle
 from collections import defaultdict
 from datetime import datetime
+from multiprocessing import Pool, cpu_count
 from typing import Any
 
 import numpy as np
@@ -245,8 +246,9 @@ def resolve_entities(entities: dict[str, Any]) -> dict[str, Any]:
     # Resolve entities using cached embeddings
     resolved_entities = {}
     for entity_name, entity_value in entities.items():
-        if entity_name not in entities_to_resolve or not entity_value:
-            resolved_entities[entity_name] = entity_value
+        if entity_name not in entities_to_resolve or entity_value is None:
+            resolved_entities[entity_name + "_resolved"] = None
+            resolved_entities[entity_name + "_similarity"] = 0.0
             continue
 
         # Get embedding for the entity value
@@ -281,11 +283,33 @@ def resolve_entities(entities: dict[str, Any]) -> dict[str, Any]:
     return resolved_entities
 
 
+def process_single_pdf(pdf_path: str) -> dict[str, Any]:
+    """Process a single PDF file and return the extracted entities."""
+    logger.info(f"Extracting entities from {pdf_path}")
+    try:
+        entities = extract_from_pdf(
+            pdf_path, RelevantEntitiesPredefined.model_json_schema()
+        )
+        if entities:
+            # Replace the "Not Found" values with None
+            entities = {k: None if v == "Not Found" else v for k, v in entities.items()}
+            resolved_entities = resolve_entities(entities)
+            entities.update(resolved_entities)
+            entities.update({"cdr_record_id": pdf_path.split("/")[-1].split(".")[0]})
+            return entities
+        else:
+            logger.error(f"Failed to extract entities from {pdf_path}")
+            return {}
+    except Exception as e:
+        logger.error(f"Error processing {pdf_path}: {str(e)}")
+        return {}
+
+
 def extract_from_all_pdfs(
     mineral_report_dir: str = config_general.CDR_REPORTS_DIR, full_eval: bool = False
 ) -> pd.DataFrame:
     """
-    Extract entities from all the PDF files and return as a DataFrame
+    Extract entities from all the PDF files in parallel and return as a DataFrame
     """
     pdf_paths = []
     for i, pdf_path in enumerate(os.listdir(mineral_report_dir)):
@@ -293,20 +317,16 @@ def extract_from_all_pdfs(
             break
         pdf_paths.append(os.path.join(mineral_report_dir, pdf_path))
 
-    data_rows = []
-    for i, pdf_path in enumerate(pdf_paths):
-        logger.info(f"{i+1}/{len(pdf_paths)}: Extracting entities from {pdf_path}")
-        entities = extract_from_pdf(
-            pdf_path, RelevantEntitiesPredefined.model_json_schema()
-        )
-        if entities:
-            resolved_entities = resolve_entities(entities)
-            entities.update(resolved_entities)
-            entities.update({"cdr_record_id": pdf_path.split("/")[-1].split(".")[0]})
-            data_rows.append(entities)
-        else:
-            logger.error(f"Failed to extract entities from {pdf_path}")
-            continue
+    # Use number of CPU cores minus 1 to leave one core free for system processes
+    num_processes = max(1, cpu_count() - 1)
+    logger.info(f"Using {num_processes} processes for parallel processing")
+
+    # Process PDFs in parallel using multiprocessing
+    with Pool(processes=num_processes) as pool:
+        data_rows = pool.map(process_single_pdf, pdf_paths)
+
+    # Filter out empty results
+    data_rows = [row for row in data_rows if row]
 
     df = pd.DataFrame(data_rows)
 
