@@ -10,56 +10,10 @@ import agent_k.config.general as config_general
 from agent_k.agents.db_agent import construct_db_agent_team
 from agent_k.config.logger import logger
 from agent_k.config.schemas import DataSource, EvalReport, MinModHyperCols
-from agent_k.utils.db_utils import DuckDBWrapper
-from agent_k.utils.eval_helper import load_eval_set
+from agent_k.utils.eval_helper import load_eval_set, load_latest_extraction_to_duckdb
 from agent_k.utils.general import load_list_to_df
 
 client = OpenAI()
-
-
-def load_latest_extraction_to_duckdb():
-    """
-    Load the latest extraction results to duckdb
-    """
-
-    # Read the latest extraction results based on the file creation time
-    csv_files = [
-        f
-        for f in os.listdir(config_general.PDF_AGENT_CACHE_DIR)
-        if f.startswith("pdf_agent_extraction_") and f.endswith(".csv")
-    ]
-    if not csv_files:
-        raise FileNotFoundError(
-            f"No extraction CSV files found in {config_general.PDF_AGENT_CACHE_DIR}"
-        )
-
-    latest_file = os.path.join(
-        config_general.PDF_AGENT_CACHE_DIR,
-        max(
-            csv_files,
-            key=lambda f: os.path.getctime(
-                os.path.join(config_general.PDF_AGENT_CACHE_DIR, f)
-            ),
-        ),
-    )
-
-    if not os.path.exists(latest_file):
-        raise FileNotFoundError(
-            f"No extraction results found in {config_general.PDF_AGENT_CACHE_DIR}"
-        )
-
-    # Ask user to confirm the file
-    logger.info(f"Latest PDF agent extraction file: {latest_file}")
-    user_input = input("Do you want to load the file? (y/n) ")
-    if user_input != "y":
-        raise ValueError("User did not confirm the file")
-
-    df = pd.read_csv(latest_file)
-    logger.info(f"Loaded {len(df)} records from {latest_file}")
-
-    with DuckDBWrapper(database=config_general.DUCKDB_DB_PATH) as db:
-        db.create_table_from_df("ni_43_101", df)
-        logger.info(f"Loaded {len(df)} rows into 43_101_extraction table")
 
 
 async def eval_pdf_agent(full_eval: bool = False, eval_set_version: str = "v3"):

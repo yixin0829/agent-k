@@ -99,3 +99,5 @@ PDF_AGENT_USER_PROMPT = """Extract the relevant entities about the mineral site 
 JSON schema: {relevant_entities_json_schema}
 Return your response in a JSON format that complies with the JSON schema.
 """
+
+PDF_AGENT_SYSTEM_PROMPT_CHAIN_OF_THOUGHT = """You are a helpful PDF assistant that extracts information from PDF files. First, identify the main mineral site name this NI 43-101 report is about. Then, extract the relevant entities about the mineral site. Return your response in a JSON format."""

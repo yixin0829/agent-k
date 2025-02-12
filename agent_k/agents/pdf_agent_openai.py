@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 from openai import OpenAI
 from pydantic import Field, create_model
+from tqdm import tqdm
 
 import agent_k.config.general as config_general
 import agent_k.config.prompts as config_prompts
@@ -291,10 +292,8 @@ def process_single_pdf(pdf_path: str) -> dict[str, Any]:
             pdf_path, RelevantEntitiesPredefined.model_json_schema()
         )
         if entities:
-            # Replace the "Not Found" values with None
-            entities = {k: None if v == "Not Found" else v for k, v in entities.items()}
-            resolved_entities = resolve_entities(entities)
-            entities.update(resolved_entities)
+            entities = resolve_entities(entities)
+            entities.update(entities)
             entities.update({"cdr_record_id": pdf_path.split("/")[-1].split(".")[0]})
             return entities
         else:
@@ -321,9 +320,15 @@ def extract_from_all_pdfs(
     num_processes = max(1, cpu_count() - 1)
     logger.info(f"Using {num_processes} processes for parallel processing")
 
-    # Process PDFs in parallel using multiprocessing
+    # Process PDFs in parallel using multiprocessing with tqdm progress bar
     with Pool(processes=num_processes) as pool:
-        data_rows = pool.map(process_single_pdf, pdf_paths)
+        data_rows = list(
+            tqdm(
+                pool.imap(process_single_pdf, pdf_paths),
+                total=len(pdf_paths),
+                desc="Processing PDFs",
+            )
+        )
 
     # Filter out empty results
     data_rows = [row for row in data_rows if row]

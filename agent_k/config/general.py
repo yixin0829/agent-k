@@ -59,6 +59,18 @@ def eval_results_file(commodity: str):
     return f"eval_results_{commodity}_{timestamp}.csv"
 
 
+def avg_metrics_file(commodity: str):
+    """Returns the filename for the average metrics file."""
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    return f"avg_metrics_{commodity}_{timestamp}.json"
+
+
+def extraction_evaluation_metrics_file(commodity: str):
+    """Returns the filename for the extraction evaluation metrics file."""
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    return f"pdf_extraction_eval_{commodity}_{timestamp}.csv"
+
+
 MRDS_DTYPE = {
     "dep_id": str,
     "url": str,
