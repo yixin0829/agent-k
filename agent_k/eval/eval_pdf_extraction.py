@@ -1,7 +1,9 @@
 import os
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import seaborn as sns
 from Levenshtein import distance
 
 import agent_k.config.general as config_general
@@ -109,6 +111,19 @@ if __name__ == "__main__":
         df_merged["total_grade_y"].abs()
         < df_merged["total_grade_y"].abs().quantile(0.99)
     ]
+
+    # Plot the kernel density of total_tonnage_x and total_tonnage_y
+    df_total_tonnage = df_merged[["total_tonnage_x", "total_tonnage_y"]]
+    plt.figure(figsize=(10, 5))
+    sns.kdeplot(
+        df_total_tonnage["total_tonnage_x"], clip=(0, np.inf), label="Yixin Pred"
+    )
+    sns.kdeplot(
+        df_total_tonnage["total_tonnage_y"], clip=(0, np.inf), label="Inferlink Pred"
+    )
+    plt.title("Total Tonnage Kernel Density Distribution")
+    plt.legend()
+    plt.show()
 
     for pdf_col, hyper_col in float_columns:
         pdf_values = pd.to_numeric(df_merged[pdf_col], errors="coerce")

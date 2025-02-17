@@ -14,9 +14,11 @@ dependencies = [
     "levenshtein>=0.26.1",
     "loguru>=0.7.3",
     "markitdown>=0.0.1a2",
+    "matplotlib>=3.10.0",
     "openai>=1.58.1",
     "pandas>=2.2.3",
     "pydantic>=2.10.4",
+    "seaborn>=0.13.2",
     "simplejson>=3.19.3",
     "tqdm>=4.67.1",
 ]
