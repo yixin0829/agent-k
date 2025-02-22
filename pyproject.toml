@@ -1,7 +1,7 @@
 [project]
 name = "agent-k"
 version = "0.1.0"
-description = "An extremely fast Python package and project manager, written in Rust."
+description = "A powerful knowledge base agentic system that uses LLM agents to help you interact with tables and PDF reports."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -12,7 +12,10 @@ dependencies = [
     "datasets>=3.3.0",
     "duckdb>=1.1.3",
     "httpx>=0.28.1",
+    "langchain[openai]>=0.3.19",
+    "langgraph>=0.2.74",
     "levenshtein>=0.26.1",
+    "litellm>=1.61.6",
     "loguru>=0.7.3",
     "markitdown>=0.0.1a2",
     "matplotlib>=3.10.0",
