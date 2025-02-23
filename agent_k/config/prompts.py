@@ -93,11 +93,8 @@ Question: {question}
 """
 
 
-PDF_AGENT_SYSTEM_PROMPT = """You are a helpful PDF assistant that extracts information from PDF files. First, identify the main mineral site name this NI 43-101 report is about. Then, extract the relevant entities about the mineral site. Return your response in a JSON format."""
+PDF_AGENT_SYSTEM_PROMPT = """You are a helpful PDF agent that extracts information from PDF files. First, identify the main mineral site name this NI 43-101 report is about. Then, extract the relevant entities about the mineral site. Structure your response as a JSON object that complies with the JSON schema provided."""
 
-PDF_AGENT_USER_PROMPT = """Extract the relevant entities about the mineral site based on the JSON schema.
-JSON schema: {relevant_entities_json_schema}
-Return your response in a JSON format that complies with the JSON schema.
-"""
+PDF_AGENT_USER_PROMPT = """JSON schema provided: {relevant_entities_json_schema}
 
-PDF_AGENT_SYSTEM_PROMPT_CHAIN_OF_THOUGHT = """You are a helpful PDF assistant that extracts information from PDF files. First, identify the main mineral site name this NI 43-101 report is about. Then, extract the relevant entities about the mineral site. Return your response in a JSON format."""
+You should retrieve the relevant information from the PDF file, reason about the information, and structure your final response as a JSON object that complies with the JSON schema provided."""
