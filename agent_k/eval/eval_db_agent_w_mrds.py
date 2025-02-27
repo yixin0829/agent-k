@@ -34,7 +34,7 @@ async def eval_db_agent(
         if i > 0 and not full_eval:
             break
 
-        logger.info(f"Evaluating question {i+1} of {len(eval_set)}")
+        logger.info(f"Evaluating question {i + 1} of {len(eval_set)}")
         qid, question, answer, selected_cols, data_source = (
             qa_pair["qid"],
             qa_pair["question"],

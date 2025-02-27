@@ -34,7 +34,7 @@ async def eval_pdf_agent(full_eval: bool = False, eval_set_version: str = "v3"):
         if i > 0 and not full_eval:
             break
 
-        logger.info(f"Evaluating question {i+1} of {len(eval_set)}")
+        logger.info(f"Evaluating question {i + 1} of {len(eval_set)}")
         qid, question, answer, selected_cols, data_source = (
             eval_qa_pair["qid"],
             eval_qa_pair["question"],
