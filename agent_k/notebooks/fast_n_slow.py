@@ -1,6 +1,4 @@
-# %% [markdown]
 # # Fast & Slow Extraction
-#
 # This is a quick implementation of the Chain of Extraction + Fast & Slow thinking idea for text-to-JSON task.
 
 # ## Imports
@@ -32,16 +30,13 @@ MODEL = "gpt-4o-mini"
 TOP_P = 0.95
 LOG_LEVEL = "DEBUG"
 
-# %%
 
 logger.remove()
 logger.add(sys.stderr, level=LOG_LEVEL)
 
-# %% [markdown]
 # ## Schemas
 
 
-# %%
 class MineralSiteMetadata(BaseModel):
     mineral_site_name: str = Field(
         ..., description="The name of the mineral site that the report is about"
@@ -71,46 +66,9 @@ class MineralSiteMetadata(BaseModel):
 
 
 schema = MineralSiteMetadata.model_json_schema()
-print(json.dumps(schema, indent=4))
 
-
-# %%
-class Example1(BaseModel):
-    name: str
-    address: str
-    total_attendees: int
-    oldest_attendee: str
-
-
-class Example2(BaseModel):
-    product_name: str
-    product_type: str
-    price: float
-    discount: float
-
-
-class Example3(BaseModel):
-    address: str
-    province: str
-    country: str
-    total_sales: float
-
-
-schema_example1 = json.dumps(Example1.model_json_schema())
-schema_example2 = json.dumps(Example2.model_json_schema())
-schema_example3 = json.dumps(Example3.model_json_schema())
-# replace "{" with "{{" and "}" with "}}" to be used in the multi-line prompt
-schema_example1 = schema_example1.replace("{", "{{").replace("}", "}}")
-schema_example2 = schema_example2.replace("{", "{{").replace("}", "}}")
-schema_example3 = schema_example3.replace("{", "{{").replace("}", "}}")
-print(schema_example1)
-print(schema_example2)
-print(schema_example3)
-
-# %% [markdown]
 # ## Prompts
 
-# %%
 SCHEMA_DECOMPOSE_SYS_PROMPT = """You are a helpful agent that groups entities in a JSON schema into two categories:
 1. Simple entities in the JSON schema that can be extracted directly from the text.
 2. Complex entities in the JSON schema that require reasoning or additional information to be extracted. Complex entities may include composite entities that need further decomposition or non-composite entities that require extra context for extraction.
@@ -218,14 +176,11 @@ Extraction result: {extraction_results}
 Previous extraction messages: {messages}
 The JSON schema is: {json_schema}"""
 
-# %% [markdown]
 # ## Helper Functions
 
-# %% [markdown]
 # ### Split JSON Schema
 
 
-# %%
 def split_json_schema(schema: dict, field_lists: list[list[str]]) -> list[dict]:
     """
     Splits a JSON schema into multiple schemas based on provided field lists.
@@ -260,21 +215,6 @@ def split_json_schema(schema: dict, field_lists: list[list[str]]) -> list[dict]:
     return schemas
 
 
-field_lists = [
-    ["mineral_site_name", "state_or_province", "country"],
-    ["total_grade", "total_tonnage"],
-    ["top_1_deposit_type", "top_1_deposit_environment"],
-    [],
-]
-result = split_json_schema(schema, field_lists)
-for i, res in enumerate(result):
-    print(f"Schema {i + 1}:", res)
-
-# %% [markdown]
-# ### Parse JSON Code Block
-
-
-# %%
 def parse_json_code_block(content: str) -> dict[str, Any]:
     """Parse the JSON code block from the assistant response."""
     try:
@@ -286,9 +226,6 @@ def parse_json_code_block(content: str) -> dict[str, Any]:
         return {}
 
 
-# ### Prompt OpenAI Assistant
-
-
 def prompt_openai_assistant(assistant: Assistant, messages: list[dict]) -> str:
     thread = CLIENT.beta.threads.create(messages=messages)
 
@@ -298,9 +235,8 @@ def prompt_openai_assistant(assistant: Assistant, messages: list[dict]) -> str:
         thread_id=thread.id,
         assistant_id=assistant.id,
     )
-    messages = list(
-        CLIENT.beta.threads.messages.list(thread_id=thread.id, run_id=run.id)
-    )
+    if run.status == "completed":
+        messages = list(CLIENT.beta.threads.messages.list(thread_id=thread.id))
     message_content = messages[0].content[0].text
     annotations = message_content.annotations
     citations = []
@@ -400,11 +336,8 @@ def deep_extract(pdf_path: str, field, default, description, dtype):
     return content
 
 
-# %% [markdown]
 # # LangGraphs
 # ## States, Nodes, and Routes
-
-# %%
 
 
 def viz_graph(graph):
@@ -729,11 +662,9 @@ def extraction_synthesis(state: State):
     return {"final_extraction_result": MineralSiteMetadata(**final_extraction_result)}
 
 
-# %% [markdown]
 # ## Build the Graphs
 # ### F&S Batch
 
-# %%
 # Build the graph
 graph_builder = StateGraph(State)
 graph_builder.add_node("schema_decompose", schema_decompose)
@@ -756,13 +687,10 @@ graph_builder.add_edge("extraction_synthesis", END)
 # Compile the graph
 graph = graph_builder.compile()
 
-viz_graph(graph)
 
-# %% [markdown]
 # ### F&S with DPE (Deep Extraction)
 # Validation loop.
 
-# %%
 # Build the graph
 graph_builder_dpe = StateGraph(State)
 graph_builder_dpe.add_node("schema_decompose", schema_decompose)
@@ -798,12 +726,9 @@ graph_builder_dpe.add_edge("extraction_synthesis", END)
 # Compile the graph
 graph_dpe = graph_builder_dpe.compile()
 
-viz_graph(graph_dpe)
 
-# %% [markdown]
 # ### F&S with DPE (Map Reduce)
 
-# %%
 # Build the graph
 graph_builder_dpe_map_reduce = StateGraph(State)
 graph_builder_dpe_map_reduce.add_node("schema_decompose", schema_decompose)
@@ -849,14 +774,12 @@ graph_builder_dpe_map_reduce.add_edge("extraction_synthesis", END)
 # Compile the graph
 graph_dpe_map_reduce = graph_builder_dpe_map_reduce.compile()
 
-viz_graph(graph_dpe_map_reduce)
-
 
 def extract_from_pdf(
     pdf_path: str,
     json_schema: dict,
-    method: Literal["F&S", "DPE", "DPE + MAP_REDUCE"] = "DPE",
-    recursion_limit: int = 12,
+    method: Literal["F&S", "DPE", "DPE + MAP_REDUCE"] = "DPE + MAP_REDUCE",
+    recursion_limit: int = 6,
 ) -> MineralSiteMetadata:
     """
     Extract information from a PDF file using different extraction methods.
@@ -908,9 +831,10 @@ def extract_from_pdf(
 
 
 if __name__ == "__main__":
+    # Example usage of single file extraction
     result = extract_from_pdf(
         "data/raw/all_sources/43-101/021a794659a5c972b322e3bda39a1740793bb55223899eca13766ca7e84abdfded.pdf",
         schema,
-        method="DPE",
+        method="DPE + MAP_REDUCE",
     )
     print(result.model_dump_json(indent=4))
