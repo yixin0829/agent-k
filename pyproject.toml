@@ -22,6 +22,7 @@ dependencies = [
     "openai>=1.58.1",
     "pandas>=2.2.3",
     "pydantic>=2.10.4",
+    "scikit-learn>=1.6.1",
     "seaborn>=0.13.2",
     "simplejson>=3.19.3",
     "tqdm>=4.67.1",
