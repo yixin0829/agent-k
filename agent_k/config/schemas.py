@@ -92,8 +92,8 @@ class RelevantEntitiesPredefined(BaseModel):
 
 
 class EvalReport(BaseModel):
-    qid: str = Field(default="Unknown", description="Question ID")
-    question: str = Field(default="Unknown", description="Question")
+    qid: str = Field(default="Not Found", description="Question ID")
+    question: str = Field(default="Not Found", description="Question")
     row_em_score: float = Field(default=0, description="Exact match score for all rows")
     row_precision: float = Field(default=0, description="Precision score for all rows")
     row_recall: float = Field(default=0, description="Recall score for all rows")

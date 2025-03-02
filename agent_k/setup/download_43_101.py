@@ -42,7 +42,7 @@ async def download_report(record_id: str, save_path: str, semaphore: asyncio.Sem
                 res = await client.get(
                     url,
                     headers={
-                        "Authorization": f"Bearer {os.getenv("API_CDR_AUTH_TOKEN")}"
+                        "Authorization": f"Bearer {os.getenv('API_CDR_AUTH_TOKEN')}"
                     },
                     follow_redirects=True,
                 )

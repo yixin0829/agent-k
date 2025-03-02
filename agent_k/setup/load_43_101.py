@@ -18,7 +18,7 @@ def upload_43_101_reports(dir_path: str):
     """
     for i, file in enumerate(os.listdir(dir_path)):
         if file.endswith(".pdf"):
-            logger.info(f"{i+1}/{len(os.listdir(dir_path))} Uploading {file}")
+            logger.info(f"{i + 1}/{len(os.listdir(dir_path))} Uploading {file}")
             file_path = os.path.join(dir_path, file)
             client.files.create(file=open(file_path, "rb"), purpose="assistants")
 
