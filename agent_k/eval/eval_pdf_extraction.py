@@ -19,28 +19,44 @@ def load_data_and_process() -> pd.DataFrame:
     Returns:
         pd.DataFrame: Merged dataframe containing both PDF extraction and ground truth data.
     """
-    # Load PDF extraction data
-    df_pdf_agent_extraction = load_latest_pdf_extraction()
-
-    # Process string columns - replace NaN with "Not Found"
     str_columns = [
         MinModHyperCols.MINERAL_SITE_NAME.value,
         MinModHyperCols.STATE_OR_PROVINCE.value,
         MinModHyperCols.COUNTRY.value,
         MinModHyperCols.TOP_1_DEPOSIT_TYPE.value,
-        MinModHyperCols.TOP_1_DEPOSIT_ENVIRONMENT.value,
+        # MinModHyperCols.TOP_1_DEPOSIT_ENVIRONMENT.value,
     ]
-    for col in str_columns:
-        df_pdf_agent_extraction[col] = df_pdf_agent_extraction[col].fillna("Not Found")
-
-    # Process float columns - replace NaN with 0
     float_columns = [
         MinModHyperCols.TOTAL_GRADE.value,
         MinModHyperCols.TOTAL_TONNAGE.value,
     ]
-    for col in float_columns:
-        df_pdf_agent_extraction[col] = df_pdf_agent_extraction[col].fillna(0)
 
+    def standardize_string_column(df: pd.DataFrame, cols: list[str]) -> pd.DataFrame:
+        # Helper: Check if the string columns have "Not Found" values and no NaN values. If so, replace NaN with "Not Found".
+        for col in cols:
+            if df[col].isna().any():
+                logger.warning(f"Column {col} has NaN values")
+                df[col] = df[col].fillna("Not Found")
+        return df
+
+    def standardize_float_column(df: pd.DataFrame, cols: list[str]) -> pd.DataFrame:
+        # Helper: Process float columns - replace NaN and "Not Found" with 0. Then cast to float.
+        for col in cols:
+            if df[col].isna().any():
+                logger.warning(f"Column {col} has NaN values")
+                df[col] = df[col].fillna(0)
+            df[col] = df[col].replace("Not Found", 0)
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+        return df
+
+    # Load PDF extraction data
+    df_pdf_agent_extraction = load_latest_pdf_extraction()
+    df_pdf_agent_extraction = standardize_string_column(
+        df_pdf_agent_extraction, str_columns
+    )
+    df_pdf_agent_extraction = standardize_float_column(
+        df_pdf_agent_extraction, float_columns
+    )
     logger.info(
         f"PDF agent extraction dataframe has {len(df_pdf_agent_extraction)} rows"
     )
@@ -50,13 +66,21 @@ def load_data_and_process() -> pd.DataFrame:
         config_general.GROUND_TRUTH_DIR,
         "minmod_hyper_response_enriched_nickel_subset_43_101_gt.csv",
     )
-    df_hyper = pd.read_csv(ground_truth_path)
-    logger.info(f"Hyper dataframe filtered to {len(df_hyper)} rows")
+    df_hyper_43_101_subset = pd.read_csv(ground_truth_path)
+    logger.info(
+        f"Hyper dataframe (subset 43-101) filtered to {len(df_hyper_43_101_subset)} rows"
+    )
+    df_hyper_43_101_subset = standardize_string_column(
+        df_hyper_43_101_subset, str_columns
+    )
+    df_hyper_43_101_subset = standardize_float_column(
+        df_hyper_43_101_subset, float_columns
+    )
 
     # Merge the two dataframes
     df_merged = pd.merge(
         df_pdf_agent_extraction,
-        df_hyper,
+        df_hyper_43_101_subset,
         left_on="cdr_record_id",
         right_on=MinModHyperCols.RECORD_VALUE.value,
         how="inner",
@@ -75,6 +99,7 @@ def calculate_string_metrics(
 ) -> List[Dict[str, Any]]:
     """
     Calculate string comparison metrics between predicted and ground truth values.
+    Note: all nan have all been converted to "Not Found"
 
     Args:
         df_merged: Dataframe containing both predicted and ground truth values
@@ -168,10 +193,10 @@ def evaluate_metrics(df_merged: pd.DataFrame) -> pd.DataFrame:
         ("state_or_province_x", MinModHyperCols.STATE_OR_PROVINCE.value + "_y"),
         ("country_x", MinModHyperCols.COUNTRY.value + "_y"),
         ("top_1_deposit_type_x", MinModHyperCols.TOP_1_DEPOSIT_TYPE.value + "_y"),
-        (
-            "top_1_deposit_environment_x",
-            MinModHyperCols.TOP_1_DEPOSIT_ENVIRONMENT.value + "_y",
-        ),
+        # (
+        #     "top_1_deposit_environment_x",
+        #     MinModHyperCols.TOP_1_DEPOSIT_ENVIRONMENT.value + "_y",
+        # ),
     ]
 
     float_columns = [
@@ -210,6 +235,7 @@ def main() -> None:
     Main function to run the PDF extraction evaluation pipeline.
     """
     df_merged = load_data_and_process()
+    df_merged.to_csv("df_merged.csv", index=False)
     df_metrics = evaluate_metrics(df_merged)
     save_metrics(df_metrics)
 
