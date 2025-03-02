@@ -1,12 +1,17 @@
+# %% [markdown]
 # # Fast & Slow Extraction
+#
 # This is a quick implementation of the Chain of Extraction + Fast & Slow thinking idea for text-to-JSON task.
 
+# %% [markdown]
 # ## Imports
 
+# %%
 import json
 import operator
 import sys
 from ast import literal_eval
+from enum import Enum
 from typing import Annotated, Any, Literal
 
 from IPython.display import Image, display
@@ -30,11 +35,54 @@ MODEL = "gpt-4o-mini"
 TOP_P = 0.95
 LOG_LEVEL = "DEBUG"
 
-
+# %%
 logger.remove()
 logger.add(sys.stderr, level=LOG_LEVEL)
 
+# %% [markdown]
 # ## Schemas
+
+
+# %%
+class DepositType(Enum):
+    LATERITE_NICKEL = "Laterite nickel"
+    UM_LAYERED_INTRUSION_NICKEL_COPPER_PGE = "U-M layered intrusion nickel-copper-PGE"
+    KOMATIITE_NICKEL_COPPER_PGE = "Komatiite nickel-copper-PGE"
+    UM_INTRUSION_NICKEL_COPPER_PGE = "U-M intrusion nickel-copper-PGE"
+    SEDIMENT_HOSTED_COPPER_CO = "Sediment-hosted copper ± Co"
+    MAFIC_ULTRAMAFIC_VMS = "Mafic-ultramafic VMS"
+    FLUVIAL_PLACER_GOLD = "Fluvial placer gold"
+    FLUVIAL_PLACER_PGE = "Fluvial placer PGE"
+    BLACK_SHALE_URANIUM = "Black shale uranium"
+    NOT_FOUND = "Not Found"
+
+    @classmethod
+    def from_string(cls, string_value):
+        for member in cls:
+            if member.value == string_value:
+                return member
+        return cls.NOT_FOUND
+
+
+class DepositEnvironment(Enum):
+    MAGMATIC = "Magmatic"
+    SUPERGENE = "Supergene"
+    VOLCANIC_BASIN_HYDROTHERMAL = "Volcanic basin hydrothermal"
+    BASIN_HYDROTHERMAL = "Basin hydrothermal"
+    BASIN_CHEMICAL = "Basin chemical"
+    EROSIONAL = "Erosional"
+    MAGMATIC_HYDROTHERMAL = "Magmatic hydrothermal"
+    METAMORPHIC_HYDROTHERMAL = "Metamorphic hydrothermal"
+    INFILTRATIONAL = "Infiltrational"
+    BASIN_EVAPORATIVE = "Basin evaporative"
+    NOT_FOUND = "Not Found"
+
+    @classmethod
+    def from_string(cls, string_value):
+        for member in cls:
+            if member.value == string_value:
+                return member
+        return cls.NOT_FOUND
 
 
 class MineralSiteMetadata(BaseModel):
@@ -42,33 +90,72 @@ class MineralSiteMetadata(BaseModel):
         ..., description="The name of the mineral site that the report is about"
     )
     country: str = Field(
-        ..., description="The country where the mineral site is located"
+        default="Not Found", description="The country where the mineral site is located"
     )
     state_or_province: str = Field(
-        ..., description="The state or province where the mineral site is located"
+        default="Not Found",
+        description="The state or province where the mineral site is located",
     )
     total_grade: str = Field(
         default="Not Found",
-        description='The total grade of all the nickel deposits in percentage format (e.g. 0.35% will be "0.35")',
+        description='The total grade of nickel deposits in percentage format (e.g. 0.35% will be "0.35"). The total grade is calculated by dividing the contained metal amount by the tonnage, then multiplying by 100 to get a percentage. The total grade essentially tells you what percentage of the ore is made up of the target mineral or metal. For example, a grade of 2% means that 2% of the ore mass is the target mineral (e.g. nickel).',
     )
     total_tonnage: str = Field(
         default="Not Found",
-        description='The total tonnage of all the nickel deposits in million tonnes (e.g. 123.4 Mt will be "123.4")',
+        description='The total tonnage of nickel deposits in million tonnes (e.g. 123.4 Mt will be "123.4"). The total tonnage calculation process follows a careful aggregation approach to prevent double-counting. First separates mineral inventories into resource categories (Measured, Indicated, Inferred) and reserve categories (Proven, Probable), then identifies disjoint (non-overlapping) categories that can be safely combined by adding their tonnage and contained metal values. This iterative merging continues until no more combinations are possible, creating a comprehensive set of aggregated estimates. The system then selects the estimate with the highest contained metal content as the representative value for each category group (resources or reserves).',
     )
-    top_1_deposit_type: str = Field(
+    top_1_deposit_type: DepositType = Field(
         default="Not Found",
         description="The most likely deposit type of the mineral site",
     )
-    top_1_deposit_environment: str = Field(
-        default="Not Found",
-        description="The most likely deposit environment of the mineral site",
-    )
+    # Exclude this field as we can map it from the deposit type
+    # top_1_deposit_environment: DepositEnvironment = Field(
+    #     default="Not Found",
+    #     description="The most likely deposit environment of the mineral site",
+    # )
 
 
 schema = MineralSiteMetadata.model_json_schema()
+print(json.dumps(schema, indent=4))
 
+
+# %%
+class Example1(BaseModel):
+    name: str
+    address: str
+    total_attendees: int
+    oldest_attendee: str
+
+
+class Example2(BaseModel):
+    product_name: str
+    product_type: str
+    price: float
+    discount: float
+
+
+class Example3(BaseModel):
+    address: str
+    province: str
+    country: str
+    total_sales: float
+
+
+schema_example1 = json.dumps(Example1.model_json_schema())
+schema_example2 = json.dumps(Example2.model_json_schema())
+schema_example3 = json.dumps(Example3.model_json_schema())
+# replace "{" with "{{" and "}" with "}}" to be used in the multi-line prompt
+schema_example1 = schema_example1.replace("{", "{{").replace("}", "}}")
+schema_example2 = schema_example2.replace("{", "{{").replace("}", "}}")
+schema_example3 = schema_example3.replace("{", "{{").replace("}", "}}")
+print(schema_example1)
+print(schema_example2)
+print(schema_example3)
+
+# %% [markdown]
 # ## Prompts
 
+# %%
 SCHEMA_DECOMPOSE_SYS_PROMPT = """You are a helpful agent that groups entities in a JSON schema into two categories:
 1. Simple entities in the JSON schema that can be extracted directly from the text.
 2. Complex entities in the JSON schema that require reasoning or additional information to be extracted. Complex entities may include composite entities that need further decomposition or non-composite entities that require extra context for extraction.
@@ -126,95 +213,152 @@ Output:
 """
 
 
-# Batch Extraction
-PDF_AGENT_SYSTEM_PROMPT = """You are a helpful agent that extracts information from mineral PDF reports. First, identify the main mineral site name the attached NI 43-101 report is about. Then, extract the relevant entities about the mineral site based on the JSON schema provided. Finally, structure your response as a JSON object that complies with the JSON schema provided.
-
-Output Format Instructions: You should enclose your retrieved information within <retrieved> XML tags, your reasoning within <thinking> XML tags, and your final response as a JSON object that complies with the JSON schema provided within <json> XML tags."""
+# Batch Extraction Assistant
+PDF_AGENT_SYSTEM_PROMPT = """<SEE OPENAI ASSISTANT DASHBOARD>"""
 
 PDF_AGENT_USER_PROMPT = """JSON schema provided: {json_schema}
 
 Not take a deep breath and think step by step."""
 
-# Deep Extraction
-DEEP_EXTRACT_SYSTEM_PROMPT = """You are a helpful agent that answer questions about the attached 43-101 mineral report by retrieving relevant information from the report using the file search tool. If applicable, use the code interpreter tool to perform aggregation calculations such as summing or averaging.
-
-Output Format Instructions: You should enclose your retrieved information within <retrieved> XML tags, your reasoning within <thinking> XML tags, and your final response within <output> XML tags."""
+# Deep Extraction Assistant
+DEEP_EXTRACT_SYSTEM_PROMPT = """<SEE OPENAI ASSISTANT DASHBOARD>"""
 
 DEEP_EXTRACT_USER_PROMPT = """Question: What's the {field} of the mineral site in the attached 43-101 report?
-{field} description: {description}
-{field} data type: {dtype}
-{field} default value: {default}
-
-Please enclose your reasoning within <thinking> XML tags and output the result within <output> XML tags. Please only include the final result in <output> XML tags and nothing else.
+Description of {field}: {description}
+Data type of {field}: {dtype}
+Default value of {field}: {default}
 
 Now take a deep breath and think step by step."""
 
+# Optimizer Assistant
+OPTIMIZER_SYSTEM_PROMPT = """<SEE OPENAI ASSISTANT DASHBOARD>"""
 
-CORRECT_EXTRACT_SYSTEM_PROMPT = """You are a helpful agent that corrects extracted information from the attached 43-101 mineral report based on the feedback and the previous extraction messages.
-
-Reflect on the feedback, identify the potential mistakes in the previous extraction messages, and correct them. If the previous retrieved information is irrelevant, you should retrieve more information from the attached PDF.
-
-Output Format Instructions: You should enclose your reasoning within <thinking> XML tags, and your final corrected JSON object response within <json> XML tags."""
-
-CORRECT_EXTRACT_USER_PROMPT = """Please correct the following extraction results based on the feedback and previous extraction messages.
+OPTIMIZER_USER_PROMPT = """Please correct the following extraction results based on the feedback and previous extraction messages.
 Extraction results: {extraction_results}
 Feedback: {feedback}
 Previous extraction messages: {messages}
-The JSON schema is: {json_schema}
-Please enclose your reasoning within <thinking> XML tags and output the result within <json> XML tags."""
+The provided JSON schema is: {json_schema}
 
-VALIDATOR_SYSTEM_PROMPT = """You are a helpful agent that validates the extracted results against the JSON schema and the previous extraction messages.
+Now take a deep breath and think step by step."""
 
-You should follow the following guidelines:
-1. Double check the extracted results against the JSON schema, ensuring the data type and value are correct.
-2. Double check the extracted values and make sure they only include the answer without any additional information or filler words.
+VALIDATOR_SYSTEM_PROMPT = """You are a validation agent responsible for verifying extracted results against a given JSON schema and previous extraction messages. Your goal is to ensure data accuracy, correctness, and adherence to the expected structure.
 
-Please enclose your reasoning within <thinking> XML tags, feedback in <feedback> XML tags, and output the result within <output> XML tags. Finally, output the result within <output> XML tags. If the extraction result is incorrect, output "NO" in the <output> XML tags. Otherwise, output "YES" in the <output> XML tags."""
+### Guidelines:
+1. Validate the extracted results against the JSON schema:
+    - Ensure that all values conform to the expected data types.
+    - Verify that extracted values match the correct format and structure.
+
+2. Ensure the extracted values are precise:
+    - Confirm that answers contain only the relevant data without any additional information, filler words, or extraneous details.
+
+### Output Format:
+- Reasoning: Enclose your thought process, validation steps, and identified issues in `<thinking>` XML tags.
+- Feedback: Provide specific corrections, observations, or necessary adjustments in `<feedback>` XML tags.
+- Final Validation Result:
+    - If the extracted result is incorrect, output "NO" within `<output>` XML tags.
+    - If the extracted result is correct, output "YES" within `<output>` XML tags.
+
+Example Structure:
+```
+<thinking>
+Detailed validation process, including schema checks and extracted value analysis.
+</thinking>
+
+<feedback>
+Specific errors found or confirmation that the extraction is correct.
+</feedback>
+
+<output>
+YES or NO
+</output>
+```
+
+Ensure all responses are concise, structured, and directly aligned with the JSON schema validation criteria."""
+
 
 VALIDATOR_USER_PROMPT = """Please validate the following extraction result based on the previous extraction messages.
 Extraction result: {extraction_results}
 Previous extraction messages: {messages}
-The JSON schema is: {json_schema}"""
+The provided JSON schema is: {json_schema}
 
+Now take a deep breath and think step by step."""
+
+# %% [markdown]
 # ## Helper Functions
 
+# %% [markdown]
 # ### Split JSON Schema
 
 
-def split_json_schema(schema: dict, field_lists: list[list[str]]) -> list[dict]:
+# %%
+def split_json_schema(
+    schema: dict, field_lists: list[list[str]], include_defs: bool = True
+) -> list[dict]:
     """
-    Splits a JSON schema into multiple schemas based on provided field lists.
+    Splits a JSON schema into multiple schemas based on provided field lists,
+    optionally including only the definitions referenced in each schema.
 
     Args:
         schema (dict): The input JSON schema.
         field_lists (list of list of str): Each inner list contains fields for a separate schema.
+        include_defs (bool): If True, include referenced definitions from the original schema's $defs.
 
     Returns:
         list of dict: A list of JSON schemas corresponding to each field list.
     """
-    # Extract properties and required fields from the original schema
+    # Extract properties, required fields, and definitions from the original schema
     original_properties = schema.get("properties", {})
     original_required = set(schema.get("required", []))
+    original_defs = schema.get("$defs", {})
 
     schemas = []
     for field_list in field_lists:
         new_schema = {"type": "object", "properties": {}, "required": []}
-        # Extract properties and required fields based on the field list
+        # Build the new schema based on the field list
         for field in field_list:
             if field in original_properties:
                 new_schema["properties"][field] = original_properties[field]
             if field in original_required:
                 new_schema["required"].append(field)
 
-        # Remove 'required' if empty
+        # Remove 'required' key if it's empty
         if not new_schema["required"]:
             new_schema.pop("required")
+
+        # Optionally include only the definitions referenced in the new schema
+        if include_defs and original_defs:
+            new_defs = {}
+            for prop in new_schema["properties"].values():
+                if "$ref" in prop:
+                    # Expecting ref format: "#/$defs/DefinitionName"
+                    ref_parts = prop["$ref"].split("/")
+                    if len(ref_parts) >= 3 and ref_parts[1] == "$defs":
+                        def_name = ref_parts[2]
+                        if def_name in original_defs:
+                            new_defs[def_name] = original_defs[def_name]
+            if new_defs:
+                new_schema["$defs"] = new_defs
 
         schemas.append(new_schema)
 
     return schemas
 
 
+field_lists = [
+    ["mineral_site_name", "state_or_province", "country"],
+    ["total_grade", "total_tonnage"],
+    ["top_1_deposit_type", "top_1_deposit_environment"],
+    [],
+]
+result = split_json_schema(schema, field_lists)
+for i, res in enumerate(result):
+    print(f"Schema {i + 1}:", res)
+
+# %% [markdown]
+# ### Parse JSON Code Block
+
+
+# %%
 def parse_json_code_block(content: str) -> dict[str, Any]:
     """Parse the JSON code block from the assistant response."""
     try:
@@ -226,6 +370,11 @@ def parse_json_code_block(content: str) -> dict[str, Any]:
         return {}
 
 
+# %% [markdown]
+# ### Prompt OpenAI Assistant
+
+
+# %%
 def prompt_openai_assistant(assistant: Assistant, messages: list[dict]) -> str:
     thread = CLIENT.beta.threads.create(messages=messages)
 
@@ -237,7 +386,11 @@ def prompt_openai_assistant(assistant: Assistant, messages: list[dict]) -> str:
     )
     if run.status == "completed":
         messages = list(CLIENT.beta.threads.messages.list(thread_id=thread.id))
-    message_content = messages[0].content[0].text
+    try:
+        message_content = messages[0].content[0].text
+    except IndexError as e:
+        logger.exception(f"{e}.`messages`: {messages}")
+
     annotations = message_content.annotations
     citations = []
     for index, annotation in enumerate(annotations):
@@ -303,7 +456,14 @@ def deep_extract(pdf_path: str, field, default, description, dtype):
     Extract ONE entity from a PDF file using OpenAI Assistant.
     """
     logger.info(f"Extracting {field} from {pdf_path}")
+    # Use the same assistant for all deep extraction
     assistant = CLIENT.beta.assistants.retrieve("asst_50sbd2mNoNhaPecIKU34vXUP")
+    # assistant = CLIENT.beta.assistants.create(
+    #     name="MinMod Assistant (Deep Extraction - Map Reduce)",
+    #     instructions=DEEP_EXTRACT_SYSTEM_PROMPT,
+    #     tools=[{"type": "code_interpreter", "type": "file_search"}],
+    #     model=MODEL,
+    #     )
 
     # Get the OpenAI file ID
     filename_to_id_map = list_43_101_reports()
@@ -336,8 +496,11 @@ def deep_extract(pdf_path: str, field, default, description, dtype):
     return content
 
 
+# %% [markdown]
 # # LangGraphs
 # ## States, Nodes, and Routes
+
+# %%
 
 
 def viz_graph(graph):
@@ -497,6 +660,28 @@ def slow_extraction_agent(state: State):
     return {"slow_extraction_agent_result": parsed_json}
 
 
+def slow_extraction_output_parser(
+    content: str,
+    entity_name: str,
+    dtype: Literal["string", "number", "boolean", "array", "object"],
+):
+    # Corner cases
+    if "not found" in content.lower():
+        return "Not Found"
+
+    try:
+        parsed_output = content.split("<output>")[1].split("</output>")[0].strip()
+    except IndexError:
+        logger.exception(
+            f"Error parsing <output> XML tags for {entity_name}\nContent: {content}"
+        )
+
+    if dtype == "number" and parsed_output != "Not Found":
+        parsed_output = float(parsed_output)
+
+    return parsed_output
+
+
 def slow_extraction_agent_dpe(state: State):
     """Map reduce extraction of complex entities from the 43-101 report"""
     logger.info("Deep extraction of complex entities from the 43-101 report")
@@ -508,18 +693,15 @@ def slow_extraction_agent_dpe(state: State):
     messages = []
     logger.info("Extracting entities from the 43-101 report")
     for entity_name, entity_schema in slow_schema["properties"].items():
-        default_value, description, dtype = (
-            entity_schema.get("default", None),
-            entity_schema.get("description", None),
-            entity_schema.get("type", None),
-        )
+        default_value = entity_schema.get("default", None)
+        description = entity_schema.get("description", None)
+        dtype = entity_schema.get("type", None)
+
         content = deep_extract(
             state["pdf_path"], entity_name, default_value, description, dtype
         )
-        # Parse <output> XML tags
-        parsed_output = content.split("<output>")[1].split("</output>")[0].strip()
-        if dtype == "number" and parsed_output != "Not Found":
-            parsed_output = float(parsed_output)
+        parsed_output = slow_extraction_output_parser(content, entity_name, dtype)
+
         extraction_results[entity_name] = parsed_output
         messages.append({"role": "assistant", "content": content})
 
@@ -537,10 +719,7 @@ def slow_extraction_agent_map_reduce(state: ComplexEntityState):
     dtype = state["dtype"]
 
     content = deep_extract(pdf_path, entity_name, default_value, description, dtype)
-    # Parse <output> XML tags
-    parsed_output = content.split("<output>")[1].split("</output>")[0].strip()
-    if dtype == "number" and parsed_output != "Not Found":
-        parsed_output = float(parsed_output)
+    parsed_output = slow_extraction_output_parser(content, entity_name, dtype)
 
     return {
         "messages": [{"role": "assistant", "content": content}],
@@ -564,7 +743,7 @@ def slow_extraction_optimizer(state: State):
     messages = [
         {
             "role": "user",
-            "content": CORRECT_EXTRACT_USER_PROMPT.format(
+            "content": OPTIMIZER_USER_PROMPT.format(
                 extraction_results=state["slow_extraction_agent_result"],
                 feedback=state["feedback"],
                 messages=state["messages"],
@@ -662,9 +841,11 @@ def extraction_synthesis(state: State):
     return {"final_extraction_result": MineralSiteMetadata(**final_extraction_result)}
 
 
+# %% [markdown]
 # ## Build the Graphs
 # ### F&S Batch
 
+# %%
 # Build the graph
 graph_builder = StateGraph(State)
 graph_builder.add_node("schema_decompose", schema_decompose)
@@ -687,10 +868,13 @@ graph_builder.add_edge("extraction_synthesis", END)
 # Compile the graph
 graph = graph_builder.compile()
 
+viz_graph(graph)
 
+# %% [markdown]
 # ### F&S with DPE (Deep Extraction)
 # Validation loop.
 
+# %%
 # Build the graph
 graph_builder_dpe = StateGraph(State)
 graph_builder_dpe.add_node("schema_decompose", schema_decompose)
@@ -726,9 +910,12 @@ graph_builder_dpe.add_edge("extraction_synthesis", END)
 # Compile the graph
 graph_dpe = graph_builder_dpe.compile()
 
+viz_graph(graph_dpe)
 
+# %% [markdown]
 # ### F&S with DPE (Map Reduce)
 
+# %%
 # Build the graph
 graph_builder_dpe_map_reduce = StateGraph(State)
 graph_builder_dpe_map_reduce.add_node("schema_decompose", schema_decompose)
@@ -774,12 +961,19 @@ graph_builder_dpe_map_reduce.add_edge("extraction_synthesis", END)
 # Compile the graph
 graph_dpe_map_reduce = graph_builder_dpe_map_reduce.compile()
 
+viz_graph(graph_dpe_map_reduce)
 
+# %% [markdown]
+# ## Run the Graphs
+# Batch extraction for both simple and complex entities.
+
+
+# %%
 def extract_from_pdf(
     pdf_path: str,
     json_schema: dict,
     method: Literal["F&S", "DPE", "DPE + MAP_REDUCE"] = "DPE + MAP_REDUCE",
-    recursion_limit: int = 6,
+    recursion_limit: int = 12,
 ) -> MineralSiteMetadata:
     """
     Extract information from a PDF file using different extraction methods.
@@ -838,3 +1032,59 @@ if __name__ == "__main__":
         method="DPE + MAP_REDUCE",
     )
     print(result.model_dump_json(indent=4))
+
+
+# %% [markdown]
+# ### Vanilla F&S
+
+# %%
+if __name__ == "__main__":
+    for s in graph.stream(
+        {
+            "pdf_path": "data/raw/all_sources/43-101/02c1e1ca772fe97dfc2d3a8923ccccd3a090b79c3c74a92e6f1ff093b08cbf0a57.pdf",
+            "json_schema": schema,
+            "method": "F&S",
+        },
+    ):
+        print(s)
+
+# %% [markdown]
+# ### F&S with DPE
+
+# %%
+if __name__ == "__main__":
+    try:
+        result = graph_dpe.invoke(
+            {
+                "pdf_path": "data/raw/all_sources/43-101/02c1e1ca772fe97dfc2d3a8923ccccd3a090b79c3c74a92e6f1ff093b08cbf0a57.pdf",
+                "json_schema": schema,
+                "method": "DPE",
+            },
+            {"recursion_limit": 12},
+        )
+    except GraphRecursionError as e:
+        logger.error(f"Recursion Error: {e}")
+
+    print(result["final_extraction_result"].model_dump_json(indent=4))
+
+# %% [markdown]
+# ### F&S DPE with Map Reduce
+
+# %%
+if __name__ == "__main__":
+    try:
+        result = graph_dpe_map_reduce.invoke(
+            {
+                "pdf_path": "data/raw/all_sources/43-101/021a794659a5c972b322e3bda39a1740793bb55223899eca13766ca7e84abdfded.pdf",
+                "json_schema": schema,
+                "method": "DPE + MAP_REDUCE",
+            },
+            {"recursion_limit": 12},
+        )
+    except GraphRecursionError as e:
+        logger.error(f"Recursion Error: {e}")
+
+    print(result["final_extraction_result"].model_dump_json(indent=4))
+
+# %% [markdown]
+#
