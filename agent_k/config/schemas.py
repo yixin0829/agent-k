@@ -134,26 +134,27 @@ COUNTRY_DESCRIPTION = "The country where the mineral site is located."
 STATE_OR_PROVINCE_DESCRIPTION = (
     "The state or province where the mineral site is located."
 )
-TOTAL_MINERAL_RESOURCE_TONNAGE_DESCRIPTION = """The total mineral resource tonnage of <main_commodity> converted to million tonnes. The total mineral resource tonnage of <main_commodity> is calculated by summing up the tonnage of individual inferred, indicated, and measured <main_commodity> mineral resources.
+TOTAL_MINERAL_RESOURCE_TONNAGE_DESCRIPTION = """The total mineral resource tonnage of the mineral site converted to million tonnes. The total mineral resource tonnage is calculated by summing up the tonnage of all individual inferred, indicated, and measured mineral resources across all the mineral zones.
 
-Example: if we have 1000 tonnes of inferred <main_commodity> mineral resources, 2000 tonnes of indicated <main_commodity> mineral resources, and 3000 tonnes of measured <main_commodity> mineral resources, the total mineral resource tonnage is 1000 + 2000 + 3000 = 6000 tonnes or 6000/1000000 = 0.006 million tonnes."""
-TOTAL_MINERAL_RESERVE_TONNAGE_DESCRIPTION = """The total mineral reserve tonnage of <main_commodity> converted to million tonnes. The total mineral reserve tonnage of <main_commodity> is calculated by summing up the tonnage of individual proven and probable <main_commodity> mineral reserves.
+Example: if we have 1000 tonnes of inferred mineral resources, 2000 tonnes of indicated mineral resources, and 3000 tonnes of measured mineral resources, the total mineral resource tonnage is 1000 + 2000 + 3000 = 6000 tonnes or 6000/1000000 = 0.006 million tonnes."""
 
-Example: if we have 1000 tonnes of proven <main_commodity> mineral reserves, 2000 tonnes of probable <main_commodity> mineral reserves, the total mineral reserve tonnage is 1000 + 2000 = 3000 tonnes or 3000/1000000 = 0.003 million tonnes."""
+TOTAL_MINERAL_RESERVE_TONNAGE_DESCRIPTION = """The total mineral reserve tonnage of the mineral site converted to million tonnes. The total mineral reserve tonnage is calculated by summing up the tonnage of all individual proven and probable mineral reserves across all the mineral zones.
 
-TOTAL_MINERAL_RESOURCE_CONTAINED_METAL_DESCRIPTION = """The total amount of <main_commodity> metal contained in all the <main_commodity> mineral resources converted to million tonnes.
+Example: if we have 1000 tonnes of proven mineral reserves, 2000 tonnes of probable mineral reserves, the total mineral reserve tonnage is 1000 + 2000 = 3000 tonnes or 3000/1000000 = 0.003 million tonnes."""
 
-1.We need to calculate the individual contained metal for each <main_commodity> mineral resource (inferred, indicated, and measured) by multiplying the mineral resource tonnage with the corresponding grade.
-2. We need to calculate the total contained metal by summing up the individual contained metal amounts in the inferred, indicated, and measured <main_commodity> mineral resources.
+TOTAL_MINERAL_RESOURCE_CONTAINED_METAL_DESCRIPTION = """The total amount of <main_commodity> metal contained in all the mineral resources converted to million tonnes.
 
-Example: if we have 1000 tonnes of inferred <main_commodity> mineral resources with a grade of 2%, 2000 tonnes of indicated <main_commodity> mineral resources with a grade of 2.5%, and 3000 tonnes of measured <main_commodity> mineral resources with a grade of 3%, the total contained metal is 1000 * 2% + 2000 * 2.5% + 3000 * 3% = 20 + 50 + 90 = 160t or 160/1000000 = 0.00016 million tonnes."""
+1. Calculate the individual contained <main_commodity> metal for each mineral resource (inferred, indicated, and measured) by multiplying the mineral resource tonnage with the corresponding <main_commodity> grade across all the mineral zones.
+2. Sum up the individual contained <main_commodity> metal amounts from step 1 to get the total contained <main_commodity> metal.
 
-TOTAL_MINERAL_RESERVE_CONTAINED_METAL_DESCRIPTION = """The total amount of <main_commodity> metal contained in all the <main_commodity> mineral reserves converted to million tonnes.
+Example: if the report stated having 1000 tonnes of inferred mineral resources with a <main_commodity> grade of 2%, 2000 tonnes of indicated mineral resources with a <main_commodity> grade of 2.5%, and 3000 tonnes of measured mineral resources with a <main_commodity> grade of 3%, the total contained <main_commodity> metal is 1000 * 2% + 2000 * 2.5% + 3000 * 3% = 20 + 50 + 90 = 160t or 160/1000000 = 0.00016 million tonnes of <main_commodity>."""
 
-1. We need to calculate the individual contained metal for each <main_commodity> mineral reserve (proven and probable) by multiplying the mineral reserve tonnage with the corresponding grade of each <main_commodity> mineral reserve.
-2. We need to calculate the total contained metal by summing up the individual contained metal amounts in the proven and probable <main_commodity> mineral reserves.
+TOTAL_MINERAL_RESERVE_CONTAINED_METAL_DESCRIPTION = """The total amount of <main_commodity> metal contained in all the mineral reserves converted to million tonnes.
 
-Example: if we have 1000 tonnes of proven <main_commodity> mineral reserves with a grade of 2%, 2000 tonnes of probable <main_commodity> mineral reserves with a grade of 2.5%, the total contained metal is 1000 * 2% + 2000 * 2.5% = 20 + 50 = 70t or 70/1000000 = 0.00007 million tonnes."""
+1. Calculate the individual contained <main_commodity> metal for each mineral reserve (proven and probable) by multiplying the mineral reserve tonnage with the corresponding <main_commodity> grade across all the mineral zones.
+2. Sum up the individual contained <main_commodity> metal amounts from step 1 to get the total contained <main_commodity> metal.
+
+Example: if we have 1000 tonnes of proven mineral reserves with a <main_commodity> grade of 2%, 2000 tonnes of probable mineral reserves with a <main_commodity> grade of 2.5%, the total contained <main_commodity> metal is 1000 * 2% + 2000 * 2.5% = 20 + 50 = 70t or 70/1000000 = 0.00007 million tonnes of <main_commodity>."""
 
 
 class MineralSiteMetadata(BaseModel):

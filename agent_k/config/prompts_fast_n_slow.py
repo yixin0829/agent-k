@@ -65,12 +65,12 @@ Not take a deep breath and think step by step."""
 # Deep Extraction Assistant
 DEEP_EXTRACT_SYSTEM_PROMPT = """<SEE OPENAI ASSISTANT DASHBOARD>"""
 
-DEEP_EXTRACT_USER_PROMPT = """Question: What's the {field} of the mineral site in the attached 43-101 report?
-Description of {field}: {description}
-Data type of {field}: {dtype}
-Default value of {field} if not found: {default}
+DEEP_EXTRACT_USER_PROMPT = """**Question:** What's the {field} of the mineral site in the attached 43-101 report?
+**Data type of {field}:** {dtype}
+**Default value of {field} if not found:** {default}
+**Description of {field}:** {description}
 
-Now take a deep breath and think step by step."""
+Now take a deep breath and answer the question step by step."""
 
 # Optimizer Assistant
 OPTIMIZER_SYSTEM_PROMPT = """<SEE OPENAI ASSISTANT DASHBOARD>"""
@@ -81,7 +81,7 @@ Feedback: {feedback}
 Previous extraction messages: {messages}
 The provided JSON schema is: {json_schema}
 
-Now take a deep breath and think step by step."""
+Now take a deep breath and answer the question step by step."""
 
 VALIDATOR_SYSTEM_PROMPT = """You are a validation agent responsible for verifying extracted results against a given JSON schema and previous extraction messages. Your goal is to ensure data accuracy, correctness, and adherence to the expected structure.
 

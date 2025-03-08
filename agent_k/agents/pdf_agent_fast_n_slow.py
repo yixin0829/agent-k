@@ -1,7 +1,6 @@
 import json
 import operator
 import os
-from ast import literal_eval
 from time import time
 from typing import Annotated, Any, Literal, Optional
 
@@ -20,11 +19,9 @@ from typing_extensions import TypedDict
 import agent_k.config.general as config_general
 from agent_k.config.logger import logger
 from agent_k.config.prompts_fast_n_slow import (
-    DECOMPOSE_USER_PROMPT_TEMPLATE,
     DEEP_EXTRACT_USER_PROMPT,
     OPTIMIZER_USER_PROMPT,
     PDF_AGENT_USER_PROMPT,
-    SCHEMA_DECOMPOSE_SYS_PROMPT,
     VALIDATOR_SYSTEM_PROMPT,
     VALIDATOR_USER_PROMPT,
 )
@@ -257,32 +254,34 @@ class ComplexEntityState(TypedDict):
 
 
 def schema_decompose(state: State):
-    response = completion(
-        model=MODEL,
-        messages=[
-            {"role": "system", "content": SCHEMA_DECOMPOSE_SYS_PROMPT},
-            {
-                "role": "user",
-                "content": DECOMPOSE_USER_PROMPT_TEMPLATE.format(
-                    json_schema=json.dumps(state["json_schema"])
-                ),
-            },
-        ],
-        temperature=TEMPERATURE,
-        top_p=TOP_P,
-    )
+    # TODO: Comment to save cost. Uncomment this once in production
+    # response = completion(
+    #     model=MODEL,
+    #     messages=[
+    #         {"role": "system", "content": SCHEMA_DECOMPOSE_SYS_PROMPT},
+    #         {
+    #             "role": "user",
+    #             "content": DECOMPOSE_USER_PROMPT_TEMPLATE.format(
+    #                 json_schema=json.dumps(state["json_schema"])
+    #             ),
+    #         },
+    #     ],
+    #     temperature=TEMPERATURE,
+    #     top_p=TOP_P,
+    # )
 
-    # Parse the <output> XML tags
-    content = response.choices[0].message.content
-    simple_entities = []
-    complex_entities = []
-    for line in content.split("\n"):
-        if line.startswith("1. Simple entities:"):
-            simple_entities = line.split(":")[1].strip()
-            simple_entities = literal_eval(simple_entities)
-        elif line.startswith("2. Complex entities:"):
-            complex_entities = line.split(":")[1].strip()
-            complex_entities = literal_eval(complex_entities)
+    # # Parse the <output> XML tags
+    # content = response.choices[0].message.content
+    # simple_entities = []
+    # complex_entities = []
+    # for line in content.split("\n"):
+    #     if line.startswith("1. Simple entities:"):
+    #         simple_entities = line.split(":")[1].strip()
+    #         simple_entities = literal_eval(simple_entities)
+    #     elif line.startswith("2. Complex entities:"):
+    #         complex_entities = line.split(":")[1].strip()
+    #         complex_entities = literal_eval(complex_entities)
+    # logger.debug(f"Response: {response.choices[0].message.content}")
 
     # TODO: Remove this once in production
     simple_entities = ["mineral_site_name", "country", "state_or_province"]
@@ -293,7 +292,6 @@ def schema_decompose(state: State):
         InferlinkEvalColumns.TOTAL_MINERAL_RESERVE_CONTAINED_METAL.value,
     ]
 
-    logger.debug(f"Response: {response.choices[0].message.content}")
     logger.debug(f"Simple entities: {simple_entities}")
     logger.debug(f"Complex entities: {complex_entities}")
 
