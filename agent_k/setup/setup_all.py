@@ -11,7 +11,7 @@ This script runs the following steps in sequence:
 
 import agent_k.config.general as config_general
 from agent_k.config.logger import logger
-from agent_k.setup.construct_eval_set import construct_eval_set_matched_based
+from agent_k.setup.construct_db_eval import construct_eval_set_matched_based
 from agent_k.setup.download_43_101 import download_reports_main
 from agent_k.setup.download_hyper import download_minmod_hyper_csv, enrich_minmod_hyper
 from agent_k.setup.download_mrds import download_mrds_main

@@ -87,22 +87,23 @@ class DepositEnvironment(Enum):
 
 class MineralSiteMetadata(BaseModel):
     mineral_site_name: str = Field(
-        ..., description="The name of the mineral site that the report is about"
+        ..., description="The name of the mineral site that the report is about."
     )
     country: str = Field(
-        default="Not Found", description="The country where the mineral site is located"
+        default="Not Found",
+        description="The country where the mineral site is located.",
     )
     state_or_province: str = Field(
         default="Not Found",
-        description="The state or province where the mineral site is located",
+        description="The state or province where the mineral site is located.",
     )
     total_grade: str = Field(
         default="Not Found",
-        description='The total grade of nickel deposits in percentage format (e.g. 0.35% will be "0.35"). The total grade is calculated by dividing the contained metal amount by the tonnage, then multiplying by 100 to get a percentage. The total grade essentially tells you what percentage of the ore is made up of the target mineral or metal. For example, a grade of 2% means that 2% of the ore mass is the target mineral (e.g. nickel).',
+        description='The total grade of all nickel deposits in percentage format (e.g. 0.35% will be "0.35").',
     )
     total_tonnage: str = Field(
         default="Not Found",
-        description='The total tonnage of nickel deposits in million tonnes (e.g. 123.4 Mt will be "123.4"). The total tonnage calculation process follows a careful aggregation approach to prevent double-counting. First separates mineral inventories into resource categories (Measured, Indicated, Inferred) and reserve categories (Proven, Probable), then identifies disjoint (non-overlapping) categories that can be safely combined by adding their tonnage and contained metal values. This iterative merging continues until no more combinations are possible, creating a comprehensive set of aggregated estimates. The system then selects the estimate with the highest contained metal content as the representative value for each category group (resources or reserves).',
+        description='The total tonnage by summing all inferred, indicated, and measured nickel deposits in million tonnes (e.g. 123.4 Mt will be "123.4").',
     )
     top_1_deposit_type: DepositType = Field(
         default="Not Found",
@@ -568,6 +569,10 @@ def schema_decompose(state: State):
         elif line.startswith("2. Complex entities:"):
             complex_entities = line.split(":")[1].strip()
             complex_entities = literal_eval(complex_entities)
+
+    # TODO: Remove this once in production
+    simple_entities = ["mineral_site_name", "country", "state_or_province"]
+    complex_entities = ["total_grade", "total_tonnage", "top_1_deposit_type"]
 
     logger.debug(f"Response: {response.choices[0].message.content}")
     logger.debug(f"Simple entities: {simple_entities}")

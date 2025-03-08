@@ -1,6 +1,7 @@
 """
 1. Fetch deduplicated mineral site entities for the current commodity from the MinMod API.
 2. Download 43-101 PDF reports from the CDR API.
+3. Download Inferlink PDF reports in the ground truth directory.
 """
 
 import asyncio
@@ -13,7 +14,7 @@ from tqdm import tqdm
 
 import agent_k.config.general as config_general
 from agent_k.config.logger import logger
-from agent_k.config.schemas import DataSource, MinModHyperCols
+from agent_k.config.schemas import DataSource, InferlinkEvalColumns, MinModHyperCols
 
 warnings.filterwarnings("ignore")
 tqdm.pandas()
@@ -96,7 +97,7 @@ async def download_all_reports(
     return results
 
 
-def download_reports_main(max_concurrent_requests: int = 10):
+def download_minmod_hyper_reports(max_concurrent_requests: int = 10):
     """
     Main function to orchestrate downloading all reports.
     """
@@ -145,5 +146,35 @@ def download_reports_main(max_concurrent_requests: int = 10):
     )
 
 
+def download_inferlink_reports(max_concurrent_requests: int = 10):
+    """
+    Downloads all PDF reports referenced in the provided DataFrame concurrently.
+    """
+    inferlink_df = pd.read_csv("data/processed/inferlink_ground_truth.csv")
+    # Get a list of unique cdr_record_id
+    unique_cdr_record_ids = inferlink_df[
+        InferlinkEvalColumns.CDR_RECORD_ID.value
+    ].unique()
+
+    # Download all reports concurrently
+    results = asyncio.run(
+        download_all_reports(unique_cdr_record_ids, max_concurrent_requests)
+    )
+
+    # Filter for successful downloads record IDs
+    successful_downloads = [record_id for record_id, success in results if success]
+
+    # Update DataFrame with successful downloads
+    inferlink_df.loc[
+        inferlink_df[InferlinkEvalColumns.CDR_RECORD_ID.value].isin(
+            successful_downloads
+        ),
+        InferlinkEvalColumns.DOWNLOADED_PDF.value,
+    ] = True
+
+    inferlink_df.to_csv("data/processed/inferlink_ground_truth.csv", index=False)
+
+
 if __name__ == "__main__":
-    download_reports_main()
+    download_minmod_hyper_reports()
+    download_inferlink_reports()

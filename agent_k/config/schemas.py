@@ -114,3 +114,17 @@ class EvalReport(BaseModel):
 
     def to_dict(self) -> dict:
         return self.model_dump()
+
+
+class InferlinkEvalColumns(Enum):
+    CDR_RECORD_ID = "cdr_record_id"
+    MINERAL_SITE_NAME = "mineral_site_name"
+    COUNTRY = "country"
+    STATE_OR_PROVINCE = "state_or_province"
+    MAIN_COMMODITY = "main_commodity"
+    COMMODITY = "commodity_observed_name"
+    TOTAL_RESOURCE_TONNAGE = "total_resource_tonnage"
+    TOTAL_RESERVE_TONNAGE = "total_reserve_tonnage"
+    TOTAL_RESOURCE_CONTAINED_METAL = "total_resource_contained_metal"
+    TOTAL_RESERVE_CONTAINED_METAL = "total_reserve_contained_metal"
+    DOWNLOADED_PDF = "downloaded_pdf"
