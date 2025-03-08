@@ -7,6 +7,8 @@ import os
 
 import pandas as pd
 
+from agent_k.config.schemas import InferlinkEvalColumns
+
 
 def read_metadata_files(base_dir="data/raw/ground_truth/inferlink"):
     """
@@ -35,7 +37,7 @@ def read_metadata_files(base_dir="data/raw/ground_truth/inferlink"):
             df = pd.read_csv(file_path)
 
             # Insert the new column at the beginning
-            df.insert(0, "cdr_record_id", parent_dir)
+            df.insert(0, InferlinkEvalColumns.CDR_RECORD_ID.value, parent_dir)
 
             # Append to master metadata dataframe
             master_metadata_df = pd.concat([master_metadata_df, df], ignore_index=True)
@@ -82,15 +84,15 @@ def read_mineral_inventory_files(base_dir="data/raw/ground_truth/inferlink"):
             df = pd.read_csv(file_path)
 
             # Insert the new column at the beginning
-            df.insert(0, "cdr_record_id", parent_dir)
-            df.insert(1, "main_commodity", parent_parent_dir)
+            df.insert(0, InferlinkEvalColumns.CDR_RECORD_ID.value, parent_dir)
+            df.insert(1, InferlinkEvalColumns.MAIN_COMMODITY.value, parent_parent_dir)
 
             # If the df is empty, append a row with cdr_record_id
             if df.empty:
                 df = pd.DataFrame(
                     {
-                        "cdr_record_id": [parent_dir],
-                        "main_commodity": [parent_parent_dir],
+                        InferlinkEvalColumns.CDR_RECORD_ID.value: [parent_dir],
+                        InferlinkEvalColumns.MAIN_COMMODITY.value: [parent_parent_dir],
                     }
                 )
 
@@ -105,7 +107,7 @@ def read_mineral_inventory_files(base_dir="data/raw/ground_truth/inferlink"):
 
     # Filtering out specific cdr_record_id that has missing mineral category
     master_inventory_df = master_inventory_df[
-        master_inventory_df["cdr_record_id"]
+        master_inventory_df[InferlinkEvalColumns.CDR_RECORD_ID.value]
         != "02f973c7f9d847a305032fa4ec221182d8aa7e4e44677bc78d114c9c6d47cdfb08"
     ]
 
@@ -291,9 +293,9 @@ if __name__ == "__main__":
     resource_n_reserve_total_tonnage = (
         master_inventory_df.groupby(
             [
-                "cdr_record_id",
-                "main_commodity",
-                "commodity_observed_name",
+                InferlinkEvalColumns.CDR_RECORD_ID.value,
+                InferlinkEvalColumns.MAIN_COMMODITY.value,
+                InferlinkEvalColumns.COMMODITY.value,
                 "resource_or_reserve",
             ]
         )
@@ -308,7 +310,11 @@ if __name__ == "__main__":
 
     # pivot the resource_n_reserve column to wide format
     resource_n_reserve_total_tonnage = resource_n_reserve_total_tonnage.pivot(
-        index=["cdr_record_id", "main_commodity", "commodity_observed_name"],
+        index=[
+            InferlinkEvalColumns.CDR_RECORD_ID.value,
+            InferlinkEvalColumns.MAIN_COMMODITY.value,
+            InferlinkEvalColumns.COMMODITY.value,
+        ],
         columns="resource_or_reserve",
         values=["normalized_ore_value", "contained_metal"],
     )
@@ -322,7 +328,7 @@ if __name__ == "__main__":
     master_df = pd.merge(
         resource_n_reserve_total_tonnage,
         master_metadata_df,
-        on="cdr_record_id",
+        on=InferlinkEvalColumns.CDR_RECORD_ID.value,
         how="left",
     )
 
@@ -333,17 +339,17 @@ if __name__ == "__main__":
     ]
     master_df = master_df.drop(columns=cols_to_drop)
 
-    master_df["commodity_observed_name"] = master_df[
-        "commodity_observed_name"
+    master_df[InferlinkEvalColumns.COMMODITY.value] = master_df[
+        InferlinkEvalColumns.COMMODITY.value
     ].str.lower()
     cols_to_rename = {
-        "normalized_ore_value_resource": "total_resource_tonnage",
-        "normalized_ore_value_reserve": "total_reserve_tonnage",
-        "contained_metal_resource": "total_resource_contained_metal",
-        "contained_metal_reserve": "total_reserve_contained_metal",
-        "country_observed_name": "country",
-        "state_or_province_observed_name": "state_or_province",
-        "mining_name": "mineral_site_name",
+        "normalized_ore_value_resource": InferlinkEvalColumns.TOTAL_MINERAL_RESOURCE_TONNAGE.value,
+        "normalized_ore_value_reserve": InferlinkEvalColumns.TOTAL_MINERAL_RESERVE_TONNAGE.value,
+        "contained_metal_resource": InferlinkEvalColumns.TOTAL_MINERAL_RESOURCE_CONTAINED_METAL.value,
+        "contained_metal_reserve": InferlinkEvalColumns.TOTAL_MINERAL_RESERVE_CONTAINED_METAL.value,
+        "country_observed_name": InferlinkEvalColumns.COUNTRY.value,
+        "state_or_province_observed_name": InferlinkEvalColumns.STATE_OR_PROVINCE.value,
+        "mining_name": InferlinkEvalColumns.MINERAL_SITE_NAME.value,
     }
     master_df = master_df.rename(columns=cols_to_rename)
 
@@ -351,7 +357,10 @@ if __name__ == "__main__":
 
     # Filter for rows where commodity_observed_name appears in the main_commodity column
     for idx, row in master_df.iterrows():
-        if row["main_commodity"] in row["commodity_observed_name"]:
+        if (
+            row[InferlinkEvalColumns.MAIN_COMMODITY.value]
+            in row[InferlinkEvalColumns.COMMODITY.value]
+        ):
             master_df.at[idx, "is_main_commodity"] = True
         else:
             master_df.at[idx, "is_main_commodity"] = False
