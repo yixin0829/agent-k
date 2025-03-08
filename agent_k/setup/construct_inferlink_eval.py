@@ -348,3 +348,14 @@ if __name__ == "__main__":
     master_df = master_df.rename(columns=cols_to_rename)
 
     master_df.to_csv("data/processed/inferlink_ground_truth.csv", index=False)
+
+    # Filter for rows where commodity_observed_name appears in the main_commodity column
+    for idx, row in master_df.iterrows():
+        if row["main_commodity"] in row["commodity_observed_name"]:
+            master_df.at[idx, "is_main_commodity"] = True
+        else:
+            master_df.at[idx, "is_main_commodity"] = False
+
+    master_df = master_df[master_df["is_main_commodity"]]
+    master_df.drop(columns=["is_main_commodity"], inplace=True)
+    master_df.to_csv("data/processed/inferlink_ground_truth_filtered.csv", index=False)
