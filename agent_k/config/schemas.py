@@ -127,3 +127,63 @@ class InferlinkEvalColumns(Enum):
     TOTAL_MINERAL_RESERVE_TONNAGE = "total_mineral_reserve_tonnage"
     TOTAL_MINERAL_RESOURCE_CONTAINED_METAL = "total_mineral_resource_contained_metal"
     TOTAL_MINERAL_RESERVE_CONTAINED_METAL = "total_mineral_reserve_contained_metal"
+
+
+MINERAL_SITE_NAME_DESCRIPTION = "The name of the mineral site that the report is about."
+COUNTRY_DESCRIPTION = "The country where the mineral site is located."
+STATE_OR_PROVINCE_DESCRIPTION = (
+    "The state or province where the mineral site is located."
+)
+TOTAL_MINERAL_RESOURCE_TONNAGE_DESCRIPTION = """The total mineral resource tonnage of <main_commodity> converted to million tonnes. The total mineral resource tonnage of <main_commodity> is calculated by summing up the tonnage of individual inferred, indicated, and measured <main_commodity> mineral resources.
+
+Example: if we have 1000 tonnes of inferred <main_commodity> mineral resources, 2000 tonnes of indicated <main_commodity> mineral resources, and 3000 tonnes of measured <main_commodity> mineral resources, the total mineral resource tonnage is 1000 + 2000 + 3000 = 6000 tonnes or 6000/1000000 = 0.006 million tonnes."""
+TOTAL_MINERAL_RESERVE_TONNAGE_DESCRIPTION = """The total mineral reserve tonnage of <main_commodity> converted to million tonnes. The total mineral reserve tonnage of <main_commodity> is calculated by summing up the tonnage of individual proven and probable <main_commodity> mineral reserves.
+
+Example: if we have 1000 tonnes of proven <main_commodity> mineral reserves, 2000 tonnes of probable <main_commodity> mineral reserves, the total mineral reserve tonnage is 1000 + 2000 = 3000 tonnes or 3000/1000000 = 0.003 million tonnes."""
+
+TOTAL_MINERAL_RESOURCE_CONTAINED_METAL_DESCRIPTION = """The total amount of <main_commodity> metal contained in all the <main_commodity> mineral resources converted to million tonnes.
+
+1.We need to calculate the individual contained metal for each <main_commodity> mineral resource (inferred, indicated, and measured) by multiplying the mineral resource tonnage with the corresponding grade.
+2. We need to calculate the total contained metal by summing up the individual contained metal amounts in the inferred, indicated, and measured <main_commodity> mineral resources.
+
+Example: if we have 1000 tonnes of inferred <main_commodity> mineral resources with a grade of 2%, 2000 tonnes of indicated <main_commodity> mineral resources with a grade of 2.5%, and 3000 tonnes of measured <main_commodity> mineral resources with a grade of 3%, the total contained metal is 1000 * 2% + 2000 * 2.5% + 3000 * 3% = 20 + 50 + 90 = 160t or 160/1000000 = 0.00016 million tonnes."""
+
+TOTAL_MINERAL_RESERVE_CONTAINED_METAL_DESCRIPTION = """The total amount of <main_commodity> metal contained in all the <main_commodity> mineral reserves converted to million tonnes.
+
+1. We need to calculate the individual contained metal for each <main_commodity> mineral reserve (proven and probable) by multiplying the mineral reserve tonnage with the corresponding grade of each <main_commodity> mineral reserve.
+2. We need to calculate the total contained metal by summing up the individual contained metal amounts in the proven and probable <main_commodity> mineral reserves.
+
+Example: if we have 1000 tonnes of proven <main_commodity> mineral reserves with a grade of 2%, 2000 tonnes of probable <main_commodity> mineral reserves with a grade of 2.5%, the total contained metal is 1000 * 2% + 2000 * 2.5% = 20 + 50 = 70t or 70/1000000 = 0.00007 million tonnes."""
+
+
+class MineralSiteMetadata(BaseModel):
+    """
+    To be extended with more fields based on the mineral inventory of the report
+    e.g. total mineral resource tonnage
+    """
+
+    mineral_site_name: str = Field(..., description=MINERAL_SITE_NAME_DESCRIPTION)
+    country: str = Field(
+        default="Not Found",
+        description=COUNTRY_DESCRIPTION,
+    )
+    state_or_province: str = Field(
+        default="Not Found",
+        description=STATE_OR_PROVINCE_DESCRIPTION,
+    )
+    total_mineral_resource_tonnage: float = Field(
+        default=0,
+        description=TOTAL_MINERAL_RESOURCE_TONNAGE_DESCRIPTION,
+    )
+    total_mineral_reserve_tonnage: float = Field(
+        default=0,
+        description=TOTAL_MINERAL_RESERVE_TONNAGE_DESCRIPTION,
+    )
+    total_mineral_resource_contained_metal: float = Field(
+        default=0,
+        description=TOTAL_MINERAL_RESOURCE_CONTAINED_METAL_DESCRIPTION,
+    )
+    total_mineral_reserve_contained_metal: float = Field(
+        default=0,
+        description=TOTAL_MINERAL_RESERVE_CONTAINED_METAL_DESCRIPTION,
+    )

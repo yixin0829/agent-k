@@ -1,4 +1,5 @@
 import random
+from datetime import datetime
 
 import httpx
 import pandas as pd
@@ -72,3 +73,8 @@ def load_list_to_df(data: list[list[str]], selected_cols: list[str]) -> pd.DataF
             df[col] = pd.to_numeric(df[col], errors="coerce")
 
     return df
+
+
+def get_current_timestamp():
+    """Get the current timestamp in the format YYYY-MM-DD_HH-MM."""
+    return datetime.now().strftime("%Y-%m-%d_%H-%M")

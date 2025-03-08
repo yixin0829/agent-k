@@ -31,6 +31,7 @@ dependencies = [
     { name = "scikit-learn" },
     { name = "seaborn" },
     { name = "simplejson" },
+    { name = "tenacity" },
     { name = "tqdm" },
 ]
 
@@ -65,6 +66,7 @@ requires-dist = [
     { name = "scikit-learn", specifier = ">=1.6.1" },
     { name = "seaborn", specifier = ">=0.13.2" },
     { name = "simplejson", specifier = ">=3.19.3" },
+    { name = "tenacity", specifier = ">=9.0.0" },
     { name = "tqdm", specifier = ">=4.67.1" },
 ]
 

@@ -25,28 +25,22 @@ def load_eval_set(eval_set_version: str = "v3"):
     return eval_set
 
 
-def load_latest_pdf_extraction() -> pd.DataFrame:
+def load_latest_pdf_extraction(
+    dir: str = config_general.PDF_AGENT_CACHE_DIR,
+) -> pd.DataFrame:
     """
     Load the latest extraction results from the cache directory.
     """
-    csv_files = [
-        f
-        for f in os.listdir(config_general.PDF_AGENT_CACHE_DIR)
-        if f.startswith("pdf_agent_extraction_") and f.endswith(".csv")
-    ]
+    csv_files = [f for f in os.listdir(dir) if f.endswith(".csv")]
 
     if not csv_files:
-        raise FileNotFoundError(
-            f"No extraction CSV files found in {config_general.PDF_AGENT_CACHE_DIR}"
-        )
+        raise FileNotFoundError(f"No extraction CSV files found in {dir}")
 
     latest_file = os.path.join(
-        config_general.PDF_AGENT_CACHE_DIR,
+        dir,
         max(
             csv_files,
-            key=lambda f: os.path.getctime(
-                os.path.join(config_general.PDF_AGENT_CACHE_DIR, f)
-            ),
+            key=lambda f: os.path.getctime(os.path.join(dir, f)),
         ),
     )
 

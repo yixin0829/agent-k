@@ -1,9 +1,10 @@
 import os
-from datetime import datetime
 
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 from dotenv import load_dotenv
 from openai import AsyncClient
+
+from agent_k.utils.general import get_current_timestamp
 
 load_dotenv()
 
@@ -55,20 +56,17 @@ def eval_set_matched_based_file(commodity: str, version: str = "vX"):
 
 def eval_results_file(commodity: str):
     """Returns the filename for the eval results file."""
-    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-    return f"eval_results_{commodity}_{timestamp}.csv"
+    return f"eval_results_{commodity}_{get_current_timestamp()}.csv"
 
 
 def avg_metrics_file(commodity: str):
     """Returns the filename for the average metrics file."""
-    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-    return f"avg_metrics_{commodity}_{timestamp}.json"
+    return f"avg_metrics_{commodity}_{get_current_timestamp()}.json"
 
 
 def extraction_evaluation_metrics_file(commodity: str):
     """Returns the filename for the extraction evaluation metrics file."""
-    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-    return f"pdf_extraction_eval_{commodity}_{timestamp}.csv"
+    return f"pdf_extraction_eval_{commodity}_{get_current_timestamp()}.csv"
 
 
 MRDS_DTYPE = {
@@ -122,9 +120,7 @@ MRDS_DTYPE = {
 
 AGENT_CACHE_DIR = os.path.join(DATA_DIR, "agent_cache")
 # Autogen settings
-DB_AGENT_CACHE_DIR = os.path.join(
-    AGENT_CACHE_DIR, "db_agent", datetime.now().strftime("%y-%m-%d_%H-%M-%S")
-)
+DB_AGENT_CACHE_DIR = os.path.join(AGENT_CACHE_DIR, "db_agent", get_current_timestamp())
 OPENAI_MODEL_CLIENT = OpenAIChatCompletionClient(
     model="gpt-4o-mini",
     api_key=os.getenv("OPENAI_API_KEY"),
