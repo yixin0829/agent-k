@@ -105,11 +105,11 @@ def read_mineral_inventory_files(base_dir="data/raw/ground_truth/inferlink"):
         except Exception as e:
             print(f"Error processing {file_path}: {e}")
 
-    # Filtering out specific cdr_record_id that has missing mineral category
-    master_inventory_df = master_inventory_df[
-        master_inventory_df[InferlinkEvalColumns.CDR_RECORD_ID.value]
-        != "02f973c7f9d847a305032fa4ec221182d8aa7e4e44677bc78d114c9c6d47cdfb08"
-    ]
+    master_inventory_df[InferlinkEvalColumns.COMMODITY.value] = (
+        master_inventory_df[InferlinkEvalColumns.COMMODITY.value]
+        .str.lower()
+        .str.strip()
+    )
 
     print("Processing complete!")
     print(master_inventory_df.head())
@@ -245,6 +245,9 @@ if __name__ == "__main__":
     master_inventory_df = normalize_ore_units(master_inventory_df)
     master_inventory_df = normalize_grade_units(master_inventory_df)
 
+    # Assert there are no values in the "zone" column contain "total" to avoid double counting
+    # assert not master_inventory_df["zone"].str.lower().str.contains("total").any()
+
     cols_to_drop = [
         "ore_unit_observed_name",
         "grade_unit_observed_name",
@@ -261,19 +264,17 @@ if __name__ == "__main__":
         "inferred": "resource",
         "measured": "resource",
         "indicated": "resource",
-        "measured+indicated": "resource",
-        "totalmeasured+indicated": "resource",
-        "total": "resource",
+        "mineral resource": "resource",
+        "measured+indicated": "resource",  # Exception
         "proved": "reserve",
         "probable": "reserve",
         "proven": "reserve",
-        "proven+probable": "reserve",
-        "probable+proven": "reserve",
     }
     # remove any whitespace from category (e.g. "proven + probable" -> "proven+probable")
     master_inventory_df["category_observed_name"] = master_inventory_df[
         "category_observed_name"
     ].str.replace(" ", "")
+
     master_inventory_df.insert(
         4,
         "resource_or_reserve",
@@ -281,13 +282,16 @@ if __name__ == "__main__":
             category_to_resource_or_reserve
         ),
     )
-
     master_inventory_df.drop(columns=["category_observed_name"], inplace=True)
+
     master_inventory_df["contained_metal"] = (
         master_inventory_df["normalized_ore_value"]
         * master_inventory_df["normalized_grade_value"]
         / 100
     )
+
+    # Note: mineral site with no inventory data will have a NaN value in the "category_observed_name" column
+    # and thus a NaN value in the "resource_or_reserve" column. These rows will be dropped during the groupby operation.
 
     # Group by cdr_record_id, resource_or_reserve and sum the normalized_ore_value
     resource_n_reserve_total_tonnage = (
@@ -339,9 +343,6 @@ if __name__ == "__main__":
     ]
     master_df = master_df.drop(columns=cols_to_drop)
 
-    master_df[InferlinkEvalColumns.COMMODITY.value] = master_df[
-        InferlinkEvalColumns.COMMODITY.value
-    ].str.lower()
     cols_to_rename = {
         "normalized_ore_value_resource": InferlinkEvalColumns.TOTAL_MINERAL_RESOURCE_TONNAGE.value,
         "normalized_ore_value_reserve": InferlinkEvalColumns.TOTAL_MINERAL_RESERVE_TONNAGE.value,

@@ -109,6 +109,7 @@ def parse_json_code_block(content: str) -> dict[str, Any]:
 
 def prompt_openai_assistant(assistant: Assistant, messages: list[dict]) -> str:
     thread = CLIENT.beta.threads.create(messages=messages)
+    logger.info(f"Thread ID: {thread.id}")
 
     # Use the create and poll SDK helper to create a run and poll the status of
     # the run until it's in a terminal state.
