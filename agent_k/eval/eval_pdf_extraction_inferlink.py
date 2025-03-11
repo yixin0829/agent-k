@@ -53,7 +53,8 @@ def load_data_and_process() -> pd.DataFrame:
             df[col] = df[col].fillna(0)
         return df
 
-    # Load PDF extraction data
+    # Note: Load PDF extraction data. Can be replaced with the following line to load a specific extraction file
+    # df_pdf_agent_extraction = pd.read_csv("data/agent_cache/pdf_agent/inferlink/dpe_map_reduce_extraction_results_2025-03-08_16-24.csv")
     df_pdf_agent_extraction = load_latest_pdf_extraction(
         dir=os.path.join(config_general.PDF_AGENT_CACHE_DIR, "inferlink")
     )

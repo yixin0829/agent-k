@@ -76,5 +76,5 @@ def load_list_to_df(data: list[list[str]], selected_cols: list[str]) -> pd.DataF
 
 
 def get_current_timestamp():
-    """Get the current timestamp in the format YYYY-MM-DD_HH-MM."""
-    return datetime.now().strftime("%Y-%m-%d_%H-%M")
+    """Get the current timestamp in the format YYYY-MM-DD_HH-MM-SS."""
+    return datetime.now().strftime("%Y-%m-%d_%H-%M-%S")

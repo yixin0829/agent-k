@@ -696,7 +696,7 @@ def extract_from_pdf(
             logger.error(f"Recursion Error: {e}")
             raise
         except Exception as e:
-            logger.warning(f"Extraction failed for {pdf_path}: {str(e)}. Retrying...")
+            logger.warning(f"Error during `{method}` extraction: {str(e)}. Retrying...")
             raise
 
     return _extract_with_retry()
