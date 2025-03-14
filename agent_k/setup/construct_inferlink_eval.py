@@ -266,14 +266,16 @@ if __name__ == "__main__":
         "indicated": "resource",
         "mineral resource": "resource",
         "measured+indicated": "resource",  # Exception
+        "proven+probable": "reserve",  # Exception
         "proved": "reserve",
         "probable": "reserve",
         "proven": "reserve",
+        "mineralresource": "resource",
     }
     # remove any whitespace from category (e.g. "proven + probable" -> "proven+probable")
-    master_inventory_df["category_observed_name"] = master_inventory_df[
-        "category_observed_name"
-    ].str.replace(" ", "")
+    master_inventory_df["category_observed_name"] = (
+        master_inventory_df["category_observed_name"].str.replace(" ", "").str.lower()
+    )
 
     master_inventory_df.insert(
         4,
@@ -281,6 +283,15 @@ if __name__ == "__main__":
         master_inventory_df["category_observed_name"].map(
             category_to_resource_or_reserve
         ),
+    )
+    # Assert for all rows have "category_observed_name" it has a corresponding "resource_or_reserve" value
+    assert (
+        not master_inventory_df[
+            master_inventory_df["category_observed_name"].notna()
+            & master_inventory_df["resource_or_reserve"].isna()
+        ]
+        .any()
+        .any()
     )
     master_inventory_df.drop(columns=["category_observed_name"], inplace=True)
 
