@@ -29,13 +29,14 @@ PROVENANCE_ENDPOINT = "/docs/documents/q/provenance/url"  # for querying record 
 # Data directories
 DATA_DIR = "data"
 RAW_DIR = os.path.join(DATA_DIR, "raw")
+PROCESSED_DIR = os.path.join(DATA_DIR, "processed")
 ALL_SOURCES_DIR = os.path.join(RAW_DIR, "all_sources")
 CDR_REPORTS_DIR = os.path.join(ALL_SOURCES_DIR, "43-101")
 MRDS_DIR = os.path.join(ALL_SOURCES_DIR, "mrds")
 DUCKDB_DB_PATH = os.path.join(ALL_SOURCES_DIR, "minmod.duckdb")
 ZIP_PATH = os.path.join(RAW_DIR, "mrds.zip")
 MRDS_URL = "https://mrdata.usgs.gov/mrds/mrds-csv.zip"
-GROUND_TRUTH_DIR = os.path.join(RAW_DIR, "ground_truth")
+GROUND_TRUTH_DIR = os.path.join(PROCESSED_DIR, "ground_truth")
 EVAL_DIR = os.path.join(DATA_DIR, "eval")
 
 
