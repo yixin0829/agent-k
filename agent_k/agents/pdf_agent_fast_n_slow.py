@@ -6,14 +6,13 @@ from typing import Annotated, Any, Literal, Optional
 
 import pandas as pd
 from IPython.display import Image, display
-from langgraph.errors import GraphRecursionError
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
+from langgraph.pregel import RetryPolicy
 from langgraph.types import Send
 from litellm import completion
 from openai import OpenAI
 from openai.types.beta import Assistant
-from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 from typing_extensions import TypedDict
 
 import agent_k.config.general as config_general
@@ -30,6 +29,11 @@ from agent_k.config.schemas import (
     MineralSiteMetadata,
     MinModHyperCols,
 )
+from agent_k.notebooks.self_rag_v2 import (
+    QUESTION_TEMPLATE,
+    create_markdown_retriever,
+    self_rag_graph,
+)
 from agent_k.setup.load_43_101 import list_43_101_reports
 from agent_k.utils.general import get_current_timestamp
 
@@ -38,6 +42,8 @@ CLIENT = OpenAI()
 MODEL = "gpt-4o-mini"
 TEMPERATURE = 0.1
 TOP_P = 0.5
+RETRY_POLICY = RetryPolicy(max_attempts=5)
+RECURSION_LIMIT = 25
 
 # Global variables
 filename_to_id_map = list_43_101_reports()
@@ -224,12 +230,10 @@ def viz_graph(graph):
 
 
 class State(TypedDict):
-    # Messages have the type "list". The `add_messages` function
-    # in the annotation defines how this state key should be updated
-    # (in this case, it appends messages to the list, rather than overwriting them)
     pdf_path: str  # 43-101 report record ID
     json_schema: dict  # Predefined JSON schema (Assumed it's available)
-    method: Literal["F&S", "DPE", "DPE MAP_REDUCE"]
+    method: Literal["F&S", "DPE", "DPE MAP_REDUCE", "DPE MAP_REDUCE SELF RAG"]
+    retriever: Any  # Retriever for self-RAG
 
     # Populated by LLMs
     simple_entities: list[str]
@@ -252,6 +256,7 @@ class ComplexEntityState(TypedDict):
     description: str
     default_value: Any
     dtype: Literal["string", "number", "boolean", "array", "object"]
+    retriever: Any
 
 
 def schema_decompose(state: State):
@@ -317,19 +322,28 @@ def fast_and_slow_route(state: State):
 
     if state["fast_schema"]["properties"]:
         next_nodes.append("fast_extraction_agent")
+
     if state["slow_schema"]["properties"]:
         if state["method"] == "DPE":
             next_nodes.append("slow_extraction_agent_dpe")
-        elif state["method"] == "DPE MAP_REDUCE":
-            # Map reduce extraction of complex entities
+        elif state["method"] in ["DPE MAP_REDUCE", "DPE MAP_REDUCE SELF RAG"]:
+            # Map reduce extraction of complex entities to parallel nodes
             for entity_name, entity_schema in state["slow_schema"][
                 "properties"
             ].items():
+                match state["method"]:
+                    case "DPE MAP_REDUCE":
+                        map_reduce_node = "slow_extraction_agent_map_reduce"
+                    case "DPE MAP_REDUCE SELF RAG":
+                        map_reduce_node = "slow_extraction_agent_map_reduce_self_rag"
+                    case _:
+                        raise ValueError(f"Unknown method: {state['method']}")
                 next_nodes.append(
                     Send(
-                        "slow_extraction_agent_map_reduce",
+                        map_reduce_node,
                         {
                             "pdf_path": state["pdf_path"],
+                            "retriever": state["retriever"],
                             "entity_name": entity_name,
                             "default_value": entity_schema.get("default", None),
                             "description": entity_schema.get("description", None),
@@ -442,6 +456,39 @@ def slow_extraction_agent_map_reduce(state: ComplexEntityState):
     dtype = state["dtype"]
 
     content = deep_extract(pdf_path, entity_name, default_value, description, dtype)
+    parsed_output = slow_extraction_output_parser(content, entity_name, dtype)
+
+    return {
+        "messages": [{"role": "assistant", "content": content}],
+        "slow_extraction_agent_result_map_reduce": [{entity_name: parsed_output}],
+    }
+
+
+def slow_extraction_agent_map_reduce_self_rag(state: ComplexEntityState):
+    entity_name = state["entity_name"]
+    default_value = state["default_value"]
+    description = state["description"]
+    dtype = state["dtype"]
+    retriever = state["retriever"]
+
+    question = QUESTION_TEMPLATE.format(
+        field=entity_name,
+        dtype=dtype,
+        default=default_value,
+        description=description,
+    )
+    inputs = {
+        "question": question,
+        "generation": "N/A",
+        "retriever": retriever,
+        "hallucination_grade": "N/A",
+        "hallucination_grader_reasoning": "N/A",
+        "answer_grade": "N/A",
+        "answer_grader_reasoning": "N/A",
+    }
+
+    value = self_rag_graph.invoke(inputs)
+    content = value["generation"]
     parsed_output = slow_extraction_output_parser(content, entity_name, dtype)
 
     return {
@@ -598,7 +645,9 @@ def build_dpe_w_map_reduce_graph():
     graph_builder.add_node("schema_decompose", schema_decompose)
     graph_builder.add_node("fast_extraction_agent", fast_extraction_agent)
     graph_builder.add_node(
-        "slow_extraction_agent_map_reduce", slow_extraction_agent_map_reduce
+        "slow_extraction_agent_map_reduce",
+        slow_extraction_agent_map_reduce,
+        retry=RETRY_POLICY,
     )
     graph_builder.add_node("slow_extraction_optimizer", slow_extraction_optimizer)
     graph_builder.add_node("validate_extraction_result", validate_extraction_result)
@@ -631,11 +680,54 @@ def build_dpe_w_map_reduce_graph():
     return graph
 
 
+def build_dpe_w_map_reduce_self_rag_graph():
+    """
+    DPE with map reduce self rag graph.
+    """
+    graph_builder = StateGraph(State)
+    graph_builder.add_node("schema_decompose", schema_decompose)
+    graph_builder.add_node("fast_extraction_agent", fast_extraction_agent)
+    graph_builder.add_node(
+        "slow_extraction_agent_map_reduce_self_rag",
+        slow_extraction_agent_map_reduce_self_rag,
+        retry=RETRY_POLICY,
+    )
+    graph_builder.add_node("slow_extraction_optimizer", slow_extraction_optimizer)
+    graph_builder.add_node("validate_extraction_result", validate_extraction_result)
+    graph_builder.add_node("slow_extraction_finish", slow_extraction_finish)
+    graph_builder.add_node("merge_map_reduce_results", merge_map_reduce_results)
+    graph_builder.add_node("extraction_synthesis", extraction_synthesis)
+    graph_builder.add_edge(START, "schema_decompose")
+    graph_builder.add_conditional_edges(
+        "schema_decompose",
+        fast_and_slow_route,
+        ["fast_extraction_agent", "slow_extraction_agent_map_reduce_self_rag"],
+    )
+    graph_builder.add_edge(
+        "slow_extraction_agent_map_reduce_self_rag", "merge_map_reduce_results"
+    )
+    graph_builder.add_edge("merge_map_reduce_results", "validate_extraction_result")
+    graph_builder.add_conditional_edges(
+        "validate_extraction_result",
+        validate_extraction_result_route,
+        ["slow_extraction_optimizer", "slow_extraction_finish"],
+    )
+    graph_builder.add_edge("slow_extraction_optimizer", "validate_extraction_result")
+    graph_builder.add_edge(
+        ["fast_extraction_agent", "slow_extraction_finish"], "extraction_synthesis"
+    )
+    graph_builder.add_edge("extraction_synthesis", END)
+    # Compile the graph
+    graph = graph_builder.compile()
+
+    return graph
+
+
 def extract_from_pdf(
     pdf_path: str,
     json_schema: dict,
     method: Literal["F&S", "DPE MAP_REDUCE"] = "DPE MAP_REDUCE",
-    recursion_limit: int = 12,
+    recursion_limit: int = RECURSION_LIMIT,
 ) -> dict:
     """
     Extract information from a PDF file using different extraction methods.
@@ -650,56 +742,50 @@ def extract_from_pdf(
         dict: Extracted information as a dictionary from MineralSiteMetadata Pydantic model
     """
 
-    def _loguru_before_sleep_callback(retry_state):
-        """Custom callback for Loguru logging before sleep in tenacity retries"""
-        logger.warning(
-            f"Retrying {retry_state.fn.__name__} in {retry_state.next_action.sleep} seconds "
-            f"after {retry_state.attempt_number} attempt(s). Error: {retry_state.outcome.exception()}"
-        )
-
-    @retry(
-        stop=stop_after_attempt(3),
-        wait=wait_fixed(1),
-        retry=retry_if_exception_type((Exception)),
-        reraise=True,
-        before_sleep=_loguru_before_sleep_callback,
+    # Convert PDF path to markdown path
+    markdown_filename = pdf_path.split("/")[-1].replace(".pdf", ".md")
+    markdown_path = os.path.join("data/processed/43-101", markdown_filename)
+    retriever = create_markdown_retriever(
+        markdown_path,
+        collection_name="rag-chroma",
     )
-    def _extract_with_retry():
-        try:
-            match method:
-                case "F&S":
-                    graph = build_batch_extraction_graph()
-                    result = graph.invoke(
-                        {
-                            "pdf_path": pdf_path,
-                            "json_schema": json_schema,
-                            "method": method,
-                        }
-                    )
-                case "DPE MAP_REDUCE":
-                    graph = build_dpe_w_map_reduce_graph()
-                    result = graph.invoke(
-                        {
-                            "pdf_path": pdf_path,
-                            "json_schema": json_schema,
-                            "method": method,
-                        },
-                        {"recursion_limit": recursion_limit},
-                    )
-                case _:
-                    raise ValueError(f"Unknown method: {method}")
 
-            result = result["final_extraction_result"].model_dump(mode="json")
-            return result
+    match method:
+        case "F&S":
+            graph = build_batch_extraction_graph()
+            result = graph.invoke(
+                {
+                    "pdf_path": pdf_path,
+                    "json_schema": json_schema,
+                    "method": method,
+                }
+            )
+        case "DPE MAP_REDUCE":
+            graph = build_dpe_w_map_reduce_graph()
+            result = graph.invoke(
+                {
+                    "pdf_path": pdf_path,
+                    "json_schema": json_schema,
+                    "method": method,
+                },
+                {"recursion_limit": recursion_limit},
+            )
+        case "DPE MAP_REDUCE SELF RAG":
+            graph = build_dpe_w_map_reduce_self_rag_graph()
+            result = graph.invoke(
+                {
+                    "pdf_path": pdf_path,
+                    "json_schema": json_schema,
+                    "method": method,
+                    "retriever": retriever,
+                },
+                {"recursion_limit": recursion_limit},
+            )
+        case _:
+            raise ValueError(f"Unknown method: {method}")
 
-        except GraphRecursionError as e:
-            logger.error(f"Recursion Error: {e}")
-            raise
-        except Exception as e:
-            logger.warning(f"Error during `{method}` extraction: {str(e)}. Retrying...")
-            raise
-
-    return _extract_with_retry()
+    result = result["final_extraction_result"].model_dump(mode="json")
+    return result
 
 
 def extract_from_inferlink_pdfs(
@@ -710,7 +796,7 @@ def extract_from_inferlink_pdfs(
     Extract entities from all the PDF files in parallel and return as a DataFrame
     """
     inferlink_ground_truth_filtered_path = pd.read_csv(
-        "data/processed/inferlink_ground_truth_filtered.csv"
+        "data/processed/ground_truth/inferlink_ground_truth_filtered.csv"
     )
     cdr_record_ids = inferlink_ground_truth_filtered_path["cdr_record_id"].tolist()
     main_commodity = inferlink_ground_truth_filtered_path["main_commodity"].tolist()
@@ -759,6 +845,9 @@ def extract_from_all_pdfs(
     mineral_report_dir: str = config_general.CDR_REPORTS_DIR,
     sample_size: Optional[int] = None,
     manually_checked_pdf_paths: Optional[list[str]] = None,
+    method: Literal[
+        "F&S", "DPE MAP_REDUCE", "DPE MAP_REDUCE SELF RAG"
+    ] = "DPE MAP_REDUCE",
 ) -> pd.DataFrame:
     """
     Extract entities from all the PDF files in parallel and return as a DataFrame
@@ -798,7 +887,7 @@ def extract_from_all_pdfs(
 
         logger.info(f"{i + 1}/{len(pdf_paths)}: Extracting entities from {path}")
         try:
-            entities = extract_from_pdf(path, schema, method="DPE MAP_REDUCE")
+            entities = extract_from_pdf(path, schema, method=method)
             if entities:
                 entities = entities.model_dump(mode="json")
                 entities.update({"cdr_record_id": cdr_record_id})
@@ -832,7 +921,9 @@ if __name__ == "__main__":
     start_time = time()
 
     sample_size = None
-    df = extract_from_inferlink_pdfs(sample_size=sample_size, method="DPE MAP_REDUCE")
+    df = extract_from_inferlink_pdfs(
+        sample_size=sample_size, method="DPE MAP_REDUCE SELF RAG"
+    )
 
     logger.info("Extracting entities from all PDF files")
     logger.info(f"Sample size: {sample_size}")

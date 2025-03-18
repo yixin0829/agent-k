@@ -67,7 +67,9 @@ def load_data_and_process() -> pd.DataFrame:
     logger.info(f"PDF extraction dataframe has {len(df_pdf_agent_extraction)} rows")
 
     # Load ground truth data
-    ground_truth_path = "data/processed/inferlink_ground_truth_filtered.csv"
+    ground_truth_path = (
+        "data/processed/ground_truth/inferlink_ground_truth_filtered.csv"
+    )
     df_gt = pd.read_csv(ground_truth_path)
     df_gt = standardize_string_column(df_gt, str_columns)
     df_gt = standardize_float_column(df_gt, float_columns)
