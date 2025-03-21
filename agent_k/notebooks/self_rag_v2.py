@@ -7,12 +7,8 @@
 # 3. Decouple the route and state update logic for hallucination and answer grade
 # 4. Optimize the prompt for RAG chain (w feedback and wo feedback)
 # 5. Add unit (e.g. "Tonnes 000") checking knowledge to Hallucination grader system prompt
-#
-# ## Next steps
-# 1. Integrate into pdf_agent_fast_n_slow.py run
-# 2. Run 1st eval
-# 3. Bind code interpreter or calculator tools to rag chain LLM
-# 5. Run 2nd eval
+# 6. Integrate into pdf_agent_fast_n_slow.py run
+# 7. Run 1st eval
 
 # %%
 from typing import Any, List, Optional
@@ -25,11 +21,19 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langgraph.graph import END, START, StateGraph
+from openai import OpenAI
 from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
 
 from agent_k.config.logger import logger
 from agent_k.config.schemas import TOTAL_MINERAL_RESOURCE_TONNAGE_DESCRIPTION
+from agent_k.utils.general import (
+    prompt_openai_assistant,
+)
+
+CLIENT = OpenAI()
+NUM_RETRIEVED_DOCS = 4
+MODEL = "gpt-4o-mini"
 
 
 def count_tokens(text):
@@ -102,7 +106,7 @@ def create_markdown_retriever(
             embedding=OpenAIEmbeddings(model=embedding_model),
         )
 
-        retriever = vectorstore.as_retriever()
+        retriever = vectorstore.as_retriever(search_kwargs={"k": NUM_RETRIEVED_DOCS})
         return retriever
     except Exception as e:
         logger.error(f"Error creating retriever: {e}")
@@ -217,6 +221,53 @@ def format_docs(docs):
 rag_chain_wo_feedback = prompt_wo_feedback | llm | StrOutputParser()
 rag_chain_w_feedback = prompt_w_feedback | llm | StrOutputParser()
 
+
+### Alternative RAG chain using OpenAI Assistant
+
+
+# OpenAI Assistant with code interpreter tool
+def deep_extract_wo_feedback(question, context):
+    # Use the same assistant for all deep extraction
+    assistant = CLIENT.beta.assistants.retrieve("asst_ScLkkCGSfMVgR8xEWkRDbZMq")
+
+    messages = [
+        {
+            "role": "user",
+            "content": GENERATION_USER_PROMPT_WO_FEEDBACK.format(
+                question=question,
+                context=context,
+            ),
+        },
+    ]
+
+    content = prompt_openai_assistant(assistant, messages)
+
+    return content
+
+
+def deep_extract_w_feedback(
+    question, context, previous_generation, hallucination_grader_reasoning
+):
+    # Use the same assistant for all deep extraction
+    assistant = CLIENT.beta.assistants.retrieve("asst_ScLkkCGSfMVgR8xEWkRDbZMq")
+
+    messages = [
+        {
+            "role": "user",
+            "content": GENERATION_USER_PROMPT_W_FEEDBACK.format(
+                question=question,
+                context=context,
+                previous_generation=previous_generation,
+                hallucination_grader_reasoning=hallucination_grader_reasoning,
+            ),
+        },
+    ]
+
+    content = prompt_openai_assistant(assistant, messages)
+
+    return content
+
+
 # %%
 ### Hallucination Grader
 
@@ -238,17 +289,22 @@ llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.1)
 structured_llm_grader = llm.with_structured_output(GradeHallucinations)
 
 # Prompt
-system = """You are a grader assessing whether an LLM generation is grounded in / supported by a set of retrieved facts.
+system = """You are a grader validating whether an LLM generation is hallucinated based on a set of retrieved documents from a NI 43-101 mineral report.
 
 Guidelines:
-1. Pay special attention to the units of the numbers in the retrieved facts, for example, "Tonnes (000)" means that the number is in thousands of tonnes.
-2. Ensure the unit conversion is correct. To convert tonnes to millions of tonnes, divide the number by 1000000; to convert thousands of tonnes to millions of tonnes, divide the number by 1000.
+1. Mineral resources are composed of inferred, indicated, and measured resources. If none of the retrieved documents mention inferred, indicated, or measured resources, check if the LLM generation contains a default value of 0 for total mineral resource tonnage.
+2. Mineral reserves are composed of proven and probable reserves. If none of the retrieved documents mention proven or probable reserves, check if the LLM generation contains a default value of 0 for total mineral reserve tonnage.
+3. Check if the units of the mineral resources or reserves in the retrieved documents are consistent with the units of the mineral resources or reserves in the LLM generation. Especially pay attention if the retrieved documents mention "Tonnes 000" or something similar, which means that the tonnage is in thousands of tonnes.
+4. Check if the final numerical answer is enclosed in `<output>` XML tags without any other XML tags, filler words, or explicit unit.
 
-Give a binary score 'yes' or 'no' and show your reasoning. 'Yes' means that the answer is grounded in / supported by the set of facts."""
+Give a binary score 'yes' or 'no' and show your reasoning. 'Yes' means that the answer is hallucinated based on the set of retrieved documents."""
 hallucination_prompt = ChatPromptTemplate.from_messages(
     [
         ("system", system),
-        ("human", "Set of facts: \n\n {documents} \n\n LLM generation: {generation}"),
+        (
+            "human",
+            "Set of retrieved documents: \n\n {documents} \n\n LLM generation: {generation}",
+        ),
     ]
 )
 
@@ -276,6 +332,8 @@ structured_llm_grader = llm.with_structured_output(GradeAnswer)
 
 # Prompt
 system = """You are a grader assessing whether an answer addresses / resolves a question.
+
+Sometimes a default value is returned because the retrieved documents do not contain relevant information. In this case, the answer should be 'yes' because the default value is still a valid answer to the question.
 
 Give a binary score 'yes' or 'no'. Yes' means that the answer resolves the question."""
 answer_prompt = ChatPromptTemplate.from_messages(
@@ -310,9 +368,8 @@ question_rewriter = re_write_prompt | llm | StrOutputParser()
 # %% [markdown]
 # # Graph
 
+
 # %%
-
-
 class GraphState(TypedDict):
     """
     Represents the state of our graph.
@@ -377,22 +434,26 @@ def generate(state):
     if hallucination_grade == "no" and hallucination_grader_reasoning:
         # RAG generation with hallucination grader feedback
         previous_generation = state["generation"]
-        generation = rag_chain_w_feedback.invoke(
-            {
-                "context": documents,
-                "question": question,
-                "previous_generation": previous_generation,
-                "hallucination_grader_reasoning": hallucination_grader_reasoning,
-            }
+        # generation = rag_chain_w_feedback.invoke(
+        #     {
+        #         "context": documents,
+        #         "question": question,
+        #         "previous_generation": previous_generation,
+        #         "hallucination_grader_reasoning": hallucination_grader_reasoning,
+        #     }
+        # )
+        generation = deep_extract_w_feedback(
+            question, documents, previous_generation, hallucination_grader_reasoning
         )
     else:
         # Initial RAG generation without hallucination grader feedback
-        generation = rag_chain_wo_feedback.invoke(
-            {
-                "context": documents,
-                "question": question,
-            }
-        )
+        # generation = rag_chain_wo_feedback.invoke(
+        #     {
+        #         "context": documents,
+        #         "question": question,
+        #     }
+        # )
+        generation = deep_extract_wo_feedback(question, documents)
 
     return {"generation": generation}
 
@@ -532,7 +593,7 @@ def hallucination_router(state):
     """
     Route based on hallucination check result
     """
-    if state["hallucination_grade"] == "yes":
+    if state["hallucination_grade"].lower() == "no":
         logger.info(
             "---DECISION: GENERATION IS GROUNDED IN DOCUMENTS (NO HALLUCINATION)---"
         )

@@ -12,7 +12,6 @@ from langgraph.pregel import RetryPolicy
 from langgraph.types import Send
 from litellm import completion
 from openai import OpenAI
-from openai.types.beta import Assistant
 from typing_extensions import TypedDict
 
 import agent_k.config.general as config_general
@@ -35,7 +34,12 @@ from agent_k.notebooks.self_rag_v2 import (
     self_rag_graph,
 )
 from agent_k.setup.load_43_101 import list_43_101_reports
-from agent_k.utils.general import get_current_timestamp
+from agent_k.utils.general import (
+    get_current_timestamp,
+    parse_json_code_block,
+    prompt_openai_assistant,
+    split_json_schema,
+)
 
 # Configs
 CLIENT = OpenAI()
@@ -47,103 +51,6 @@ RECURSION_LIMIT = 25
 
 # Global variables
 filename_to_id_map = list_43_101_reports()
-
-
-def split_json_schema(
-    schema: dict, field_lists: list[list[str]], include_defs: bool = True
-) -> list[dict]:
-    """
-    Splits a JSON schema into multiple schemas based on provided field lists,
-    optionally including only the definitions referenced in each schema.
-
-    Args:
-        schema (dict): The input JSON schema.
-        field_lists (list of list of str): Each inner list contains fields for a separate schema.
-        include_defs (bool): If True, include referenced definitions from the original schema's $defs.
-
-    Returns:
-        list of dict: A list of JSON schemas corresponding to each field list.
-    """
-    # Extract properties, required fields, and definitions from the original schema
-    original_properties = schema.get("properties", {})
-    original_required = set(schema.get("required", []))
-    original_defs = schema.get("$defs", {})
-
-    schemas = []
-    for field_list in field_lists:
-        new_schema = {"type": "object", "properties": {}, "required": []}
-        # Build the new schema based on the field list
-        for field in field_list:
-            if field in original_properties:
-                new_schema["properties"][field] = original_properties[field]
-            if field in original_required:
-                new_schema["required"].append(field)
-
-        # Remove 'required' key if it's empty
-        if not new_schema["required"]:
-            new_schema.pop("required")
-
-        # Optionally include only the definitions referenced in the new schema
-        if include_defs and original_defs:
-            new_defs = {}
-            for prop in new_schema["properties"].values():
-                if "$ref" in prop:
-                    # Expecting ref format: "#/$defs/DefinitionName"
-                    ref_parts = prop["$ref"].split("/")
-                    if len(ref_parts) >= 3 and ref_parts[1] == "$defs":
-                        def_name = ref_parts[2]
-                        if def_name in original_defs:
-                            new_defs[def_name] = original_defs[def_name]
-            if new_defs:
-                new_schema["$defs"] = new_defs
-
-        schemas.append(new_schema)
-
-    return schemas
-
-
-def parse_json_code_block(content: str) -> dict[str, Any]:
-    """Parse the JSON code block from the assistant response."""
-    try:
-        json_code_block = content.split("<json>")[1].split("</json>")[0]
-        return json.loads(json_code_block)
-    except Exception as e:
-        logger.error(f"Failed to parse JSON code block: {e}")
-        logger.error(f"LLM response: {content}")
-        return {}
-
-
-def prompt_openai_assistant(assistant: Assistant, messages: list[dict]) -> str:
-    thread = CLIENT.beta.threads.create(messages=messages)
-    logger.info(f"Thread ID: {thread.id}")
-
-    # Use the create and poll SDK helper to create a run and poll the status of
-    # the run until it's in a terminal state.
-    run = CLIENT.beta.threads.runs.create_and_poll(
-        thread_id=thread.id,
-        assistant_id=assistant.id,
-    )
-    if run.status == "completed":
-        messages = list(CLIENT.beta.threads.messages.list(thread_id=thread.id))
-    try:
-        message_content = messages[0].content[0].text
-    except IndexError as e:
-        logger.exception(f"{e}.`messages`: {messages}")
-
-    annotations = message_content.annotations
-    citations = []
-    for index, annotation in enumerate(annotations):
-        message_content.value = message_content.value.replace(
-            annotation.text, f"[{index}]"
-        )
-        if file_citation := getattr(annotation, "file_citation", None):
-            cited_file = CLIENT.files.retrieve(file_citation.file_id)
-            citations.append(f"[{index}] {cited_file.filename}")
-
-    logger.debug(message_content.value)
-    # logger.debug("\n".join(citations))
-
-    return message_content.value
 
 
 def batch_extract(
@@ -298,8 +205,8 @@ def schema_decompose(state: State):
         InferlinkEvalColumns.TOTAL_MINERAL_RESERVE_CONTAINED_METAL.value,
     ]
 
-    logger.debug(f"Simple entities: {simple_entities}")
-    logger.debug(f"Complex entities: {complex_entities}")
+    # logger.debug(f"Simple entities: {simple_entities}")
+    # logger.debug(f"Complex entities: {complex_entities}")
 
     fast_schema, slow_schema = split_json_schema(
         state["json_schema"], [simple_entities, complex_entities]
@@ -315,8 +222,6 @@ def schema_decompose(state: State):
 
 def fast_and_slow_route(state: State):
     logger.info("Routing to the appropriate extraction agent")
-    logger.debug(f"Fast schema: {state['fast_schema']}")
-    logger.debug(f"Slow schema: {state['slow_schema']}")
 
     next_nodes = []
 
@@ -920,7 +825,7 @@ if __name__ == "__main__":
     # Log metadata about the extraction (total time, number of PDFs, number of entities extracted)
     start_time = time()
 
-    sample_size = None
+    sample_size = 1
     df = extract_from_inferlink_pdfs(
         sample_size=sample_size, method="DPE MAP_REDUCE SELF RAG"
     )
