@@ -28,7 +28,7 @@ from agent_k.config.schemas import (
     MineralSiteMetadata,
     MinModHyperCols,
 )
-from agent_k.notebooks.self_rag_v2 import (
+from agent_k.notebooks.self_rag_v3 import (
     QUESTION_TEMPLATE,
     create_markdown_retriever,
     self_rag_graph,
@@ -46,8 +46,8 @@ CLIENT = OpenAI()
 MODEL = "gpt-4o-mini"
 TEMPERATURE = 0.1
 TOP_P = 0.5
-RETRY_POLICY = RetryPolicy(max_attempts=5)
-RECURSION_LIMIT = 25
+RETRY_POLICY = RetryPolicy(max_attempts=3)
+RECURSION_LIMIT = 10
 
 # Global variables
 filename_to_id_map = list_43_101_reports()
@@ -631,8 +631,7 @@ def build_dpe_w_map_reduce_self_rag_graph():
 def extract_from_pdf(
     pdf_path: str,
     json_schema: dict,
-    method: Literal["F&S", "DPE MAP_REDUCE"] = "DPE MAP_REDUCE",
-    recursion_limit: int = RECURSION_LIMIT,
+    method: Literal["F&S", "DPE MAP_REDUCE", "DPE MAP_REDUCE SELF RAG"],
 ) -> dict:
     """
     Extract information from a PDF file using different extraction methods.
@@ -647,14 +646,6 @@ def extract_from_pdf(
         dict: Extracted information as a dictionary from MineralSiteMetadata Pydantic model
     """
 
-    # Convert PDF path to markdown path
-    markdown_filename = pdf_path.split("/")[-1].replace(".pdf", ".md")
-    markdown_path = os.path.join("data/processed/43-101", markdown_filename)
-    retriever = create_markdown_retriever(
-        markdown_path,
-        collection_name="rag-chroma",
-    )
-
     match method:
         case "F&S":
             graph = build_batch_extraction_graph()
@@ -663,7 +654,8 @@ def extract_from_pdf(
                     "pdf_path": pdf_path,
                     "json_schema": json_schema,
                     "method": method,
-                }
+                },
+                {"recursion_limit": RECURSION_LIMIT},
             )
         case "DPE MAP_REDUCE":
             graph = build_dpe_w_map_reduce_graph()
@@ -673,9 +665,17 @@ def extract_from_pdf(
                     "json_schema": json_schema,
                     "method": method,
                 },
-                {"recursion_limit": recursion_limit},
+                {"recursion_limit": RECURSION_LIMIT},
             )
         case "DPE MAP_REDUCE SELF RAG":
+            # Initialize the retriever
+            markdown_filename = pdf_path.split("/")[-1].replace(".pdf", ".md")
+            markdown_path = os.path.join("data/processed/43-101", markdown_filename)
+            retriever = create_markdown_retriever(
+                markdown_path,
+                collection_name="rag-chroma",
+            )
+
             graph = build_dpe_w_map_reduce_self_rag_graph()
             result = graph.invoke(
                 {
@@ -684,7 +684,7 @@ def extract_from_pdf(
                     "method": method,
                     "retriever": retriever,
                 },
-                {"recursion_limit": recursion_limit},
+                {"recursion_limit": RECURSION_LIMIT},
             )
         case _:
             raise ValueError(f"Unknown method: {method}")
@@ -694,8 +694,8 @@ def extract_from_pdf(
 
 
 def extract_from_inferlink_pdfs(
-    sample_size: int = None,
-    method: Literal["F&S", "DPE MAP_REDUCE"] = "DPE MAP_REDUCE",
+    sample_size: int,
+    method: Literal["F&S", "DPE MAP_REDUCE", "DPE MAP_REDUCE SELF RAG"],
 ) -> pd.DataFrame:
     """
     Extract entities from all the PDF files in parallel and return as a DataFrame
@@ -720,12 +720,14 @@ def extract_from_inferlink_pdfs(
             f"{i + 1}/{len(cdr_record_ids)}: Extracting entities from {cdr_record_id} with main commodity {mc}"
         )
 
-        # replace <main_commodity> with the main commodity
+        # replace <main_commodity> with the main commodity in the schema
         schema = MineralSiteMetadata.model_json_schema()
         schema_str = json.dumps(schema)
         schema_str = schema_str.replace("<main_commodity>", mc)
         schema = json.loads(schema_str)
+
         path = os.path.join(config_general.CDR_REPORTS_DIR, f"{cdr_record_id}.pdf")
+
         try:
             entities = extract_from_pdf(path, schema, method=method)
             entities = {**{"cdr_record_id": cdr_record_id}, **entities}
@@ -734,6 +736,17 @@ def extract_from_inferlink_pdfs(
             logger.error(f"Failed to extract from {path}: {e}")
 
     df = pd.DataFrame(data_rows)
+
+    # Convert numerical columns to Mt
+    numerical_columns = [
+        InferlinkEvalColumns.TOTAL_MINERAL_RESOURCE_TONNAGE.value,
+        InferlinkEvalColumns.TOTAL_MINERAL_RESERVE_TONNAGE.value,
+        InferlinkEvalColumns.TOTAL_MINERAL_RESOURCE_CONTAINED_METAL.value,
+        InferlinkEvalColumns.TOTAL_MINERAL_RESERVE_CONTAINED_METAL.value,
+    ]
+    for col in numerical_columns:
+        df[col] = df[col].apply(pd.to_numeric, errors="coerce")
+        df[col] = df[col] / 1e6
 
     df.to_csv(
         os.path.join(
@@ -825,7 +838,7 @@ if __name__ == "__main__":
     # Log metadata about the extraction (total time, number of PDFs, number of entities extracted)
     start_time = time()
 
-    sample_size = 1
+    sample_size = None
     df = extract_from_inferlink_pdfs(
         sample_size=sample_size, method="DPE MAP_REDUCE SELF RAG"
     )
