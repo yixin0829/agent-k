@@ -1,6 +1,7 @@
 import json
 import operator
 import os
+import re
 from time import time
 from typing import Annotated, Any, Literal, Optional
 
@@ -31,7 +32,7 @@ from agent_k.config.schemas import (
 from agent_k.notebooks.self_rag_v3 import (
     QUESTION_TEMPLATE,
     create_markdown_retriever,
-    self_rag_graph,
+    self_rag_graph_builder,
 )
 from agent_k.setup.load_43_101 import list_43_101_reports
 from agent_k.utils.general import (
@@ -319,6 +320,8 @@ def slow_extraction_output_parser(
         )
 
     if dtype == "number" and parsed_output != "Not Found":
+        # Preprocess the output to remove any non-numeric characters except for the decimal point
+        parsed_output = re.sub(r"[^0-9.]", "", parsed_output)
         parsed_output = float(parsed_output)
 
     return parsed_output
@@ -392,7 +395,10 @@ def slow_extraction_agent_map_reduce_self_rag(state: ComplexEntityState):
         "answer_grader_reasoning": "N/A",
     }
 
-    value = self_rag_graph.invoke(inputs)
+    # Compile a new graph for each entity
+    value = self_rag_graph_builder.compile().invoke(
+        inputs, config={"recursion_limit": RECURSION_LIMIT}
+    )
     content = value["generation"]
     parsed_output = slow_extraction_output_parser(content, entity_name, dtype)
 
@@ -698,7 +704,8 @@ def extract_from_inferlink_pdfs(
     method: Literal["F&S", "DPE MAP_REDUCE", "DPE MAP_REDUCE SELF RAG"],
 ) -> pd.DataFrame:
     """
-    Extract entities from all the PDF files in parallel and return as a DataFrame
+    Extract entities from all the PDF files in parallel and return as a DataFrame.
+    Results are saved incrementally to a CSV file to prevent data loss.
     """
     inferlink_ground_truth_filtered_path = pd.read_csv(
         "data/processed/ground_truth/inferlink_ground_truth_filtered.csv"
@@ -712,7 +719,31 @@ def extract_from_inferlink_pdfs(
 
     logger.info(f"Extracting entities from {len(cdr_record_ids)} PDF files")
 
-    data_rows = []
+    # Create output directory if it doesn't exist
+    output_dir = os.path.join(config_general.PDF_AGENT_CACHE_DIR, "inferlink")
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Create output file path
+    output_file = os.path.join(
+        output_dir,
+        f"{method.lower().replace(' ', '_')}_extraction_results_{get_current_timestamp()}.csv",
+    )
+
+    # Create empty DataFrame with headers
+    schema = MineralSiteMetadata.model_json_schema()
+    empty_df = pd.DataFrame(
+        columns=["cdr_record_id"] + list(schema["properties"].keys())
+    )
+    empty_df.to_csv(output_file, index=False)
+
+    # Define numerical columns for conversion
+    numerical_columns = [
+        InferlinkEvalColumns.TOTAL_MINERAL_RESOURCE_TONNAGE.value,
+        InferlinkEvalColumns.TOTAL_MINERAL_RESERVE_TONNAGE.value,
+        InferlinkEvalColumns.TOTAL_MINERAL_RESOURCE_CONTAINED_METAL.value,
+        InferlinkEvalColumns.TOTAL_MINERAL_RESERVE_CONTAINED_METAL.value,
+    ]
+
     for i, (cdr_record_id, mc) in enumerate(
         zip(cdr_record_ids, main_commodity, strict=False)
     ):
@@ -720,43 +751,37 @@ def extract_from_inferlink_pdfs(
             f"{i + 1}/{len(cdr_record_ids)}: Extracting entities from {cdr_record_id} with main commodity {mc}"
         )
 
-        # replace <main_commodity> with the main commodity in the schema
-        schema = MineralSiteMetadata.model_json_schema()
-        schema_str = json.dumps(schema)
-        schema_str = schema_str.replace("<main_commodity>", mc)
-        schema = json.loads(schema_str)
-
-        path = os.path.join(config_general.CDR_REPORTS_DIR, f"{cdr_record_id}.pdf")
-
         try:
-            entities = extract_from_pdf(path, schema, method=method)
-            entities = {**{"cdr_record_id": cdr_record_id}, **entities}
-            data_rows.append(entities)
+            # Replace <main_commodity> with the main commodity in the schema
+            schema_str = json.dumps(schema)
+            schema_str = schema_str.replace("<main_commodity>", mc)
+            current_schema = json.loads(schema_str)
+
+            path = os.path.join(config_general.CDR_REPORTS_DIR, f"{cdr_record_id}.pdf")
+            entities = extract_from_pdf(path, current_schema, method=method)
+
+            if entities:
+                # Add record ID to entities
+                entities = {**{"cdr_record_id": cdr_record_id}, **entities}
+
+                # Convert to DataFrame and handle numerical columns
+                df_row = pd.DataFrame([entities])
+                for col in numerical_columns:
+                    if col in df_row.columns:
+                        df_row[col] = pd.to_numeric(df_row[col], errors="coerce")
+                        df_row[col] = df_row[col] / 1e6
+
+                # Append to CSV file
+                df_row.to_csv(output_file, mode="a", header=False, index=False)
+
         except Exception as e:
             logger.error(f"Failed to extract from {path}: {e}")
+            continue
 
-    df = pd.DataFrame(data_rows)
+    # Read the final CSV file and return as DataFrame
+    final_df = pd.read_csv(output_file)
 
-    # Convert numerical columns to Mt
-    numerical_columns = [
-        InferlinkEvalColumns.TOTAL_MINERAL_RESOURCE_TONNAGE.value,
-        InferlinkEvalColumns.TOTAL_MINERAL_RESERVE_TONNAGE.value,
-        InferlinkEvalColumns.TOTAL_MINERAL_RESOURCE_CONTAINED_METAL.value,
-        InferlinkEvalColumns.TOTAL_MINERAL_RESERVE_CONTAINED_METAL.value,
-    ]
-    for col in numerical_columns:
-        df[col] = df[col].apply(pd.to_numeric, errors="coerce")
-        df[col] = df[col] / 1e6
-
-    df.to_csv(
-        os.path.join(
-            config_general.PDF_AGENT_CACHE_DIR,
-            "inferlink",
-            f"{method.lower().replace(' ', '_')}_extraction_results_{get_current_timestamp()}.csv",
-        ),
-        index=False,
-    )
-    return df
+    return final_df
 
 
 def extract_from_all_pdfs(
@@ -806,12 +831,16 @@ def extract_from_all_pdfs(
         logger.info(f"{i + 1}/{len(pdf_paths)}: Extracting entities from {path}")
         try:
             entities = extract_from_pdf(path, schema, method=method)
+        except Exception as e:
+            logger.exception(f"Failed to extract from {path}: {e}")
+
+        try:
             if entities:
                 entities = entities.model_dump(mode="json")
                 entities.update({"cdr_record_id": cdr_record_id})
                 data_rows.append(entities)
         except Exception as e:
-            logger.error(f"Failed to extract from {path}: {e}")
+            logger.exception(f"Failed to process entities for {path}: {e}")
 
     # Filter out empty results
     data_rows = [row for row in data_rows if row]

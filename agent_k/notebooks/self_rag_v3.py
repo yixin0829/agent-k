@@ -10,7 +10,10 @@
 # - Changed main validator prompt in VALIDATOR_SYSTEM_PROMPT to set contained metal to zero if tonnage is zero
 
 # %%
+import json
 import re
+from collections import Counter
+from operator import add
 from typing import Annotated, Any, List, Optional
 
 import chromadb
@@ -23,7 +26,6 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langgraph.graph import END, START, StateGraph
-from langgraph.graph.message import add_messages
 from openai import OpenAI
 from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
@@ -139,7 +141,6 @@ retriever = create_markdown_retriever(
 )
 
 results = retriever.invoke("What's the mineral site name?")
-
 # %%
 ### Retrieval Grader
 
@@ -178,7 +179,7 @@ grade_prompt = ChatPromptTemplate.from_messages(
 )
 
 template = "# Retrieved document\n{document}\n\n# User question\n{question}"
-print(template.format(document="[sample document]", question="[sample question]"))
+# print(template.format(document="[sample document]", question="[sample question]"))
 
 retrieval_grader = grade_prompt | structured_llm_grader
 
@@ -205,11 +206,11 @@ GENERATION_USER_PROMPT_WO_FEEDBACK = """You are an assistant for question-answer
 ---
 Now take a deep breath and answer the question step by step."""
 
-GENERATION_USER_PROMPT_W_FEEDBACK = """You are an assistant for question-answering tasks. Use the following pieces of retrieved context to answer the question. If you don't know the answer, just return the default value of the field in the question.
+GENERATION_USER_PROMPT_W_FEEDBACK = """You are an assistant for question-answering tasks. Use the following pieces of retrieved context and previous feedback on incorrect answers to answer the question. If you don't know the answer, just return the default value of the field in the question.
 
 {question}
 **Context:** {context}
-**Previous generation and feedback:** {previous_messages}
+**Previous answers and feedback:** {previous_messages}
 ---
 Now take a deep breath and answer the question again step by step while considering the feedback to the previous incorrect answer."""
 
@@ -243,13 +244,16 @@ def deep_extract_w_feedback(question, context, previous_messages) -> str:
     # Use the same assistant for all deep extraction
     assistant = CLIENT.beta.assistants.retrieve("asst_ScLkkCGSfMVgR8xEWkRDbZMq")
 
+    # Convert previous messages to a list of strings from a list of dicts
+    previous_messages_str = [str(msg) for msg in previous_messages]
+
     messages = [
         {
             "role": "user",
             "content": GENERATION_USER_PROMPT_W_FEEDBACK.format(
                 question=question,
                 context=context,
-                previous_messages=previous_messages,
+                previous_messages="\n".join(previous_messages_str),
             ),
         },
     ]
@@ -267,36 +271,70 @@ def deep_extract_w_feedback(question, context, previous_messages) -> str:
 class GradeHallucinations(BaseModel):
     """Binary score for hallucination present in generation answer."""
 
-    reasoning: str = Field(
-        description="Reasoning whether the raw facts in the answer are aligned with the retrieved documents"
+    feedback: str = Field(
+        description="Reasoning whether the raw facts in the answer are aligned with the retrieved documents + feedback on how to improve"
     )
     binary_score: str = Field(
         description="Raw facts in the answer are aligned with the retrieved documents, 'yes' or 'no'"
     )
 
 
+json_schema = GradeHallucinations.model_json_schema()
+json_schema_str = json.dumps(json_schema)
+print(json_schema_str)
+
+
 # generate json schema for GradeHallucinations (Update in OpenAI Assistant)
 json_schema = GradeHallucinations.model_json_schema()
+
+# OpenAI Assistant JSON Schema
+json_schema_openai_standard = {
+    "name": "GradeHallucinations",
+    "strict": True,
+    "schema": {
+        "type": "object",
+        "properties": {
+            "feedback": {
+                "type": "string",
+                "description": "Reasoning whether the raw facts in the answer are aligned with the retrieved documents + feedback on how to improve",
+            },
+            "binary_score": {
+                "type": "string",
+                "description": "Raw facts in the answer are aligned with the retrieved documents, 'yes' or 'no'.",
+            },
+        },
+        "required": ["feedback", "binary_score"],
+        "additionalProperties": False,
+    },
+}
+
 
 # LLM with function call
 llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.1)
 structured_llm_grader = llm.with_structured_output(GradeHallucinations)
 
 # Prompt (Update in OpenAI Assistant)
-system = """You are a grader assistant validating whether a LLM's generation is consistent with the retrieved documents from a NI 43-101 mineral report.
+system = """You are a hallucination agent validating whether a LLM's generation is consistent with the retrieved documents from a NI 43-101 mineral report. Focus on the calculation logic and unit conversions.
 
 Guidelines:
-1. Check if total mineral resource tonnage is the sum of inferred, indicated, and measured mineral resources. Otherwise, it is a hallucination and specified default value should be returned.
-2. Check if total mineral reserve tonnage is the sum of proven and probable mineral reserves. Otherwise, it is a hallucination and specified default value should be returned.
-3. Check no hallucination in total mineral resource contained metal and total mineral reserve contained metal calculation.
-4. Check if the tonnage or grade unit used in the LLM generation is consistent with the unit used in the retrieved documents. For example, "Tonnes 000", "Tonnes (000)", or "(000) Tonnes" mean thousand tonnes (Kt) or 1000 tonnes (t).
-5. Check if the unit is converted correctly to tonnes (t) in the final answer.
+1. Check if total mineral resource tonnage is the sum of inferred, indicated, and measured mineral resources. If not, a default value of 0 should be returned.
+2. Check if total mineral reserve tonnage is the sum of proven and probable mineral reserves. If not, a default value of 0 should be returned.
+3. Check if the tonnage or grade unit used in the LLM generation is consistent with the unit used in the retrieved documents. For example, "Tonnes 000", "Tonnes (000)", or "(000) Tonnes" mean thousand tonnes (Kt) or 1000 tonnes (t).
+4. Check if the unit of final answer enclosed in `<output>` tags is converted correctly to tonnes (t).
 
-Give a binary score 'yes' or 'no' and show your reasoning. 'Yes' means that the LLM generation is consistent with the retrieved documents."""
+Show your feedback and give a binary score 'yes' or 'no' and . 'Yes' means that the LLM generation is consistent with the retrieved documents and no hallucination."""
 
-user_prompt_template = (
-    "# Retrieved Documents\n{documents}\n\n# LLM Generation\n{generation}"
-)
+user_prompt_template = """# Retrieved Documents
+{documents}
+
+# LLM Generation
+{generation}
+
+# Previous Messages
+{previous_messages}
+
+___
+Now take a deep breath and grade the LLM generation based on the retrieved documents and previous messages between you and the LLM generator."""
 
 hallucination_prompt = ChatPromptTemplate.from_messages(
     [
@@ -305,24 +343,27 @@ hallucination_prompt = ChatPromptTemplate.from_messages(
     ]
 )
 
-print(
-    user_prompt_template.format(
-        documents="[sample documents]", generation="[sample generation]"
-    )
-)
+# print(user_prompt_template.format(documents="[sample documents]", generation="[sample generation]"))
 
 hallucination_grader = hallucination_prompt | structured_llm_grader
 
 
-def hallucination_grader_assistant(documents, generation) -> GradeHallucinations:
+def hallucination_grader_assistant(
+    documents, generation, previous_messages
+) -> GradeHallucinations:
     # Use openai assistant to grade the generation
     assistant = CLIENT.beta.assistants.retrieve("asst_pgJ1WkxCaHeCcShpdIMIFl6C")
+
+    # Convert previous messages to a list of strings from a list of dicts
+    previous_messages_str = [str(msg) for msg in previous_messages]
 
     messages = [
         {
             "role": "user",
             "content": user_prompt_template.format(
-                documents=documents, generation=generation
+                documents=documents,
+                generation=generation,
+                previous_messages="\n".join(previous_messages_str),
             ),
         },
     ]
@@ -390,7 +431,7 @@ re_write_prompt = ChatPromptTemplate.from_messages(
 )
 
 template = "Here is the initial question:\n\n---\n{question}\n--- \n\nFormulate an improved question."
-print(template.format(question="[sample question]"))
+# print(template.format(question="[sample question]"))
 
 question_rewriter = re_write_prompt | llm | StrOutputParser()
 
@@ -417,8 +458,8 @@ class GraphState(TypedDict):
     retriever: Any
     hallucination_grade: str
     answer_grade: str
-    # Store previous generation and feedback
-    messages: Annotated[list, add_messages]
+    messages: Annotated[list[str], add]  # store prev generation + feedback
+    answers: Annotated[list[str], add]  # store prev ans for self consistency
 
 
 # %%
@@ -444,6 +485,19 @@ def retrieve(state):
     return {"documents": documents}
 
 
+def get_mode_or_last(lst):
+    count = Counter(lst)
+    max_count = max(count.values())
+
+    # Check if the mode is unique
+    modes = [item for item, cnt in count.items() if cnt == max_count]
+
+    if max_count > 1 and len(modes) == 1:
+        return modes[0]
+    else:
+        return lst[-1]
+
+
 def generate(state):
     """
     Generate answer
@@ -460,7 +514,11 @@ def generate(state):
     hallucination_grade = state["hallucination_grade"]
     answer_grade = state["answer_grade"]
 
-    if hallucination_grade.lower() == "no" or answer_grade.lower() == "no":
+    if len(state["answers"]) >= 3:
+        # Self consistency if detected looping
+        mode_answer = get_mode_or_last(state["answers"])
+        generation = f"<reasoning>Detect looping. Use self consistency to choose the most popular answer from previous generations.</reasoning><output>{mode_answer}</output>"
+    elif hallucination_grade.lower() == "no" or answer_grade.lower() == "no":
         # RAG generation with previous generation and feedback
         previous_messages = state["messages"]
         generation = deep_extract_w_feedback(question, documents, previous_messages)
@@ -468,10 +526,17 @@ def generate(state):
         # Initial RAG generation without hallucination grader feedback
         generation = deep_extract_wo_feedback(question, documents)
 
+    try:
+        parsed_output = generation.split("<output>")[1].split("</output>")[0].strip()
+        parsed_output = re.sub(r"[^0-9.]", "", parsed_output)
+    except IndexError:
+        logger.exception(f"Error parsing <output> XML tags for content: {generation}")
+
     return {
         "generation": generation,
+        "answers": [parsed_output],
         "messages": [
-            {"role": "assistant", "content": generation},
+            {"role": "Answer generator", "content": generation},
         ],
     }
 
@@ -540,16 +605,17 @@ def check_hallucination(state):
     logger.info("---CHECK HALLUCINATIONS---")
     documents = state["documents"]
     generation = state["generation"]
+    previous_messages = state["messages"]
 
-    score = hallucination_grader_assistant(documents, generation)
+    score = hallucination_grader_assistant(documents, generation, previous_messages)
     grade = score.binary_score
-    hallucination_grader_reasoning = score.reasoning
+    hallucination_grader_feedback = score.feedback
     return {
         "hallucination_grade": grade,
         "messages": [
             {
-                "role": "assistant",
-                "content": f"Hallucination grade: {grade}, Reasoning: {hallucination_grader_reasoning}",
+                "role": "Hallucination grader",
+                "content": f"No hallucination: {grade}, Feedback: {hallucination_grader_feedback}",
             }
         ],
     }
@@ -576,8 +642,8 @@ def check_answers_question(state):
         "answer_grade": grade,
         "messages": [
             {
-                "role": "assistant",
-                "content": f"Answer grade: {grade}, Reasoning: {answer_grader_reasoning}",
+                "role": "Answer grader",
+                "content": f"Answer addresses question: {grade}, Reasoning: {answer_grader_reasoning}",
             }
         ],
     }
@@ -632,12 +698,15 @@ def generate_router(state):
                 f"---FAILED TO CONVERT MATCHED STRING TO NUMBER: {numeric_string}---"
             )
 
-    if answer != 0:
+    if "self consistency" in generation:
+        logger.info("---DECISION: LOOPING DETECT. USE SELF CONSISTENCY VALUE. END---")
+        return END
+    elif answer != 0:
         logger.info(
             "---DECISION: GENERATION CONTAINS NUMERIC OUTPUT, CHECK HALLUCINATION---"
         )
         return "check_hallucination"
-    else:
+    elif answer == 0:
         logger.info("---DECISION: GENERATION RETURNS DEFAULT VALUE 0. END---")
         return END
 
@@ -667,9 +736,6 @@ def answer_quality_router(state):
         return "useful"
     else:
         logger.info("---DECISION: GENERATION DOES NOT ADDRESS QUESTION---")
-        logger.info(
-            f"Reasoning on why generation does not address question: {state['answer_grader_reasoning']}"
-        )
         return "regenerate"
 
 
@@ -765,12 +831,10 @@ if __name__ == "__main__":
         "generation": "N/A",
         "retriever": retriever,
         "hallucination_grade": "N/A",
-        "hallucination_grader_reasoning": "N/A",
         "answer_grade": "N/A",
-        "answer_grader_reasoning": "N/A",
     }
 
-    value = self_rag_graph.invoke(inputs)
+    value = self_rag_graph.invoke(inputs, config={"recursion_limit": 10})
 
     # Final generation
     logger.info("---FINAL GENERATION---")
