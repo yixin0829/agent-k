@@ -2,8 +2,8 @@
 
 Agent-K is a powerful knowledge base agentic system that uses LLM agents to help you interact with tables and reports.
 
-One example question can be: "What are the mineral resources with a total tonnage greater than 100,000 million tonnes in Canada? Return mineral site names, tonnage, and commodity."
-Traditionally, to answer this question, one would need to extract structured data from the PDF reports, databases, and other sources, construct a database (e.g. relational database or knowledge graph), and then write a SQL/SPARQL query to answer the question.
+One example question can be: "What are all the mineral sites with a total tonnage greater than 100,000 million tonnes in Canada? Return mineral site names, total tonnage, and commodity."
+Traditionally, to answer this question, one would need to extract structured data from the PDF reports, combining with other databases to construct an unified database (e.g. relational database or knowledge graph), and then write a SQL/SPARQL query to answer the question. Futhermore, there are many use cases in healthcare, financial analysis, academic research that involves question answering on hybrid tabular and document data across hundreds of tables and PDFs.
 
 This research aims to automate this E2E process using LLM agents without the need for manual data extraction, entity resolution, database construction, and text-to-SQL generation.
 
