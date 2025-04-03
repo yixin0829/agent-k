@@ -9,6 +9,9 @@ RUN useradd -m sandboxuser
 USER sandboxuser
 WORKDIR /home/sandboxuser
 
+# COPY requirements.txt .
+# RUN pip install --no-cache-dir -r requirements.txt
+
 CMD ["python", "--version"]
 
 # Build image:
