@@ -17,16 +17,16 @@ class PythonExecTool(ToolInterface):
         return {
             "function": {
                 "name": "execute_python_code",
-                "description": "Executes Python code securely in a container. Python version 3.10 is installed in the container. pandas, numpy, matplotlib, seaborn, and scikit-learn are installed in the container.",
+                "description": "Executes Python code securely in a container. Python version 3.12 is installed in the container.",
                 "parameters": {
                     "type": "object",
                     "properties": {
-                        "python_code": {
+                        "code": {
                             "type": "string",
                             "description": "The Python code to execute",
                         }
                     },
-                    "required": ["python_code"],
+                    "required": ["code"],
                 },
             }
         }
@@ -35,10 +35,10 @@ class PythonExecTool(ToolInterface):
         """
         Execute the Python code in a Docker container and return the output.
         """
-        python_code = arguments["python_code"]
-        python_code_stripped = python_code.strip('"""')
+        code = arguments["code"]
+        code_stripped = code.strip('"""')
 
-        output, errors = self._run_code_in_container(python_code_stripped)
+        output, errors = self._run_code_in_container(code_stripped)
         if errors:
             return f"[Error]\n{errors}"
 
