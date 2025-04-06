@@ -1,5 +1,5 @@
 """
-The goal is to construct a ground truth table using Inferlink's extraction results.
+The goal is to construct a ground truth table using Inferlink's annotation results.
 """
 
 import glob
@@ -206,6 +206,7 @@ def normalize_grade_units(df):
         "wt%": 1.0,  # Weight percent
         "wt.%": 1.0,  # Weight percent (alternative notation)
         "grams per tonne": 0.0001,  # Grams per tonne (spelled out)
+        "gram per tonne": 0.0001,  # Grams per tonne (spelled out)
     }
 
     # Apply conversion

@@ -54,7 +54,9 @@ def load_data_and_process() -> pd.DataFrame:
         return df
 
     # Note: Load PDF extraction data. Can be replaced with the following line to load a specific extraction file
-    # df_pdf_agent_extraction = pd.read_csv("data/agent_cache/pdf_agent/inferlink/dpe_map_reduce_extraction_results_2025-03-08_16-24.csv")
+    # df_pdf_agent_extraction = pd.read_csv(
+    #     "data/processed/inferlink_extraction_v3_filtered.csv"
+    # )
     df_pdf_agent_extraction = load_latest_pdf_extraction(
         dir=os.path.join(config_general.PDF_AGENT_CACHE_DIR, "inferlink")
     )
@@ -98,7 +100,7 @@ def calculate_string_metrics(
 ) -> List[Dict[str, Any]]:
     """
     Calculate string comparison metrics between predicted and ground truth values.
-    Note: all nan have all been converted to "Not Found"
+    All nan have been converted to "Not Found" in standardize_string_column()
 
     Args:
         df_merged: Dataframe containing both predicted and ground truth values
