@@ -29,7 +29,7 @@ from agent_k.config.schemas import (
     MineralSiteMetadata,
     MinModHyperCols,
 )
-from agent_k.notebooks.self_rag_v3 import (
+from agent_k.notebooks.self_rag_v4 import (
     QUESTION_TEMPLATE,
     create_markdown_retriever,
     self_rag_graph_builder,
@@ -48,7 +48,7 @@ MODEL = "gpt-4o-mini"
 TEMPERATURE = 0.1
 TOP_P = 0.5
 RETRY_POLICY = RetryPolicy(max_attempts=3)
-RECURSION_LIMIT = 10
+RECURSION_LIMIT = 12
 
 # Global variables
 filename_to_id_map = list_43_101_reports()
@@ -676,7 +676,9 @@ def extract_from_pdf(
         case "DPE MAP_REDUCE SELF RAG":
             # Initialize the retriever
             markdown_filename = pdf_path.split("/")[-1].replace(".pdf", ".md")
-            markdown_path = os.path.join("data/processed/43-101", markdown_filename)
+            markdown_path = os.path.join(
+                "data/processed/43-101-header-corrected", markdown_filename
+            )
             retriever = create_markdown_retriever(
                 markdown_path,
                 collection_name="rag-chroma",

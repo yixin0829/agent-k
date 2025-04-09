@@ -23,8 +23,8 @@ def code_interpreter(reflection: str, code: str) -> str:
     Execute the provided Python code in a restricted Docker container and return the output.
 
     Args:
-        reflection: The reflection on the previous messages if any. Diagnose the potential issues and provide potential improvements.
-        code: The Python code to execute. The last line of the code should be a print statement to return the final calculation result.
+        reflection: Reasoning before generate the code.
+        code: The Python code to execute. The last line of the code should be a print statement that prints the final calculation result.
 
     Returns:
         The output of executing the Python code.
@@ -37,7 +37,7 @@ tools = [code_interpreter]
 tool_node = ToolNode(tools)
 
 # Bind the tools to the model
-model_with_tools = ChatOpenAI(model="gpt-4o-mini", temperature=0.1).bind_tools(tools)
+model_with_tools = ChatOpenAI(model="o3-mini").bind_tools(tools)
 
 
 class State(TypedDict):
@@ -92,8 +92,9 @@ def react_agent(system_prompt: str, question: str):
 DEEP_EXTRACTOR_SYSTEM_PROMPT = """You are an advanced AI assistant that answers questions based on the attached NI 43-101 mineral report. Your responses should be grounded in the report's content using the code interpreter tool for numerical calculations.
 
 ## Response Workflow:
-1. Perform Aggregations: Use the code interpreter tool for operations like summation, multiplication, or other numerical operations.
-2. Structure the Response Correctly: Format your final output with XML tags as follows:
+1. Identify relevant facts in the context needed for answering the question.
+2. Perform Aggregations: Use the code interpreter tool for operations like summation, multiplication, or other numerical operations.
+3. Structure the Response Correctly: Format your final output with XML tags as follows:
     - Reasoning: Explain your retrieval or computation process within `<thinking>` tags.
     - Code: Show the executed code within `<code>`  tags
     - Final Answer: Provide the final response within `<output>` tags. Do not include other extra XML tags (e.g., `<answer>`) or filler words.
