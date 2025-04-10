@@ -37,7 +37,7 @@ tools = [code_interpreter]
 tool_node = ToolNode(tools)
 
 # Bind the tools to the model
-model_with_tools = ChatOpenAI(model="o3-mini").bind_tools(tools)
+model_with_tools = ChatOpenAI(model="gpt-4o-mini").bind_tools(tools)
 
 
 class State(TypedDict):

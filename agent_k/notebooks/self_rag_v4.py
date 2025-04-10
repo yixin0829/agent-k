@@ -176,7 +176,7 @@ retrieval_grader = grade_prompt | structured_llm_grader
 # Deep Extraction Assistant (Sync with OpenAI Assistant)
 DEEP_EXTRACT_SYSTEM_PROMPT = """You are an advanced AI assistant that answers questions based on the attached NI 43-101 mineral report. Your responses should be grounded in the report's content using the code interpreter tool for numerical calculations.
 
-## Response Workflow:
+## Guidelines
 1. Perform Aggregations: Use the code interpreter tool for operations like summation, multiplication, or other numerical operations.
 2. Structure the Response Correctly: Format your final output with XML tags as follows:
     - Reasoning: Explain your retrieval or computation process within `<thinking>` tags.
@@ -264,7 +264,7 @@ json_schema_openai_standard = {
 
 
 # LLM with function call
-llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.1)
+llm = ChatOpenAI(model="gpt-4o-mini")
 structured_llm_grader = llm.with_structured_output(GradeHallucinations)
 
 # Prompt (Update in OpenAI Assistant)
@@ -298,7 +298,6 @@ hallucination_prompt = ChatPromptTemplate.from_messages(
 # print(user_prompt_template.format(documents="[sample documents]", generation="[sample generation]"))
 
 hallucination_grader = hallucination_prompt | structured_llm_grader
-
 
 # %%
 ### Question Re-writer
