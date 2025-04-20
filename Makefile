@@ -8,7 +8,7 @@ build:
 run:
 	docker run -d --name sandbox --network none --cap-drop all --pids-limit 64 --tmpfs /tmp:rw,size=64M python_sandbox:latest sleep infinity
 
-# Execute a command in the Docker container
+# Execute a test python script in the Docker container
 exec:
 	docker exec -i sandbox python -c "print('hello world')"
 

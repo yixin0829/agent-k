@@ -9,8 +9,8 @@ RUN useradd -m sandboxuser
 USER sandboxuser
 WORKDIR /home/sandboxuser
 
-# Check if requirements.txt exists and install dependencies if it does
-COPY --chown=sandboxuser:sandboxuser requirements.txt* /home/sandboxuser/ 2>/dev/null || echo "No requirements.txt found, skipping pip install"
+# The wildcard is used to copy the requirements.txt file if it exists
+COPY requirements.txt* .
 RUN if [ -f requirements.txt ]; then \
         pip install --no-cache-dir --user -r requirements.txt; \
     else \
