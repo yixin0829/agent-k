@@ -21,12 +21,16 @@ class PythonExecTool(ToolInterface):
                 "parameters": {
                     "type": "object",
                     "properties": {
+                        "reasoning": {
+                            "type": "string",
+                            "description": "Reasoning based on the given context before generating the code.",
+                        },
                         "code": {
                             "type": "string",
-                            "description": "The Python code to execute",
-                        }
+                            "description": "The Python code to execute. The last line of the code should be a print statement that prints the final calculation result.",
+                        },
                     },
-                    "required": ["code"],
+                    "required": ["reasoning", "code"],
                 },
             }
         }
