@@ -9,16 +9,13 @@ RUN useradd -m sandboxuser
 USER sandboxuser
 WORKDIR /home/sandboxuser
 
-# COPY requirements.txt .
-# RUN pip install --no-cache-dir -r requirements.txt
+# Check if requirements.txt exists and install dependencies if it does
+COPY --chown=sandboxuser:sandboxuser requirements.txt* /home/sandboxuser/ 2>/dev/null || echo "No requirements.txt found, skipping pip install"
+RUN if [ -f requirements.txt ]; then \
+        pip install --no-cache-dir --user -r requirements.txt; \
+    else \
+        echo "No requirements.txt found in project root. Running with base Python 3.12 installation."; \
+    fi
+
 
 CMD ["python", "--version"]
-
-# Build image:
-# !docker build -t python_sandbox:latest ./docker
-
-# Run the container in restricted mode. The container will run in the background.
-# !docker run -d --name sandbox --network none --cap-drop all --pids-limit 64 --tmpfs /tmp:rw,size=64M   python_sandbox:latest sleep infinity
-
-# Can execute code in the container:
-# !docker exec -i sandbox python -c "print('hello world')"
