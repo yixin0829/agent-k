@@ -1,5 +1,6 @@
 import json
 import random
+import re
 from datetime import datetime
 from typing import Any
 
@@ -141,12 +142,12 @@ def split_json_schema(
 
 def parse_json_code_block(content: str) -> dict[str, Any]:
     """Parse the JSON code block from the assistant response."""
-    try:
-        json_code_block = content.split("<json>")[1].split("</json>")[0]
-        return json.loads(json_code_block)
-    except Exception as e:
-        logger.error(f"Failed to parse JSON code block: {e}")
-        logger.error(f"LLM response: {content}")
+    # Use regex to find the JSON code block
+    json_code_block = re.search(r"<json>(.*?)</json>", content, re.DOTALL)
+    if json_code_block:
+        return json.loads(json_code_block.group(1))
+    else:
+        logger.error(f"Failed to parse JSON code block: {content}")
         return {}
 
 

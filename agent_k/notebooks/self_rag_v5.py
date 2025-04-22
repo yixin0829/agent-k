@@ -1,12 +1,8 @@
 # %% [markdown]
-# Changes compared to v3 implementation:
-# - Processed 43-101 markdown reports with correct headers and cleaned false headers like "## Notes"
-# - Custom code interpreter tool via docker container
-# - Optimize the prompts
-# - Simplify the graph by removing the check_answer node
+# Changes compared to v4 implementation:
+# - Optimizer implemented with litellm completion API in pdf_agent_fast_n_slow.py
 
 # %%
-import json
 import re
 from collections import Counter
 from operator import add
@@ -22,6 +18,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langgraph.graph import END, START, StateGraph
+from langgraph.pregel import RetryPolicy
 from openai import OpenAI
 from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
@@ -34,19 +31,20 @@ from agent_k.notebooks.react_code_agent import react_agent
 
 load_dotenv()
 
+# Retry for generate node (code interpreter easily fails)
+RETRY_POLICY = RetryPolicy(max_attempts=3)
+
 CLIENT = OpenAI()
 NUM_RETRIEVED_DOCS = 5
-MODEL = "gpt-4o-mini"
+PYTHON_AGENT_MODEL = "gpt-4o-mini"
+GRADE_HALLUCINATION_MODEL = "gpt-4o-mini"
+QUESTION_REWRITER_MODEL = "gpt-4o-mini"
+QUESTION_REWRITER_TEMPERATURE = 0.5
 
 
 def count_tokens(text):
-    try:
-        encoding = tiktoken.get_encoding("cl100k_base")
-        return len(encoding.encode(text))
-    except Exception as e:
-        logger.warning(f"Error counting tokens: {e}")
-        logger.warning("Falling back to rough approximation (4 tokens per character)")
-        return len(text) // 4
+    encoding = tiktoken.get_encoding("cl100k_base")
+    return len(encoding.encode(text))
 
 
 def create_markdown_retriever(
@@ -166,7 +164,7 @@ grade_prompt = ChatPromptTemplate.from_messages(
 )
 
 template = "# Retrieved document\n{document}\n\n# User question\n{question}"
-# print(template.format(document="[sample document]", question="[sample question]"))
+print(template.format(document="[sample document]", question="[sample question]"))
 
 retrieval_grader = grade_prompt | structured_llm_grader
 
@@ -177,16 +175,17 @@ retrieval_grader = grade_prompt | structured_llm_grader
 DEEP_EXTRACT_SYSTEM_PROMPT = """You are an advanced AI assistant that answers questions based on the attached NI 43-101 mineral report. Your responses should be grounded in the report's content using the code interpreter tool for numerical calculations.
 
 ## Guidelines
-1. Perform Aggregations: Use the code interpreter tool for operations like summation, multiplication, or other numerical operations.
-2. Structure the Response Correctly: Format your final output with XML tags as follows:
+1. Identify relevant facts in the context needed for answering the question.
+2. Perform Aggregations: Use the code interpreter tool for operations like summation, multiplication, or other numerical operations.
+3. Structure the Response Correctly: Format your final output with XML tags as follows:
     - Reasoning: Explain your retrieval or computation process within `<thinking>` tags.
-    - Code: Show the executed code within `<code>`  tags
-    - Final Answer: Provide the final response within `<output>` tags. Do not include other extra XML tags (e.g., `<answer>`) or filler words.
+    - Code: Show the executed code within `<code>`  tags.
+    - Final Answer: Provide the final response with unit within `<output>` tags (e.g. `<output>1000 tonnes</output>`).
 
 ## Key Constraints:
 - No Hallucination: If the required information is unavailable, return the default value specified in the JSON schema in the `<output>` tag."""
 
-GENERATION_USER_PROMPT_W_FEEDBACK = """You are an assistant for question-answering tasks. Use the following retrieved context and previous feedback to answer the question. If you don't know the answer, just return the default value of the field in the question.
+GENERATION_USER_PROMPT_W_FEEDBACK = """You are an assistant for question-answering tasks. Use the following retrieved context and previous feedback (if any) to answer the question. If you don't know the answer, just return the default value of the field in the question.
 
 ## Context
 {context}
@@ -233,42 +232,12 @@ class GradeHallucinations(BaseModel):
     )
 
 
-json_schema = GradeHallucinations.model_json_schema()
-json_schema_str = json.dumps(json_schema)
-print(json_schema_str)
-
-
-# generate json schema for GradeHallucinations (Update in OpenAI Assistant)
-json_schema = GradeHallucinations.model_json_schema()
-
-# OpenAI Assistant JSON Schema
-json_schema_openai_standard = {
-    "name": "GradeHallucinations",
-    "strict": True,
-    "schema": {
-        "type": "object",
-        "properties": {
-            "feedback": {
-                "type": "string",
-                "description": "Reasoning whether the raw facts in the answer are aligned with the retrieved documents + feedback on how to improve",
-            },
-            "binary_score": {
-                "type": "string",
-                "description": "Raw facts in the answer are aligned with the retrieved documents, 'yes' or 'no'.",
-            },
-        },
-        "required": ["feedback", "binary_score"],
-        "additionalProperties": False,
-    },
-}
-
-
 # LLM with function call
-llm = ChatOpenAI(model="o3-mini")
+llm = ChatOpenAI(model=GRADE_HALLUCINATION_MODEL)
 structured_llm_grader = llm.with_structured_output(GradeHallucinations)
 
 # Prompt (Update in OpenAI Assistant)
-system = """You are a hallucination agent validating a LLM's generation against the retrieved documents. Focus on the calculation logic and unit conversions.
+GRADE_HALLUCINATION_SYSTEM_PROMPT = """You are a hallucination agent validating a LLM's generation against the retrieved documents. Focus on the calculation logic and unit conversions.
 
 Guidelines:
 1. Total mineral resource tonnage should be the sum of one or more of inferred, indicated, and measured mineral resources. If not, a default value of 0 should be returned.
@@ -279,10 +248,10 @@ Guidelines:
 
 Show your feedback and give a binary score 'yes' or 'no' and reasoning. 'Yes' means that the LLM generation is consistent with the retrieved documents and no hallucination."""
 
-user_prompt_template = """## Retrieved Documents
+GRADE_HALLUCINATION_USER_PROMPT = """# Retrieved Documents
 {documents}
 
-## LLM Generation
+# LLM Generation
 {generation}
 
 ---
@@ -290,12 +259,17 @@ Now take a deep breath and grade the LLM generation"""
 
 hallucination_prompt = ChatPromptTemplate.from_messages(
     [
-        ("system", system),
-        ("human", user_prompt_template),
+        ("system", GRADE_HALLUCINATION_SYSTEM_PROMPT),
+        ("human", GRADE_HALLUCINATION_USER_PROMPT),
     ]
 )
 
-# print(user_prompt_template.format(documents="[sample documents]", generation="[sample generation]"))
+print(
+    "\n"
+    + GRADE_HALLUCINATION_USER_PROMPT.format(
+        documents="[sample documents]", generation="[sample generation]"
+    )
+)
 
 hallucination_grader = hallucination_prompt | structured_llm_grader
 
@@ -303,22 +277,23 @@ hallucination_grader = hallucination_prompt | structured_llm_grader
 ### Question Re-writer
 
 # LLM
-llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.1)
+llm = ChatOpenAI(
+    model=QUESTION_REWRITER_MODEL, temperature=QUESTION_REWRITER_TEMPERATURE
+)
 
 # Prompt
-system = """You a question re-writer that converts an input question to a better version that is optimized for vectorstore retrieval. Look at the input and try to reason about the underlying semantic intent / meaning."""
+QUESTION_REWRITER_SYSTEM_PROMPT = """You a question re-writer that converts an input question to a better version that is optimized for vectorstore retrieval. Look at the input and try to reason about the underlying semantic intent / meaning."""
+
+QUESTION_REWRITER_USER_PROMPT = """Here is the initial question:\n\n---\n{question}\n--- \n\nFormulate an improved question."""
+
 re_write_prompt = ChatPromptTemplate.from_messages(
     [
-        ("system", system),
-        (
-            "human",
-            "Here is the initial question:\n\n---\n{question}\n--- \n\nFormulate an improved question.",
-        ),
+        ("system", QUESTION_REWRITER_SYSTEM_PROMPT),
+        ("human", QUESTION_REWRITER_USER_PROMPT),
     ]
 )
 
-template = "Here is the initial question:\n\n---\n{question}\n--- \n\nFormulate an improved question."
-# print(template.format(question="[sample question]"))
+print(QUESTION_REWRITER_USER_PROMPT.format(question="[sample question]"))
 
 question_rewriter = re_write_prompt | llm | StrOutputParser()
 
@@ -500,8 +475,8 @@ def check_hallucination(state):
         "hallucination_grade": grade,
         "messages": [
             {
-                "role": "Hallucination grader",
-                "content": f"Passed hallucination check: {grade}, Feedback: {hallucination_grader_feedback}",
+                "role": "Hallucination Grader",
+                "content": f"Passed hallucination check: {grade}\nFeedback: {hallucination_grader_feedback}",
             }
         ],
     }
@@ -585,13 +560,11 @@ def viz_graph(graph):
 self_rag_graph_builder = StateGraph(GraphState)
 
 # Define the nodes
-self_rag_graph_builder.add_node("retrieve", retrieve)  # retrieve
-self_rag_graph_builder.add_node("grade_documents", grade_documents)  # grade documents
-self_rag_graph_builder.add_node("generate", generate)  # generatae
-self_rag_graph_builder.add_node("transform_query", transform_query)  # transform_query
-self_rag_graph_builder.add_node(
-    "check_hallucination", check_hallucination
-)  # check hallucination
+self_rag_graph_builder.add_node("retrieve", retrieve)
+self_rag_graph_builder.add_node("grade_documents", grade_documents)
+self_rag_graph_builder.add_node("generate", generate, retry=RETRY_POLICY)
+self_rag_graph_builder.add_node("transform_query", transform_query)
+self_rag_graph_builder.add_node("check_hallucination", check_hallucination)
 
 # Build graph
 self_rag_graph_builder.add_edge(START, "retrieve")
@@ -641,14 +614,14 @@ if __name__ == "__main__":
         collection_name="rag-chroma",
     )
 
-    inputs = {
+    graph_inputs = {
         "question": question,
         "generation": "N/A",
         "retriever": retriever,
         "hallucination_grade": "N/A",
     }
 
-    value = self_rag_graph.invoke(inputs, config={"recursion_limit": 12})
+    value = self_rag_graph.invoke(graph_inputs, config={"recursion_limit": 12})
 
     # Final generation
     logger.info("---FINAL GENERATION---")

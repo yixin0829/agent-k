@@ -13,14 +13,10 @@ class PythonExecAgent(BaseAgent):
 
     def __init__(
         self,
-        model_name: str = "o3-mini",
-        developer_prompt: str = """
-                    You are a helpful assistant that can write and execute Python code.
-                """,
+        model_name: str,
+        developer_prompt: str,
         logger=logger,
-        reasoning_effort: Optional[
-            str
-        ] = None,  # optional; if provided, passed to API calls
+        reasoning_effort: Optional[str] = None,
     ):
         super().__init__(
             model_name=model_name,

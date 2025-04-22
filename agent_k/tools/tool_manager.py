@@ -28,16 +28,16 @@ class ToolManager:
         tool_def = tool.get_definition()
         tool_name = tool_def["function"]["name"]
         self.tools[tool_name] = tool
-        self.logger.debug(f"Registered tool '{tool_name}': {tool_def}")
+        # self.logger.debug(f"Registered tool '{tool_name}': {tool_def}")
 
     def get_tool_definitions(self) -> List[Dict[str, Any]]:
         """
         Return the list of tool definitions in the format expected by the OpenAI API.
         """
         definitions = []
-        for name, tool in self.tools.items():
+        for _, tool in self.tools.items():
             tool_def = tool.get_definition()["function"]
-            self.logger.debug(f"Tool definition retrieved for '{name}': {tool_def}")
+            # self.logger.debug(f"Tool definition retrieved for '{name}': {tool_def}")
             definitions.append({"type": "function", "function": tool_def})
         return definitions
 
@@ -53,24 +53,23 @@ class ToolManager:
         If the model wants to call a tool, parse the function arguments, invoke the tool,
         then optionally return the tool's raw output or feed it back to the model for a final answer.
         """
-        # We take the first tool call from the model’s response
+        # We take the first tool call from the model's response
         first_tool_call = response.choices[0].message.tool_calls[0]
         tool_name = first_tool_call.function.name
-        self.logger.info(f"Handling tool call: {tool_name}")
 
         args = json.loads(first_tool_call.function.arguments)
-        self.logger.info(f"Tool arguments: {args}")
 
         if tool_name not in self.tools:
-            error_message = (
+            raise ValueError(
                 f"Error: The requested tool '{tool_name}' is not registered."
             )
-            self.logger.error(error_message)
-            raise ValueError(error_message)
 
         # 1. Invoke the tool
-        self.logger.debug(f"Invoking tool '{tool_name}'")
         tool_response = self.tools[tool_name].run(args)
+        if "[Error]" in tool_response:
+            self.logger.error(f"Tool '{tool_name}' response: {tool_response}")
+            raise ValueError(tool_response)
+
         self.logger.info(f"Tool '{tool_name}' response: {tool_response}")
 
         # If returning the tool response "as is," just store and return it
@@ -85,6 +84,7 @@ class ToolManager:
         # Otherwise, feed the tool's response back to the LLM for a final answer
         function_call_result_message = {
             "role": "tool",
+            "name": tool_name,
             "content": tool_response,
             "tool_call_id": first_tool_call.id,
         }

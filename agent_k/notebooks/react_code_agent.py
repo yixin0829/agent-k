@@ -3,6 +3,13 @@
 #
 # Build a simple Agent with code interpreter tool using LangGraph.
 
+# %% [markdown]
+# # LangGraph Implementation
+#
+# Implemented a React agent with LangGraph tool node and LangChain core.
+#
+# Issue: looping between agent and tools node.
+
 # %%
 from typing import Annotated, TypedDict
 
@@ -11,9 +18,12 @@ from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
+from langgraph.managed.is_last_step import RemainingSteps
 from langgraph.prebuilt import ToolNode
 
 from agent_k.tools.python_code_interpreter import PythonExecTool
+
+PYTHON_AGENT_MODEL = "gpt-4o-mini"
 
 
 # %%
@@ -23,8 +33,8 @@ def code_interpreter(reflection: str, code: str) -> str:
     Execute the provided Python code in a restricted Docker container and return the output.
 
     Args:
-        reflection: Reasoning before generate the code.
-        code: The Python code to execute. The last line of the code should be a print statement that prints the final calculation result.
+        reflection: Reasoning on the past messages before generating the code.
+        code: The Python code to execute with valid syntax. The last line of the code should be the final calculation result.
 
     Returns:
         The output of executing the Python code.
@@ -37,17 +47,21 @@ tools = [code_interpreter]
 tool_node = ToolNode(tools)
 
 # Bind the tools to the model
-model_with_tools = ChatOpenAI(model="o3-mini").bind_tools(tools)
+model_with_tools = ChatOpenAI(model=PYTHON_AGENT_MODEL, temperature=0.1).bind_tools(
+    tools
+)
 
 
 class State(TypedDict):
     messages: Annotated[list, add_messages]
+    remaining_steps: RemainingSteps
 
 
 def should_continue(state: State):
     messages = state["messages"]
     last_message = messages[-1]
-    if last_message.tool_calls:
+
+    if last_message.tool_calls and state["remaining_steps"] >= 2:
         return "tools"
     return END
 
@@ -78,18 +92,21 @@ except Exception:
     pass
 
 
-def react_agent(system_prompt: str, question: str):
+def react_agent(system_prompt: str, question: str, recursion_limit: int = 10):
     """
     Run the React agent with code interpreter tool.
     """
     graph = workflow.compile()
     messages = [("system", system_prompt), ("user", question)]
-    result = graph.invoke({"messages": messages}, config={"recursion_limit": 10})
+    result = graph.invoke(
+        {"messages": messages}, config={"recursion_limit": recursion_limit}
+    )
+
     return result
 
 
 # %%
-DEEP_EXTRACTOR_SYSTEM_PROMPT = """You are an advanced AI assistant that answers questions based on the attached NI 43-101 mineral report. Your responses should be grounded in the report's content using the code interpreter tool for numerical calculations.
+DEEP_EXTRACTOR_SYSTEM_PROMPT = """You are a helpful AI assistant that answers questions based on the attached NI 43-101 mineral report. Your responses should be grounded in the report's content using the code interpreter tool for numerical calculations.
 
 ## Response Workflow:
 1. Identify relevant facts in the context needed for answering the question.
@@ -122,4 +139,26 @@ if __name__ == "__main__":
     for m in result["messages"]:
         m.pretty_print()
 
-    # print(result["messages"][-1].content)
+    # Final answer
+    print("=" * 100)
+    print(result["messages"][-1].content)
+    # print(result["messages"][-3].tool_calls[0]["args"]["reflection"])
+    # print(result["messages"][-3].tool_calls[0]["args"]["code"])
+
+# %% [markdown]
+# # OpenAI Implementation
+#
+# Inspired by https://cookbook.openai.com/examples/object_oriented_agentic_approach/secure_code_interpreter_tool_for_llm_agents
+
+# %%
+# from agent_k.agents.python_code_exec_agent import PythonExecAgent
+
+# agent = PythonExecAgent(
+#     model_name="gpt-4o-mini",
+#     developer_prompt=DEEP_EXTRACTOR_SYSTEM_PROMPT,
+# )
+
+# agent.task(USER_PROMPT, reasoning_effort=None)
+
+# %%
+# agent.messages.get_messages()

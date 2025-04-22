@@ -98,7 +98,7 @@ Now take a deep breath and answer the question step by step."""
 # Optimizer Assistant
 OPTIMIZER_SYSTEM_PROMPT = """You are a helpful AI agent specializing in correcting and refining JSON outputs extracted from 43-101 mineral reports. Your goal is to ensure that the extracted JSON data is accurate, complete, and relevant based on the provided feedback and previous extraction messages.
 
-## Task Instructions:
+## Guidelines
 1. Analyze the Feedback:
     - Carefully reflect on the provided feedback.
     - Identify potential errors, inconsistencies, or missing information in the previous JSON extraction.
@@ -108,7 +108,7 @@ OPTIMIZER_SYSTEM_PROMPT = """You are a helpful AI agent specializing in correcti
 3. Retrieve Additional Information if Needed:
     - If the necessary data is missing or incomplete, retrieve the correct information from the attached PDF report before generating the final JSON output.
 
-## Output Format:
+## Output Format
 - Reasoning Process: Enclose your thought process, reflections, and justifications in `<thinking>` XML tags.
 - Final Corrected JSON Output: Enclose the corrected JSON response within `<json>` XML tags.
 
@@ -120,7 +120,8 @@ Explanation of identified errors, inconsistencies, and corrections made.
 
 <json>
 {
-  "corrected_data": "Your final structured JSON output here."
+  "corrected_data": "Your final structured JSON output here.",
+  ...
 }
 </json>
 ```

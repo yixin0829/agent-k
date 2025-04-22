@@ -19,6 +19,7 @@ import agent_k.config.general as config_general
 from agent_k.config.logger import logger
 from agent_k.config.prompts_fast_n_slow import (
     DEEP_EXTRACT_USER_PROMPT,
+    OPTIMIZER_SYSTEM_PROMPT,
     OPTIMIZER_USER_PROMPT,
     PDF_AGENT_USER_PROMPT,
     VALIDATOR_SYSTEM_PROMPT,
@@ -29,7 +30,7 @@ from agent_k.config.schemas import (
     MineralSiteMetadata,
     MinModHyperCols,
 )
-from agent_k.notebooks.self_rag_v4 import (
+from agent_k.notebooks.self_rag_v5 import (
     QUESTION_TEMPLATE,
     create_markdown_retriever,
     self_rag_graph_builder,
@@ -44,9 +45,10 @@ from agent_k.utils.general import (
 
 # Configs
 CLIENT = OpenAI()
-MODEL = "gpt-4o-mini"
-TEMPERATURE = 0.1
-TOP_P = 0.5
+SLOW_EXTRACT_VALIDATION_MODEL = "gpt-4o-mini"
+SLOW_EXTRACT_VALIDATION_TEMPERATURE = 0.1
+SLOW_EXTRACT_OPTIMIZER_MODEL = "gpt-4o-mini"
+SLOW_EXTRACT_OPTIMIZER_TEMPERATURE = 0.1
 RETRY_POLICY = RetryPolicy(max_attempts=3)
 RECURSION_LIMIT = 12
 
@@ -385,19 +387,17 @@ def slow_extraction_agent_map_reduce_self_rag(state: ComplexEntityState):
         default=default_value,
         description=description,
     )
-    inputs = {
+    graph_inputs = {
         "question": question,
         "generation": "N/A",
         "retriever": retriever,
         "hallucination_grade": "N/A",
-        "hallucination_grader_reasoning": "N/A",
-        "answer_grade": "N/A",
-        "answer_grader_reasoning": "N/A",
     }
 
-    # Compile a new graph for each entity
-    value = self_rag_graph_builder.compile().invoke(
-        inputs, config={"recursion_limit": RECURSION_LIMIT}
+    # Compile a new graph for each slow entity extraction to avoid mixed memory
+    self_rag_graph = self_rag_graph_builder.compile()
+    value = self_rag_graph.invoke(
+        graph_inputs, config={"recursion_limit": RECURSION_LIMIT}
     )
     content = value["generation"]
     parsed_output = slow_extraction_output_parser(content, entity_name, dtype)
@@ -414,13 +414,12 @@ def slow_extraction_optimizer(state: State):
     logger.info(
         "Correcting the existing slow extraction results based on the feedback and previous extraction messages"
     )
-    assistant = CLIENT.beta.assistants.retrieve("asst_D2MTLBHWmh8sgYw2d90C4JyP")
-
-    # Get the OpenAI file ID
-    filename = state["pdf_path"].split("/")[-1]
-    file_id = filename_to_id_map[filename]
 
     messages = [
+        {
+            "role": "system",
+            "content": OPTIMIZER_SYSTEM_PROMPT,
+        },
         {
             "role": "user",
             "content": OPTIMIZER_USER_PROMPT.format(
@@ -429,19 +428,15 @@ def slow_extraction_optimizer(state: State):
                 messages=state["messages"],
                 json_schema=json.dumps(slow_schema),
             ),
-            "attachments": [
-                {
-                    "file_id": file_id,
-                    "tools": [
-                        {"type": "file_search"},
-                        {"type": "code_interpreter"},
-                    ],
-                }
-            ],
         },
     ]
 
-    content = prompt_openai_assistant(assistant, messages)
+    response = completion(
+        model=SLOW_EXTRACT_OPTIMIZER_MODEL,
+        temperature=SLOW_EXTRACT_OPTIMIZER_TEMPERATURE,
+        messages=messages,
+    )
+    content = response.choices[0].message.content
     parsed_json = parse_json_code_block(content)
 
     return {
@@ -451,6 +446,9 @@ def slow_extraction_optimizer(state: State):
 
 
 def merge_map_reduce_results(state: State):
+    """
+    Merges the results from multiple map-reduce operations into a single dictionary.
+    """
     merged_result = {}
     for d in state["slow_extraction_agent_result_map_reduce"]:
         for k, v in d.items():
@@ -464,23 +462,22 @@ def validate_extraction_result(state: State):
     logger.info("Validating slow extraction result")
     slow_schema = state["slow_schema"]
 
-    # logger.debug(f"state messages: {state['messages']}")
+    messages = [
+        {"role": "system", "content": VALIDATOR_SYSTEM_PROMPT},
+        {
+            "role": "user",
+            "content": VALIDATOR_USER_PROMPT.format(
+                extraction_results=state["slow_extraction_agent_result"],
+                messages=state["messages"],
+                json_schema=json.dumps(slow_schema),
+            ),
+        },
+    ]
 
     response = completion(
-        model=MODEL,
-        messages=[
-            {"role": "system", "content": VALIDATOR_SYSTEM_PROMPT},
-            {
-                "role": "user",
-                "content": VALIDATOR_USER_PROMPT.format(
-                    extraction_results=state["slow_extraction_agent_result"],
-                    messages=state["messages"],
-                    json_schema=json.dumps(slow_schema),
-                ),
-            },
-        ],
-        temperature=TEMPERATURE,
-        top_p=TOP_P,
+        model=SLOW_EXTRACT_VALIDATION_MODEL,
+        temperature=SLOW_EXTRACT_VALIDATION_TEMPERATURE,
+        messages=messages,
     )
     logger.debug(f"Response: {response.choices[0].message.content}")
     content = response.choices[0].message.content
@@ -715,6 +712,7 @@ def extract_from_inferlink_pdfs(
     cdr_record_ids = inferlink_ground_truth_filtered_path["cdr_record_id"].tolist()
     main_commodity = inferlink_ground_truth_filtered_path["main_commodity"].tolist()
 
+    # For testing purpose. If None, extract from all PDF files
     if sample_size:
         cdr_record_ids = cdr_record_ids[:sample_size]
         main_commodity = main_commodity[:sample_size]
@@ -725,7 +723,7 @@ def extract_from_inferlink_pdfs(
     output_dir = os.path.join(config_general.PDF_AGENT_CACHE_DIR, "inferlink")
     os.makedirs(output_dir, exist_ok=True)
 
-    # Create output file path
+    # Create output evaluation file path
     output_file = os.path.join(
         output_dir,
         f"{method.lower().replace(' ', '_')}_extraction_results_{get_current_timestamp()}.csv",
@@ -777,7 +775,7 @@ def extract_from_inferlink_pdfs(
                 df_row.to_csv(output_file, mode="a", header=False, index=False)
 
         except Exception as e:
-            logger.error(f"Failed to extract from {path}: {e}")
+            logger.exception(f"Failed to extract from {path}: {e}")
             continue
 
     # Read the final CSV file and return as DataFrame
