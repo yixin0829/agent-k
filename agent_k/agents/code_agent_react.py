@@ -1,19 +1,6 @@
-# %% [markdown]
-# Testing out running python code in an isolated Docker container.
-#
-# Build a simple Agent with code interpreter tool using LangGraph.
-
-# %% [markdown]
-# # LangGraph Implementation
-#
-# Implemented a React agent with LangGraph tool node and LangChain core.
-#
-# Issue: looping between agent and tools node.
-
-# %%
 from typing import Annotated, TypedDict
 
-from IPython.display import Image, display
+from langchain_core.messages import AIMessage
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
 from langgraph.graph import END, START, StateGraph
@@ -21,20 +8,21 @@ from langgraph.graph.message import add_messages
 from langgraph.managed.is_last_step import RemainingSteps
 from langgraph.prebuilt import ToolNode
 
+from agent_k.config.prompts_fast_n_slow import DEEP_EXTRACT_SYSTEM_PROMPT
 from agent_k.tools.python_code_interpreter import PythonExecTool
 
 PYTHON_AGENT_MODEL = "gpt-4o-mini"
+PYTHON_AGENT_TEMPERATURE = 0.1
 
 
-# %%
 @tool
 def code_interpreter(reflection: str, code: str) -> str:
     """
     Execute the provided Python code in a restricted Docker container and return the output.
 
     Args:
-        reflection: Reasoning on the past messages before generating the code.
-        code: The Python code to execute with valid syntax. The last line of the code should be the final calculation result.
+        reflection: Reasoning on user question or previous code execution before generating the improved code.
+        code: Python code for calculating the final result. The last line of the code should be a print statement that prints the final result.
 
     Returns:
         The output of executing the Python code.
@@ -47,9 +35,9 @@ tools = [code_interpreter]
 tool_node = ToolNode(tools)
 
 # Bind the tools to the model
-model_with_tools = ChatOpenAI(model=PYTHON_AGENT_MODEL, temperature=0.1).bind_tools(
-    tools
-)
+model_with_tools = ChatOpenAI(
+    model=PYTHON_AGENT_MODEL, temperature=PYTHON_AGENT_TEMPERATURE
+).bind_tools(tools)
 
 
 class State(TypedDict):
@@ -59,11 +47,20 @@ class State(TypedDict):
 
 def should_continue(state: State):
     messages = state["messages"]
-    last_message = messages[-1]
+    last_agent_message = messages[-1]
 
-    if last_message.tool_calls and state["remaining_steps"] >= 2:
-        return "tools"
-    return END
+    if last_agent_message.tool_calls:
+        if state["remaining_steps"] >= 2:
+            return "tools"
+        else:
+            messages.append(
+                AIMessage(
+                    content="<output>The code execution failed. Please try again.</output>"
+                )
+            )
+            return END
+    else:
+        return END
 
 
 def call_model(state: State):
@@ -82,17 +79,8 @@ workflow.add_edge(START, "agent")
 workflow.add_conditional_edges("agent", should_continue, ["tools", END])
 workflow.add_edge("tools", "agent")
 
-app = workflow.compile()
 
-
-try:
-    display(Image(app.get_graph().draw_mermaid_png()))
-except Exception:
-    # This requires some extra dependencies and is optional
-    pass
-
-
-def react_agent(system_prompt: str, question: str, recursion_limit: int = 10):
+def react_agent(system_prompt: str, question: str, recursion_limit):
     """
     Run the React agent with code interpreter tool.
     """
@@ -103,21 +91,6 @@ def react_agent(system_prompt: str, question: str, recursion_limit: int = 10):
     )
 
     return result
-
-
-# %%
-DEEP_EXTRACTOR_SYSTEM_PROMPT = """You are a helpful AI assistant that answers questions based on the attached NI 43-101 mineral report. Your responses should be grounded in the report's content using the code interpreter tool for numerical calculations.
-
-## Response Workflow:
-1. Identify relevant facts in the context needed for answering the question.
-2. Perform Aggregations: Use the code interpreter tool for operations like summation, multiplication, or other numerical operations.
-3. Structure the Response Correctly: Format your final output with XML tags as follows:
-    - Reasoning: Explain your retrieval or computation process within `<thinking>` tags.
-    - Code: Show the executed code within `<code>`  tags
-    - Final Answer: Provide the final response within `<output>` tags. Do not include other extra XML tags (e.g., `<answer>`) or filler words.
-
-## Key Constraints:
-- No Hallucination: If the required information is unavailable, return the default value in the `<output>` tag."""
 
 
 USER_PROMPT = """You are an assistant for question-answering tasks. Use the following pieces of retrieved context and previous feedback on incorrect answers to answer the question. If you don't know the answer, just return the default value of the field in the question.
@@ -135,30 +108,10 @@ Context: [Document(metadata={'Header 2': '17.10 Mineral Resource Estimate'}, pag
 Now take a deep breath and answer the question again step by step while considering the feedback to the previous incorrect answer."""
 
 if __name__ == "__main__":
-    result = react_agent(DEEP_EXTRACTOR_SYSTEM_PROMPT, USER_PROMPT)
+    result = react_agent(DEEP_EXTRACT_SYSTEM_PROMPT, USER_PROMPT, recursion_limit=5)
     for m in result["messages"]:
         m.pretty_print()
 
     # Final answer
     print("=" * 100)
     print(result["messages"][-1].content)
-    # print(result["messages"][-3].tool_calls[0]["args"]["reflection"])
-    # print(result["messages"][-3].tool_calls[0]["args"]["code"])
-
-# %% [markdown]
-# # OpenAI Implementation
-#
-# Inspired by https://cookbook.openai.com/examples/object_oriented_agentic_approach/secure_code_interpreter_tool_for_llm_agents
-
-# %%
-# from agent_k.agents.python_code_exec_agent import PythonExecAgent
-
-# agent = PythonExecAgent(
-#     model_name="gpt-4o-mini",
-#     developer_prompt=DEEP_EXTRACTOR_SYSTEM_PROMPT,
-# )
-
-# agent.task(USER_PROMPT, reasoning_effort=None)
-
-# %%
-# agent.messages.get_messages()

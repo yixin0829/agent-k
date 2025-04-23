@@ -316,10 +316,10 @@ def slow_extraction_output_parser(
 
     try:
         parsed_output = content.split("<output>")[1].split("</output>")[0].strip()
-    except IndexError:
-        logger.exception(
+    except IndexError as e:
+        raise Exception(
             f"Error parsing <output> XML tags for {entity_name}\nContent: {content}"
-        )
+        ) from e
 
     if dtype == "number" and parsed_output != "Not Found":
         # Preprocess the output to remove any non-numeric characters except for the decimal point

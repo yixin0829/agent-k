@@ -26,11 +26,11 @@ from openai import OpenAI
 from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
 
+from agent_k.agents.code_agent_react import react_agent
 from agent_k.config.logger import logger
 from agent_k.config.schemas import (
     TOTAL_MINERAL_RESOURCE_TONNAGE_DESCRIPTION,
 )
-from agent_k.notebooks.react_code_agent import react_agent
 
 load_dotenv()
 

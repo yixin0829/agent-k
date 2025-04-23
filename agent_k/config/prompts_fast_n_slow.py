@@ -74,8 +74,8 @@ PDF_AGENT_USER_PROMPT = """JSON schema provided: {json_schema}
 
 Not take a deep breath and think step by step."""
 
-# Deep Extraction Assistant
-DEEP_EXTRACT_SYSTEM_PROMPT = """You are an advanced AI assistant that answers questions based on the attached NI 43-101 mineral report. Your responses should be grounded in the report's content using the file search tool and, if needed, the code interpreter tool for numerical calculations.
+# Deep Extraction Assistant (Sync with OpenAI Assistant)
+DEEP_EXTRACT_SYSTEM_PROMPT_ASSISTANT = """You are an advanced AI assistant that answers questions based on the attached NI 43-101 mineral report. Your responses should be grounded in the report's content using the file search tool and, if needed, the code interpreter tool for numerical calculations.
 
 ## Response Workflow:
 1. Retrieve Relevant Information: Search the report to find direct evidence supporting your answer.
@@ -179,3 +179,72 @@ VALIDATOR_USER_PROMPT = """Please validate the following extraction result based
 **The provided JSON schema:** {json_schema}
 ---
 Now take a deep breath and think step by step."""
+
+
+########################################################################################
+# From self_rag_v5.py
+########################################################################################
+GRADE_DOCUMENTS_SYSTEM_PROMPT = """You are a grader assessing relevance of a retrieved document to a user question. \n
+It does not need to be a stringent test. The goal is to filter out erroneous retrievals. \n
+If the document contains keyword(s) or semantic meaning related to the user question, grade it as relevant. \n
+Give a binary score 'yes' or 'no' score to indicate whether the document is relevant to the question."""
+
+QUESTION_TEMPLATE = """**Question:** What's the {field} of the mineral site in the attached 43-101 report?
+**Data type of {field}:** {dtype}
+**Default value of {field} if not found:** {default}
+**Description of {field}:** {description}"""
+
+
+# Deep Extraction code agent prompt
+DEEP_EXTRACT_SYSTEM_PROMPT = """You are an advanced AI assistant that answers questions based on the attached NI 43-101 mineral report. Your responses should be grounded in the report's content using the code interpreter tool for numerical calculations.
+
+## Guidelines
+1. Identify relevant facts in the context needed for answering the question.
+2. Use the code interpreter tool to perform aggregation operations like summation, multiplication, or other numerical operations.
+3. Once have a successful code execution output, format your final answer with XML tags as follows; otherwise, fix the code and try again:
+    - Thinking: Explain your reasoning process within `<thinking>` tags.
+    - Code: Show the executed code within `<code>`  tags.
+    - Output: Provide the final response with unit within `<output>` tags (e.g. `<output>1000 tonnes</output>`).
+
+## Key Constraints:
+- No Hallucination: If the required information is unavailable, return the default value specified in the JSON schema in the `<output>` tag."""
+
+GENERATION_USER_PROMPT_W_FEEDBACK = """You are an assistant for question-answering tasks. Use the following retrieved context and previous feedback (if any) to answer the question. If you don't know the answer, just return the default value of the field in the question.
+
+## Context
+{context}
+
+## Previous Messages
+{previous_messages}
+
+## Question
+{question}
+
+---
+Now take a deep breath and answer the question step by step while considering the previous feedback."""
+
+
+# Prompt (Update in OpenAI Assistant)
+GRADE_HALLUCINATION_SYSTEM_PROMPT = """You are a hallucination agent validating a LLM's generation against the retrieved documents. Focus on the calculation logic and unit conversions.
+
+Guidelines:
+1. Total mineral resource tonnage should be the sum of one or more of inferred, indicated, and measured mineral resources. If not, a default value of 0 should be returned.
+2. Total mineral reserve tonnage should be the sum of one or more of proven and probable mineral reserves. If not, a default value of 0 should be returned.
+3. The tonnage or grade unit used in the LLM generation should be consistent with the unit used in the retrieved documents. For example, "Tonnes 000", "Tonnes (000)", or "(000) Tonnes" mean thousand tonnes (Kt) or 1000 tonnes (t).
+4. The unit of grade should be correctly converted to decimal before used in the calculation in the code.
+5. The final answer enclosed in `<output>` tags should be converted correctly to tonnes (t).
+
+Show your feedback and give a binary score 'yes' or 'no' and reasoning. 'Yes' means that the LLM generation is consistent with the retrieved documents and no hallucination."""
+
+GRADE_HALLUCINATION_USER_PROMPT = """# Retrieved Documents
+{documents}
+
+# LLM Generation
+{generation}
+
+---
+Now take a deep breath and grade the LLM generation"""
+
+QUESTION_REWRITER_SYSTEM_PROMPT = """You a question re-writer that converts an input question to a better version that is optimized for vectorstore retrieval. Look at the input and try to reason about the underlying semantic intent / meaning."""
+
+QUESTION_REWRITER_USER_PROMPT = """Here is the initial question:\n\n---\n{question}\n--- \n\nFormulate an improved question."""

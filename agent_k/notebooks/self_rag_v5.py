@@ -1,6 +1,10 @@
 # %% [markdown]
 # Changes compared to v4 implementation:
 # - Optimizer implemented with litellm completion API in pdf_agent_fast_n_slow.py
+# - Python code interpreter tool enhancements:
+#   - Enhanced the python code interpreter tool error handling (wrap the last line in a print statement if not already + remove incorrect indentation if whitespace number is not a multiple of 2)
+#   - Enhanced the python code interpreter tool to handle the case where the last line is a variable (e.g. "mineral_resource_tonnage" -> "print(mineral_resource_tonnage)")
+#   - Return when state["remaining_steps"] < 2 to avoid recurrsion error
 
 # %%
 import re
@@ -23,11 +27,21 @@ from openai import OpenAI
 from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
 
+from agent_k.agents.code_agent_react import react_agent
 from agent_k.config.logger import logger
+from agent_k.config.prompts_fast_n_slow import (
+    DEEP_EXTRACT_SYSTEM_PROMPT,
+    GENERATION_USER_PROMPT_W_FEEDBACK,
+    GRADE_DOCUMENTS_SYSTEM_PROMPT,
+    GRADE_HALLUCINATION_SYSTEM_PROMPT,
+    GRADE_HALLUCINATION_USER_PROMPT,
+    QUESTION_REWRITER_SYSTEM_PROMPT,
+    QUESTION_REWRITER_USER_PROMPT,
+    QUESTION_TEMPLATE,
+)
 from agent_k.config.schemas import (
     TOTAL_MINERAL_RESOURCE_TONNAGE_DESCRIPTION,
 )
-from agent_k.notebooks.react_code_agent import react_agent
 
 load_dotenv()
 
@@ -36,10 +50,13 @@ RETRY_POLICY = RetryPolicy(max_attempts=3)
 
 CLIENT = OpenAI()
 NUM_RETRIEVED_DOCS = 5
+GRADE_RETRIEVAL_MODEL = "gpt-4o-mini"
+GRADE_RETRIEVAL_TEMPERATURE = 0.1
 PYTHON_AGENT_MODEL = "gpt-4o-mini"
 GRADE_HALLUCINATION_MODEL = "gpt-4o-mini"
 QUESTION_REWRITER_MODEL = "gpt-4o-mini"
 QUESTION_REWRITER_TEMPERATURE = 0.5
+REACT_AGENT_RECURSION_LIMIT = 10
 
 
 def count_tokens(text):
@@ -128,8 +145,6 @@ def create_markdown_retriever(
 
 # %%
 ### Retrieval Grader
-
-
 class GradeDocuments(BaseModel):
     """Binary score for relevance check on retrieved documents."""
 
@@ -142,62 +157,23 @@ class GradeDocuments(BaseModel):
 
 
 # LLM with function call
-llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.1)
+llm = ChatOpenAI(model=GRADE_RETRIEVAL_MODEL, temperature=GRADE_RETRIEVAL_TEMPERATURE)
 structured_llm_grader = llm.with_structured_output(GradeDocuments)
 
-# Prompt
-system = """You are a grader assessing relevance of a retrieved document to a user question. \n
-It does not need to be a stringent test. The goal is to filter out erroneous retrievals. \n
-If the document contains keyword(s) or semantic meaning related to the user question, grade it as relevant. \n
-Give a binary score 'yes' or 'no' score to indicate whether the document is relevant to the question."""
-
-QUESTION_TEMPLATE = """**Question:** What's the {field} of the mineral site in the attached 43-101 report?
-**Data type of {field}:** {dtype}
-**Default value of {field} if not found:** {default}
-**Description of {field}:** {description}"""
 
 grade_prompt = ChatPromptTemplate.from_messages(
     [
-        ("system", system),
+        ("system", GRADE_DOCUMENTS_SYSTEM_PROMPT),
         ("human", "# Retrieved document\n{document}\n\n# User question\n{question}"),
     ]
 )
 
 template = "# Retrieved document\n{document}\n\n# User question\n{question}"
-print(template.format(document="[sample document]", question="[sample question]"))
 
 retrieval_grader = grade_prompt | structured_llm_grader
 
 # %%
 ### Generate
-
-# Deep Extraction Assistant (Sync with OpenAI Assistant)
-DEEP_EXTRACT_SYSTEM_PROMPT = """You are an advanced AI assistant that answers questions based on the attached NI 43-101 mineral report. Your responses should be grounded in the report's content using the code interpreter tool for numerical calculations.
-
-## Guidelines
-1. Identify relevant facts in the context needed for answering the question.
-2. Perform Aggregations: Use the code interpreter tool for operations like summation, multiplication, or other numerical operations.
-3. Structure the Response Correctly: Format your final output with XML tags as follows:
-    - Reasoning: Explain your retrieval or computation process within `<thinking>` tags.
-    - Code: Show the executed code within `<code>`  tags.
-    - Final Answer: Provide the final response with unit within `<output>` tags (e.g. `<output>1000 tonnes</output>`).
-
-## Key Constraints:
-- No Hallucination: If the required information is unavailable, return the default value specified in the JSON schema in the `<output>` tag."""
-
-GENERATION_USER_PROMPT_W_FEEDBACK = """You are an assistant for question-answering tasks. Use the following retrieved context and previous feedback (if any) to answer the question. If you don't know the answer, just return the default value of the field in the question.
-
-## Context
-{context}
-
-## Previous Messages
-{previous_messages}
-
-## Question
-{question}
-
----
-Now take a deep breath and answer the question step by step while considering the previous feedback."""
 
 
 def deep_extract_w_feedback(question, context, previous_messages) -> str:
@@ -210,6 +186,7 @@ def deep_extract_w_feedback(question, context, previous_messages) -> str:
             context=context,
             previous_messages="\n".join(previous_messages_str),
         ),
+        recursion_limit=REACT_AGENT_RECURSION_LIMIT,
     )
     content = result["messages"][-1].content
 
@@ -236,39 +213,12 @@ class GradeHallucinations(BaseModel):
 llm = ChatOpenAI(model=GRADE_HALLUCINATION_MODEL)
 structured_llm_grader = llm.with_structured_output(GradeHallucinations)
 
-# Prompt (Update in OpenAI Assistant)
-GRADE_HALLUCINATION_SYSTEM_PROMPT = """You are a hallucination agent validating a LLM's generation against the retrieved documents. Focus on the calculation logic and unit conversions.
-
-Guidelines:
-1. Total mineral resource tonnage should be the sum of one or more of inferred, indicated, and measured mineral resources. If not, a default value of 0 should be returned.
-2. Total mineral reserve tonnage should be the sum of one or more of proven and probable mineral reserves. If not, a default value of 0 should be returned.
-3. The tonnage or grade unit used in the LLM generation should be consistent with the unit used in the retrieved documents. For example, "Tonnes 000", "Tonnes (000)", or "(000) Tonnes" mean thousand tonnes (Kt) or 1000 tonnes (t).
-4. The unit of grade should be correctly converted to decimal before used in the calculation in the code.
-5. The final answer enclosed in `<output>` tags should be converted correctly to tonnes (t).
-
-Show your feedback and give a binary score 'yes' or 'no' and reasoning. 'Yes' means that the LLM generation is consistent with the retrieved documents and no hallucination."""
-
-GRADE_HALLUCINATION_USER_PROMPT = """# Retrieved Documents
-{documents}
-
-# LLM Generation
-{generation}
-
----
-Now take a deep breath and grade the LLM generation"""
 
 hallucination_prompt = ChatPromptTemplate.from_messages(
     [
         ("system", GRADE_HALLUCINATION_SYSTEM_PROMPT),
         ("human", GRADE_HALLUCINATION_USER_PROMPT),
     ]
-)
-
-print(
-    "\n"
-    + GRADE_HALLUCINATION_USER_PROMPT.format(
-        documents="[sample documents]", generation="[sample generation]"
-    )
 )
 
 hallucination_grader = hallucination_prompt | structured_llm_grader
@@ -282,18 +232,12 @@ llm = ChatOpenAI(
 )
 
 # Prompt
-QUESTION_REWRITER_SYSTEM_PROMPT = """You a question re-writer that converts an input question to a better version that is optimized for vectorstore retrieval. Look at the input and try to reason about the underlying semantic intent / meaning."""
-
-QUESTION_REWRITER_USER_PROMPT = """Here is the initial question:\n\n---\n{question}\n--- \n\nFormulate an improved question."""
-
 re_write_prompt = ChatPromptTemplate.from_messages(
     [
         ("system", QUESTION_REWRITER_SYSTEM_PROMPT),
         ("human", QUESTION_REWRITER_USER_PROMPT),
     ]
 )
-
-print(QUESTION_REWRITER_USER_PROMPT.format(question="[sample question]"))
 
 question_rewriter = re_write_prompt | llm | StrOutputParser()
 
@@ -347,6 +291,9 @@ def retrieve(state):
 
 
 def get_mode_or_last(lst):
+    """
+    Helper function to get the mode or last item of a list (used for self consistency)
+    """
     count = Counter(lst)
     max_count = max(count.values())
 

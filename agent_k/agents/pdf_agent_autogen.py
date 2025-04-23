@@ -10,7 +10,7 @@ from autogen_core import CancellationToken
 from autogen_ext.agents.openai import OpenAIAssistantAgent
 
 import agent_k.config.general as config_general
-import agent_k.config.prompts as config_prompts
+import agent_k.config.prompts_db_agent as config_prompts
 from agent_k.config.general import OPENAI_ASSISTANT_CLIENT, OPENAI_ASSISTANT_MODEL
 from agent_k.config.logger import logger
 

@@ -46,17 +46,21 @@ class PythonExecTool(ToolInterface):
             code = code.encode("utf-8").decode("unicode_escape")
         code_lines = code.splitlines()
 
-        # Remove incorrect indentation if whitespace number is not a multiple of 2
+        # Corner case: Remove incorrect indentation if whitespace number is not a multiple of 2
         for i, line in enumerate(code_lines):
             left_space = len(line) - len(line.lstrip())
             if left_space % 2 != 0:
                 code_lines[i] = line.lstrip()
 
-        # If last line is a variable, wrap it in a print statement
+        # Corner case: If the last line is an assignment, parse the variable name
+        if "=" in code_lines[-1]:
+            variable_name = code_lines[-1].split("=")[0].strip()
+            code_lines += [f"print({variable_name})"]
+
+        # Corner case: If last line is not a print statement, wrap it in a print statement
         if not code_lines[-1].startswith("print("):
             code_lines = code_lines[:-1] + [f"print({code_lines[-1]})"]
             code = "\n".join(code_lines)
-            # logger.warning(f"Wrapped last line in a print statement:\n{code}")
 
         output, errors = self._run_code_in_container(code)
         if errors:

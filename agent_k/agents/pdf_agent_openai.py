@@ -14,7 +14,7 @@ from pydantic import Field, create_model
 from tqdm import tqdm
 
 import agent_k.config.general as config_general
-import agent_k.config.prompts as config_prompts
+import agent_k.config.prompts_db_agent as config_prompts
 from agent_k.config.logger import logger
 from agent_k.config.schemas import (
     DataSource,
