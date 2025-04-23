@@ -181,10 +181,10 @@ DEEP_EXTRACT_SYSTEM_PROMPT = """You are an advanced AI assistant that answers qu
 2. Structure the Response Correctly: Format your final output with XML tags as follows:
     - Reasoning: Explain your retrieval or computation process within `<thinking>` tags.
     - Code: Show the executed code within `<code>`  tags
-    - Final Answer: Provide the final response within `<output>` tags. Do not include other extra XML tags (e.g., `<answer>`) or filler words.
+    - Final Answer: Provide the final response within `<answer>` tags. Do not include other extra XML tags (e.g., `<answer>`) or filler words.
 
 ## Key Constraints:
-- No Hallucination: If the required information is unavailable, return the default value specified in the JSON schema in the `<output>` tag."""
+- No Hallucination: If the required information is unavailable, return the default value specified in the JSON schema in the `<answer>` tag."""
 
 GENERATION_USER_PROMPT_W_FEEDBACK = """You are an assistant for question-answering tasks. Use the following retrieved context and previous feedback to answer the question. If you don't know the answer, just return the default value of the field in the question.
 
@@ -275,7 +275,7 @@ Guidelines:
 2. Total mineral reserve tonnage should be the sum of one or more of proven and probable mineral reserves. If not, a default value of 0 should be returned.
 3. The tonnage or grade unit used in the LLM generation should be consistent with the unit used in the retrieved documents. For example, "Tonnes 000", "Tonnes (000)", or "(000) Tonnes" mean thousand tonnes (Kt) or 1000 tonnes (t).
 4. The unit of grade should be correctly converted to decimal before used in the calculation in the code.
-5. The final answer enclosed in `<output>` tags should be converted correctly to tonnes (t).
+5. The final answer enclosed in `<answer>` tags should be converted correctly to tonnes (t).
 
 Show your feedback and give a binary score 'yes' or 'no' and reasoning. 'Yes' means that the LLM generation is consistent with the retrieved documents and no hallucination."""
 
@@ -401,16 +401,16 @@ def generate(state):
     if len(state["previous_answers"]) >= 3:
         # Self consistency if detected looping
         mode_answer = get_mode_or_last(state["previous_answers"])
-        generation = f"<reasoning>Detect looping. Use self consistency to choose the most popular answer from previous generations.</reasoning><output>{mode_answer}</output>"
+        generation = f"<reasoning>Detect looping. Use self consistency to choose the most popular answer from previous generations.</reasoning><answer>{mode_answer}</answer>"
     else:
         previous_messages = state["messages"]
         generation = deep_extract_w_feedback(question, documents, previous_messages)
 
     try:
-        parsed_output = generation.split("<output>")[1].split("</output>")[0].strip()
+        parsed_output = generation.split("<answer>")[1].split("</answer>")[0].strip()
         parsed_output = re.sub(r"[^0-9.]", "", parsed_output)
     except IndexError:
-        logger.exception(f"Error parsing <output> XML tags for content: {generation}")
+        logger.exception(f"Error parsing <answer> XML tags for content: {generation}")
 
     return {
         "generation": generation,
@@ -637,7 +637,7 @@ if __name__ == "__main__":
     )
 
     retriever = create_markdown_retriever(
-        "data/processed/43-101-header-corrected/0200a1c6d2cfafeb485d815d95966961d4c119e8662b8babec74e05b59ba4759d2.md",
+        "data/processed/43-101-refined/0200a1c6d2cfafeb485d815d95966961d4c119e8662b8babec74e05b59ba4759d2.md",
         collection_name="rag-chroma",
     )
 

@@ -166,7 +166,8 @@ def prompt_openai_assistant(assistant: Assistant, messages: list[dict]) -> str:
     try:
         message_content = messages[0].content[0].text
     except IndexError as e:
-        logger.exception(f"{e}.`messages`: {messages}")
+        logger.error(f"{e}.`messages`: {messages}")
+        raise e
 
     annotations = message_content.annotations
     citations = []

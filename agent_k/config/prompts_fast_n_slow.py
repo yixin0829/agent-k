@@ -2,7 +2,7 @@ SCHEMA_DECOMPOSE_SYS_PROMPT = """You are a helpful agent that groups entities in
 1. Simple entities in the JSON schema that can be extracted directly from the text.
 2. Complex entities in the JSON schema that require reasoning or additional information to be extracted. Complex entities may include composite entities that need further decomposition or non-composite entities that require extra context for extraction.
 
-You should enclose your reasoning within <thinking> XML tags and output the result within <output> XML tags."""
+You should enclose your reasoning within <thinking> XML tags and output the result within <answer> XML tags."""
 
 DECOMPOSE_USER_PROMPT_TEMPLATE = """# Example 1
 Given the following JSON schema:
@@ -13,10 +13,10 @@ Output:
 <thinking>
 "name" and "address" are not complex entities and can be extracted directly from the text. "total_attendees" is likely a complex entity because it requires extracting individual attendees and counting them. Oldest attendee is a complex entity because it requires extracting the oldest attendee from the list of attendees.
 </thinking>
-<output>
+<answer>
 1. Simple entities: ["name", "address"]
 2. Complex entities: ["total_attendees", "oldest_attendee"]
-</output>
+</answer>
 
 # Example 2
 Given the following JSOn schema:
@@ -27,10 +27,10 @@ Output:
 <thinking>
 "product_name", "product_type", "price", and "discount" are all not complex entities and can be extracted directly from the text. "discount" is likely a complex entity because it requires extracting the discounted price and the original price from the text and then calculating the discount.
 </thinking>
-<output>
+<answer>
 1. Simple entities: ["product_name", "product_type", "price"]
 2. Complex entities: ["discount"]
-</output>
+</answer>
 
 # Example 3
 Given the following JSON schema:
@@ -41,10 +41,10 @@ Output:
 <thinking>
 "address", "province", and "country" are not complex entities and can be extracted directly from the text. "total_sales" is a complex entity because it requires extracting separate sale entities and then summing the sale values.
 </thinking>
-<output>
+<answer>
 1. Simple entities: ["address", "province", "country"]
 2. Complex entities: ["total_sales"]
-</output>
+</answer>
 
 # Example 4
 Given the following JSON schema:
@@ -82,10 +82,10 @@ DEEP_EXTRACT_SYSTEM_PROMPT_ASSISTANT = """You are an advanced AI assistant that 
 2. Perform Aggregations (If Needed): Use the code interpreter tool for operations like summation, averaging, or other calculations.
 3. Structure the Response Correctly: Format your final output with XML tags as follows:
     - Reasoning: Explain your retrieval or computation process within `<thinking>` tags.
-    - Final Answer: Provide the final response within `<output>` tags. Do not include other extra XML tags (e.g., `<answer>`) or filler words.
+    - Final Answer: Provide the final response within `<answer>` tags. Do not include other extra XML tags (e.g., `<answer>`) or filler words.
 
 ## Key Constraints:
-- No Hallucination: If the required information is unavailable, return the default value specified in the JSON schema in the `<output>` tag.
+- No Hallucination: If the required information is unavailable, return the default value specified in the JSON schema in the `<answer>` tag.
 """
 
 DEEP_EXTRACT_USER_PROMPT = """**Question:** What's the {field} of the mineral site in the attached 43-101 report?
@@ -152,8 +152,8 @@ VALIDATOR_SYSTEM_PROMPT = """You are a validation agent responsible for verifyin
 - Reasoning: Enclose your thought process, validation steps, and identified issues in `<thinking>` XML tags.
 - Feedback: Provide specific corrections, observations, or necessary adjustments in `<feedback>` XML tags.
 - Final Validation Result:
-    - If the extracted result is incorrect, output "NO" within `<output>` XML tags.
-    - If the extracted result is correct, output "YES" within `<output>` XML tags.
+    - If the extracted result is incorrect, output "NO" within `<answer>` XML tags.
+    - If the extracted result is correct, output "YES" within `<answer>` XML tags.
 
 Example output format:
 ```
@@ -165,9 +165,9 @@ Detailed validation process, including schema checks and extracted value analysi
 Specific errors found or confirmation that the extraction is correct.
 </feedback>
 
-<output>
+<answer>
 YES or NO
-</output>
+</answer>
 ```
 
 Ensure all responses are concise, structured, and directly aligned with the JSON schema validation criteria."""
@@ -196,18 +196,18 @@ QUESTION_TEMPLATE = """**Question:** What's the {field} of the mineral site in t
 
 
 # Deep Extraction code agent prompt
-DEEP_EXTRACT_SYSTEM_PROMPT = """You are an advanced AI assistant that answers questions based on the attached NI 43-101 mineral report. Your responses should be grounded in the report's content using the code interpreter tool for numerical calculations.
+DEEP_EXTRACT_SYSTEM_PROMPT = """You are a helpful AI agent that answers questions based on given context from a NI 43-101 mineral report. Your responses should be grounded in the report's content. You must use the code interpreter tool for numerical calculations. After you have a successful code execution output, structure your final response with XML tags.
 
-## Guidelines
-1. Identify relevant facts in the context needed for answering the question.
+## General Workflow
+1. Reason and identify relevant facts in the context needed for answering the question.
 2. Use the code interpreter tool to perform aggregation operations like summation, multiplication, or other numerical operations.
-3. Once have a successful code execution output, format your final answer with XML tags as follows; otherwise, fix the code and try again:
+3. Structure your final response with XML tags as follows once you have a successful code execution output:
     - Thinking: Explain your reasoning process within `<thinking>` tags.
-    - Code: Show the executed code within `<code>`  tags.
-    - Output: Provide the final response with unit within `<output>` tags (e.g. `<output>1000 tonnes</output>`).
+    - Code: Show the executed code within `<code>` tags.
+    - Answer: Provide the final calculation result within `<answer>` tags (e.g. `<answer>1000 tonnes</answer>`).
 
 ## Key Constraints:
-- No Hallucination: If the required information is unavailable, return the default value specified in the JSON schema in the `<output>` tag."""
+- No Hallucination: If the required information is unavailable, return the default value specified in the JSON schema in the `<answer>` tag."""
 
 GENERATION_USER_PROMPT_W_FEEDBACK = """You are an assistant for question-answering tasks. Use the following retrieved context and previous feedback (if any) to answer the question. If you don't know the answer, just return the default value of the field in the question.
 
@@ -232,7 +232,7 @@ Guidelines:
 2. Total mineral reserve tonnage should be the sum of one or more of proven and probable mineral reserves. If not, a default value of 0 should be returned.
 3. The tonnage or grade unit used in the LLM generation should be consistent with the unit used in the retrieved documents. For example, "Tonnes 000", "Tonnes (000)", or "(000) Tonnes" mean thousand tonnes (Kt) or 1000 tonnes (t).
 4. The unit of grade should be correctly converted to decimal before used in the calculation in the code.
-5. The final answer enclosed in `<output>` tags should be converted correctly to tonnes (t).
+5. The final answer enclosed in `<answer>` tags should be converted correctly to tonnes (t).
 
 Show your feedback and give a binary score 'yes' or 'no' and reasoning. 'Yes' means that the LLM generation is consistent with the retrieved documents and no hallucination."""
 

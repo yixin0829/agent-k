@@ -171,10 +171,10 @@ DEEP_EXTRACT_SYSTEM_PROMPT = """You are an advanced AI assistant that answers qu
 1. Perform Aggregations (If Needed): Use the code interpreter tool for operations like summation, averaging, or other calculations.
 2. Structure the Response Correctly: Format your final output with XML tags as follows:
     - Reasoning: Explain your retrieval or computation process within `<thinking>` tags.
-    - Final Answer: Provide the final response within `<output>` tags. Do not include other extra XML tags (e.g., `<answer>`) or filler words.
+    - Final Answer: Provide the final response within `<answer>` tags. Do not include other extra XML tags (e.g., `<answer>`) or filler words.
 
 ## Key Constraints:
-- No Hallucination: If the required information is unavailable, return the default value specified in the JSON schema in the `<output>` tag.
+- No Hallucination: If the required information is unavailable, return the default value specified in the JSON schema in the `<answer>` tag.
 """
 
 GENERATION_USER_PROMPT_WO_FEEDBACK = """You are an assistant for question-answering tasks. Use the following pieces of retrieved context to answer the question. If you don't know the answer, just return the default value of the field in the question.
@@ -295,7 +295,7 @@ Guidelines:
 1. Mineral resources are composed of inferred, indicated, and measured resources. If none of the retrieved documents mention inferred, indicated, or measured resources, check if the LLM generation contains a default value of 0 for total mineral resource tonnage.
 2. Mineral reserves are composed of proven and probable reserves. If none of the retrieved documents mention proven or probable reserves, check if the LLM generation contains a default value of 0 for total mineral reserve tonnage.
 3. Check if the units of the mineral resources or reserves in the retrieved documents are consistent with the units of the mineral resources or reserves in the LLM generation. Especially pay attention if the retrieved documents mention "Tonnes 000" or something similar, which means that the tonnage is in thousands of tonnes.
-4. Check if the final numerical answer is enclosed in `<output>` XML tags without any other XML tags, filler words, or explicit unit.
+4. Check if the final numerical answer is enclosed in `<answer>` XML tags without any other XML tags, filler words, or explicit unit.
 
 Give a binary score 'yes' or 'no' and show your reasoning. 'Yes' means that the answer is hallucinated based on the set of retrieved documents."""
 hallucination_prompt = ChatPromptTemplate.from_messages(

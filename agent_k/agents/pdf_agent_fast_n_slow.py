@@ -13,6 +13,12 @@ from langgraph.pregel import RetryPolicy
 from langgraph.types import Send
 from litellm import completion
 from openai import OpenAI
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 from typing_extensions import TypedDict
 
 import agent_k.config.general as config_general
@@ -43,17 +49,21 @@ from agent_k.utils.general import (
     split_json_schema,
 )
 
-# Configs
+################################# Configs #################################
 CLIENT = OpenAI()
 SLOW_EXTRACT_VALIDATION_MODEL = "gpt-4o-mini"
 SLOW_EXTRACT_VALIDATION_TEMPERATURE = 0.1
 SLOW_EXTRACT_OPTIMIZER_MODEL = "gpt-4o-mini"
 SLOW_EXTRACT_OPTIMIZER_TEMPERATURE = 0.1
 RETRY_POLICY = RetryPolicy(max_attempts=3)
-RECURSION_LIMIT = 12
+RECURSION_LIMIT = 12  # Self-RAG recursion limit
+SELF_RAG_RETRY_LIMIT = 3
+################################# Configs #################################
+
 
 # Global variables
 filename_to_id_map = list_43_101_reports()
+retry_count = 0
 
 
 def batch_extract(
@@ -186,7 +196,7 @@ def schema_decompose(state: State):
     #     top_p=TOP_P,
     # )
 
-    # # Parse the <output> XML tags
+    # # Parse the <answer> XML tags
     # content = response.choices[0].message.content
     # simple_entities = []
     # complex_entities = []
@@ -315,10 +325,10 @@ def slow_extraction_output_parser(
         return "Not Found"
 
     try:
-        parsed_output = content.split("<output>")[1].split("</output>")[0].strip()
+        parsed_output = content.split("<answer>")[1].split("</answer>")[0].strip()
     except IndexError as e:
         raise Exception(
-            f"Error parsing <output> XML tags for {entity_name}\nContent: {content}"
+            f"Error parsing <answer> XML tags for {entity_name}\nContent: {content}"
         ) from e
 
     if dtype == "number" and parsed_output != "Not Found":
@@ -394,13 +404,34 @@ def slow_extraction_agent_map_reduce_self_rag(state: ComplexEntityState):
         "hallucination_grade": "N/A",
     }
 
-    # Compile a new graph for each slow entity extraction to avoid mixed memory
-    self_rag_graph = self_rag_graph_builder.compile()
-    value = self_rag_graph.invoke(
-        graph_inputs, config={"recursion_limit": RECURSION_LIMIT}
+    def before_sleep_callback(retry_state):
+        global retry_count
+        retry_count += 1
+        logger.warning(
+            f"[{retry_state.attempt_number}/{SELF_RAG_RETRY_LIMIT}] Retrying... {retry_state.outcome.exception()}"
+        )
+
+    # Use tenacity to retry the graph invocation and output parsing with exponential backoff
+    @retry(
+        stop=stop_after_attempt(SELF_RAG_RETRY_LIMIT),
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+        retry=retry_if_exception_type(Exception),
+        before_sleep=before_sleep_callback,
     )
-    content = value["generation"]
-    parsed_output = slow_extraction_output_parser(content, entity_name, dtype)
+    def invoke_self_rag_and_parse_with_retry(inputs, config, entity_name, dtype):
+        # Compile a new graph for each slow entity extraction to avoid mixed memory
+        self_rag_graph = self_rag_graph_builder.compile()
+        value = self_rag_graph.invoke(inputs, config=config)
+        content = value["generation"]
+        parsed_output = slow_extraction_output_parser(content, entity_name, dtype)
+        return content, parsed_output
+
+    content, parsed_output = invoke_self_rag_and_parse_with_retry(
+        graph_inputs,
+        config={"recursion_limit": RECURSION_LIMIT},
+        entity_name=entity_name,
+        dtype=dtype,
+    )
 
     return {
         "messages": [{"role": "assistant", "content": content}],
@@ -482,7 +513,7 @@ def validate_extraction_result(state: State):
     logger.debug(f"Response: {response.choices[0].message.content}")
     content = response.choices[0].message.content
     parsed_feedback = content.split("<feedback>")[1].split("</feedback>")[0]
-    parsed_output = content.split("<output>")[1].split("</output>")[0]
+    parsed_output = content.split("<answer>")[1].split("</answer>")[0]
 
     return {
         "slow_extraction_validation": parsed_output,
@@ -671,14 +702,13 @@ def extract_from_pdf(
                 {"recursion_limit": RECURSION_LIMIT},
             )
         case "DPE MAP_REDUCE SELF RAG":
-            # Initialize the retriever
+            # Initialize the retriever with the markdown file path
             markdown_filename = pdf_path.split("/")[-1].replace(".pdf", ".md")
             markdown_path = os.path.join(
-                "data/processed/43-101-header-corrected", markdown_filename
+                "data/processed/43-101-refined", markdown_filename
             )
             retriever = create_markdown_retriever(
-                markdown_path,
-                collection_name="rag-chroma",
+                markdown_path, collection_name=markdown_path
             )
 
             graph = build_dpe_w_map_reduce_self_rag_graph()
@@ -701,16 +731,26 @@ def extract_from_pdf(
 def extract_from_inferlink_pdfs(
     sample_size: int,
     method: Literal["F&S", "DPE MAP_REDUCE", "DPE MAP_REDUCE SELF RAG"],
+    eval_type: Literal["FULL", "SUBSET"],
 ) -> pd.DataFrame:
     """
     Extract entities from all the PDF files in parallel and return as a DataFrame.
     Results are saved incrementally to a CSV file to prevent data loss.
     """
-    inferlink_ground_truth_filtered_path = pd.read_csv(
-        "data/processed/ground_truth/inferlink_ground_truth_filtered.csv"
-    )
-    cdr_record_ids = inferlink_ground_truth_filtered_path["cdr_record_id"].tolist()
-    main_commodity = inferlink_ground_truth_filtered_path["main_commodity"].tolist()
+    if eval_type == "SUBSET":
+        inferlink_ground_truth = pd.read_csv(
+            "data/processed/ground_truth/inferlink_ground_truth_filtered.csv"
+        )
+        cdr_record_ids = inferlink_ground_truth["cdr_record_id"].tolist()
+        main_commodity = inferlink_ground_truth["main_commodity"].tolist()
+    elif eval_type == "FULL":
+        inferlink_ground_truth = pd.read_csv(
+            "data/processed/ground_truth/inferlink_ground_truth.csv"
+        )
+        cdr_record_ids = inferlink_ground_truth["cdr_record_id"].tolist()
+        main_commodity = inferlink_ground_truth["commodity_observed_name"].tolist()
+    else:
+        raise ValueError(f"Unknown eval type: {eval_type}")
 
     # For testing purpose. If None, extract from all PDF files
     if sample_size:
@@ -775,7 +815,7 @@ def extract_from_inferlink_pdfs(
                 df_row.to_csv(output_file, mode="a", header=False, index=False)
 
         except Exception as e:
-            logger.exception(f"Failed to extract from {path}: {e}")
+            logger.error(f"Failed to extract from {path}: {e}")
             continue
 
     # Read the final CSV file and return as DataFrame
@@ -832,7 +872,7 @@ def extract_from_all_pdfs(
         try:
             entities = extract_from_pdf(path, schema, method=method)
         except Exception as e:
-            logger.exception(f"Failed to extract from {path}: {e}")
+            logger.error(f"Failed to extract from {path}: {e}")
 
         try:
             if entities:
@@ -840,7 +880,7 @@ def extract_from_all_pdfs(
                 entities.update({"cdr_record_id": cdr_record_id})
                 data_rows.append(entities)
         except Exception as e:
-            logger.exception(f"Failed to process entities for {path}: {e}")
+            logger.error(f"Failed to process entities for {path}: {e}")
 
     # Filter out empty results
     data_rows = [row for row in data_rows if row]
@@ -867,13 +907,28 @@ if __name__ == "__main__":
     # Log metadata about the extraction (total time, number of PDFs, number of entities extracted)
     start_time = time()
 
-    sample_size = None
+    ################################# Configs #################################
+    sample_size = 1
+    method = "DPE MAP_REDUCE SELF RAG"
+    eval_type = "FULL"
+    ################################# Configs #################################
+
     df = extract_from_inferlink_pdfs(
-        sample_size=sample_size, method="DPE MAP_REDUCE SELF RAG"
+        sample_size=sample_size,
+        method=method,
+        eval_type=eval_type,
     )
 
     logger.info("Extracting entities from all PDF files")
-    logger.info(f"Sample size: {sample_size}")
+    # Experiment hyperparameters
+    logger.info(f"Code agent retry limit: {SELF_RAG_RETRY_LIMIT}")
+    logger.info(f"Sample size: {'100%' if sample_size is None else sample_size}%")
+    logger.info(f"Method: {method}")
+    logger.info(f"Evaluation type: {eval_type}")
+
+    # Metadata
+    logger.info(f"Code agent retry count: {retry_count}")
+    logger.info(f"Average code agent retry count per PDF: {retry_count / len(df):.2f}")
     logger.info(f"Total time taken: {time() - start_time:.2f} seconds")
     logger.info(f"Average time per PDF: {(time() - start_time) / len(df):.2f} seconds")
     logger.info(f"Number of PDFs: {len(df)}")

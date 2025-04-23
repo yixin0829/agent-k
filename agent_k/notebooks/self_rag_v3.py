@@ -193,10 +193,10 @@ DEEP_EXTRACT_SYSTEM_PROMPT = """You are an advanced AI assistant that answers qu
 1. Perform Aggregations: Use the code interpreter tool for operations like summation, multiplication, or other numerical operations.
 2. Structure the Response Correctly: Format your final output with XML tags as follows:
     - Reasoning: Explain your retrieval or computation process within `<thinking>` tags.
-    - Final Answer: Provide the final response within `<output>` tags. Do not include other extra XML tags (e.g., `<answer>`) or filler words.
+    - Final Answer: Provide the final response within `<answer>` tags. Do not include other extra XML tags (e.g., `<answer>`) or filler words.
 
 ## Key Constraints:
-- No Hallucination: If the required information is unavailable, return the default value specified in the JSON schema in the `<output>` tag.
+- No Hallucination: If the required information is unavailable, return the default value specified in the JSON schema in the `<answer>` tag.
 """
 
 GENERATION_USER_PROMPT_WO_FEEDBACK = """You are an assistant for question-answering tasks. Use the following pieces of retrieved context to answer the question. If you don't know the answer, just return the default value of the field in the question.
@@ -320,7 +320,7 @@ Guidelines:
 1. Check if total mineral resource tonnage is the sum of inferred, indicated, and measured mineral resources. If not, a default value of 0 should be returned.
 2. Check if total mineral reserve tonnage is the sum of proven and probable mineral reserves. If not, a default value of 0 should be returned.
 3. Check if the tonnage or grade unit used in the LLM generation is consistent with the unit used in the retrieved documents. For example, "Tonnes 000", "Tonnes (000)", or "(000) Tonnes" mean thousand tonnes (Kt) or 1000 tonnes (t).
-4. Check if the unit of final answer enclosed in `<output>` tags is converted correctly to tonnes (t).
+4. Check if the unit of final answer enclosed in `<answer>` tags is converted correctly to tonnes (t).
 
 Show your feedback and give a binary score 'yes' or 'no' and . 'Yes' means that the LLM generation is consistent with the retrieved documents and no hallucination."""
 
@@ -399,7 +399,7 @@ system = """You are a grader assessing whether an answer addresses / resolves a 
 
 Guidelines:
 1. Check if the reasoning is enclosed in `<thinking>` XML tags.
-2. Check if the final numerical answer is enclosed in `<output>` XML tags without any other XML tags, filler words, or explicit unit.
+2. Check if the final numerical answer is enclosed in `<answer>` XML tags without any other XML tags, filler words, or explicit unit.
 3. A default value 0 also counts as an invalid answer.
 
 Give a binary score 'yes' or 'no'. Yes' means that the answer resolves the question."""
@@ -517,7 +517,7 @@ def generate(state):
     if len(state["answers"]) >= 3:
         # Self consistency if detected looping
         mode_answer = get_mode_or_last(state["answers"])
-        generation = f"<reasoning>Detect looping. Use self consistency to choose the most popular answer from previous generations.</reasoning><output>{mode_answer}</output>"
+        generation = f"<reasoning>Detect looping. Use self consistency to choose the most popular answer from previous generations.</reasoning><answer>{mode_answer}</answer>"
     elif hallucination_grade.lower() == "no" or answer_grade.lower() == "no":
         # RAG generation with previous generation and feedback
         previous_messages = state["messages"]
@@ -527,10 +527,10 @@ def generate(state):
         generation = deep_extract_wo_feedback(question, documents)
 
     try:
-        parsed_output = generation.split("<output>")[1].split("</output>")[0].strip()
+        parsed_output = generation.split("<answer>")[1].split("</answer>")[0].strip()
         parsed_output = re.sub(r"[^0-9.]", "", parsed_output)
     except IndexError:
-        logger.exception(f"Error parsing <output> XML tags for content: {generation}")
+        logger.exception(f"Error parsing <answer> XML tags for content: {generation}")
 
     return {
         "generation": generation,
@@ -681,10 +681,10 @@ def retriever_router(state):
 
 
 def generate_router(state):
-    # Use regex to check if the generation matches the pattern "<output>X</output>"
+    # Use regex to check if the generation matches the pattern "<answer>X</answer>"
     # where X is a number (integer or decimal)
     generation: str = state["generation"]
-    output_pattern = re.compile(r"<output>(\d+(?:\.\d+)?)</output>")
+    output_pattern = re.compile(r"<answer>(\d+(?:\.\d+)?)</answer>")
     match = output_pattern.search(generation)
 
     # Extract the numeric value from the match and convert it to a number

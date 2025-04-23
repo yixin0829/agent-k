@@ -239,9 +239,13 @@ def normalize_grade_units(df):
 if __name__ == "__main__":
     # When run as a script, process all metadata.csv files
     master_metadata_df = read_metadata_files()
-    master_metadata_df.to_csv("data/processed/inferlink_metadata.csv", index=False)
+    master_metadata_df.to_csv(
+        "data/processed/ground_truth/inferlink_metadata.csv", index=False
+    )
     master_inventory_df = read_mineral_inventory_files()
-    master_inventory_df.to_csv("data/processed/inferlink_inventory.csv", index=False)
+    master_inventory_df.to_csv(
+        "data/processed/ground_truth/inferlink_inventory.csv", index=False
+    )
 
     master_inventory_df = normalize_ore_units(master_inventory_df)
     master_inventory_df = normalize_grade_units(master_inventory_df)
@@ -366,7 +370,9 @@ if __name__ == "__main__":
     }
     master_df = master_df.rename(columns=cols_to_rename)
 
-    master_df.to_csv("data/processed/inferlink_ground_truth.csv", index=False)
+    master_df.to_csv(
+        "data/processed/ground_truth/inferlink_ground_truth.csv", index=False
+    )
 
     # Filter for rows where commodity_observed_name appears in the main_commodity column
     for idx, row in master_df.iterrows():
@@ -380,4 +386,6 @@ if __name__ == "__main__":
 
     master_df = master_df[master_df["is_main_commodity"]]
     master_df.drop(columns=["is_main_commodity"], inplace=True)
-    master_df.to_csv("data/processed/inferlink_ground_truth_filtered.csv", index=False)
+    master_df.to_csv(
+        "data/processed/ground_truth/inferlink_ground_truth_filtered.csv", index=False
+    )

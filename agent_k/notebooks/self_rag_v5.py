@@ -121,17 +121,23 @@ def create_markdown_retriever(
         # Initialize the Chroma client
         client = chromadb.Client()
 
+        # Hash the collection name to determine which of 10 collections to use
+        collection_hash = hash(collection_name)
+        collection_index = abs(collection_hash) % 10  # Get value between 0-9
+        hashed_collection_name = f"rag-chroma_shard_{collection_index}"
+        logger.info(f"Hashed collection name: {hashed_collection_name}")
+
         # Delete existing in-memory collection if it exists
         try:
-            client.delete_collection(collection_name)
-            logger.info(f"Deleted existing collection: {collection_name}")
+            client.delete_collection(hashed_collection_name)
+            logger.info(f"Deleted existing collection: {hashed_collection_name}")
         except Exception:
             pass
 
         # Create a new vectorstore with persist_directory=None to keep it in-memory
         vectorstore = Chroma.from_documents(
             documents=doc_splits,
-            collection_name=collection_name,
+            collection_name=hashed_collection_name,
             embedding=OpenAIEmbeddings(model=embedding_model),
             persist_directory=None,  # Keep in-memory to avoid persistence
         )
@@ -284,6 +290,18 @@ def retrieve(state):
     logger.info("---RETRIEVE---")
     question = state["question"]
 
+    # Regex parse lines start with "**Question" and "**Description"
+    question_line = re.search(r"^.*?Question\s*(.*?)\s*$", question, re.DOTALL)
+    description_line = re.search(r"^.*?Description\s*(.*?)\s*$", question, re.DOTALL)
+
+    if question_line:
+        question = question_line.group(1).strip()
+
+    if description_line:
+        description = description_line.group(1).strip()
+
+    question = f"{question}\n\n{description}"
+
     # Retrieval
     documents = state["retriever"].invoke(question)
 
@@ -323,16 +341,17 @@ def generate(state):
     if len(state["previous_answers"]) >= 3:
         # Self consistency if detected looping
         mode_answer = get_mode_or_last(state["previous_answers"])
-        generation = f"<reasoning>Detect looping. Use self consistency to choose the most popular answer from previous generations.</reasoning><output>{mode_answer}</output>"
+        generation = f"<reasoning>Detect looping. Use self consistency to choose the most popular answer from previous generations.</reasoning><answer>{mode_answer}</answer>"
     else:
         previous_messages = state["messages"]
         generation = deep_extract_w_feedback(question, documents, previous_messages)
 
     try:
-        parsed_output = generation.split("<output>")[1].split("</output>")[0].strip()
+        parsed_output = generation.split("<answer>")[1].split("</answer>")[0].strip()
         parsed_output = re.sub(r"[^0-9.]", "", parsed_output)
-    except IndexError:
-        logger.exception(f"Error parsing <output> XML tags for content: {generation}")
+    except IndexError as e:
+        logger.error(f"Error parsing <answer> XML tags for content: {generation}")
+        raise e
 
     return {
         "generation": generation,
@@ -557,7 +576,7 @@ if __name__ == "__main__":
     )
 
     retriever = create_markdown_retriever(
-        "data/processed/43-101-header-corrected/0200a1c6d2cfafeb485d815d95966961d4c119e8662b8babec74e05b59ba4759d2.md",
+        "data/processed/43-101-refined/0200a1c6d2cfafeb485d815d95966961d4c119e8662b8babec74e05b59ba4759d2.md",
         collection_name="rag-chroma",
     )
 

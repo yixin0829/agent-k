@@ -1,6 +1,5 @@
 from typing import Annotated, TypedDict
 
-from langchain_core.messages import AIMessage
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
 from langgraph.graph import END, START, StateGraph
@@ -11,8 +10,10 @@ from langgraph.prebuilt import ToolNode
 from agent_k.config.prompts_fast_n_slow import DEEP_EXTRACT_SYSTEM_PROMPT
 from agent_k.tools.python_code_interpreter import PythonExecTool
 
+################################# Configs #################################
 PYTHON_AGENT_MODEL = "gpt-4o-mini"
 PYTHON_AGENT_TEMPERATURE = 0.1
+################################# Configs #################################
 
 
 @tool
@@ -50,17 +51,9 @@ def should_continue(state: State):
     last_agent_message = messages[-1]
 
     if last_agent_message.tool_calls:
-        if state["remaining_steps"] >= 2:
-            return "tools"
-        else:
-            messages.append(
-                AIMessage(
-                    content="<output>The code execution failed. Please try again.</output>"
-                )
-            )
-            return END
-    else:
-        return END
+        return "tools"
+
+    return END
 
 
 def call_model(state: State):
@@ -108,7 +101,7 @@ Context: [Document(metadata={'Header 2': '17.10 Mineral Resource Estimate'}, pag
 Now take a deep breath and answer the question again step by step while considering the feedback to the previous incorrect answer."""
 
 if __name__ == "__main__":
-    result = react_agent(DEEP_EXTRACT_SYSTEM_PROMPT, USER_PROMPT, recursion_limit=5)
+    result = react_agent(DEEP_EXTRACT_SYSTEM_PROMPT, USER_PROMPT, recursion_limit=6)
     for m in result["messages"]:
         m.pretty_print()
 
