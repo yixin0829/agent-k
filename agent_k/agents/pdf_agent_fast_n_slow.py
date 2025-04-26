@@ -6,7 +6,6 @@ from time import time
 from typing import Annotated, Any, Literal, Optional
 
 import pandas as pd
-from IPython.display import Image, display
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
 from langgraph.pregel import RetryPolicy
@@ -57,7 +56,7 @@ SLOW_EXTRACT_OPTIMIZER_MODEL = "gpt-4o-mini"
 SLOW_EXTRACT_OPTIMIZER_TEMPERATURE = 0.1
 RETRY_POLICY = RetryPolicy(max_attempts=3)
 RECURSION_LIMIT = 12  # Self-RAG recursion limit
-SELF_RAG_RETRY_LIMIT = 3
+SELF_RAG_RETRY_LIMIT = 5
 ################################# Configs #################################
 
 
@@ -140,13 +139,6 @@ def deep_extract(pdf_path: str, field, default, description, dtype):
     content = prompt_openai_assistant(assistant, messages)
 
     return content
-
-
-def viz_graph(graph):
-    try:
-        display(Image(graph.get_graph().draw_mermaid_png()))
-    except Exception:
-        pass
 
 
 class State(TypedDict):
@@ -418,20 +410,29 @@ def slow_extraction_agent_map_reduce_self_rag(state: ComplexEntityState):
         retry=retry_if_exception_type(Exception),
         before_sleep=before_sleep_callback,
     )
-    def invoke_self_rag_and_parse_with_retry(inputs, config, entity_name, dtype):
+    def invoke_self_rag_and_parse_with_retry(graph_inputs, config, entity_name, dtype):
         # Compile a new graph for each slow entity extraction to avoid mixed memory
         self_rag_graph = self_rag_graph_builder.compile()
-        value = self_rag_graph.invoke(inputs, config=config)
+        value = self_rag_graph.invoke(graph_inputs, config=config)
         content = value["generation"]
         parsed_output = slow_extraction_output_parser(content, entity_name, dtype)
         return content, parsed_output
 
-    content, parsed_output = invoke_self_rag_and_parse_with_retry(
-        graph_inputs,
-        config={"recursion_limit": RECURSION_LIMIT},
-        entity_name=entity_name,
-        dtype=dtype,
-    )
+    try:
+        content, parsed_output = invoke_self_rag_and_parse_with_retry(
+            graph_inputs,
+            config={"recursion_limit": RECURSION_LIMIT},
+            entity_name=entity_name,
+            dtype=dtype,
+        )
+    except Exception as e:
+        logger.error(
+            f"All retries failed for {entity_name}: {e}. Returning default value."
+        )
+        content = (
+            f"Failed to extract {entity_name} after {SELF_RAG_RETRY_LIMIT} attempts."
+        )
+        parsed_output = default_value
 
     return {
         "messages": [{"role": "assistant", "content": content}],
@@ -731,31 +732,38 @@ def extract_from_pdf(
 def extract_from_inferlink_pdfs(
     sample_size: int,
     method: Literal["F&S", "DPE MAP_REDUCE", "DPE MAP_REDUCE SELF RAG"],
-    eval_type: Literal["FULL", "SUBSET"],
+    eval_type: Literal["FULL", "VAL", "TEST"],
 ) -> pd.DataFrame:
     """
     Extract entities from all the PDF files in parallel and return as a DataFrame.
     Results are saved incrementally to a CSV file to prevent data loss.
     """
-    if eval_type == "SUBSET":
+    if eval_type == "VAL":
         inferlink_ground_truth = pd.read_csv(
-            "data/processed/ground_truth/inferlink_ground_truth_filtered.csv"
+            "data/processed/ground_truth/inferlink_ground_truth_val.csv"
         )
-        cdr_record_ids = inferlink_ground_truth["cdr_record_id"].tolist()
-        main_commodity = inferlink_ground_truth["main_commodity"].tolist()
+    elif eval_type == "TEST":
+        inferlink_ground_truth = pd.read_csv(
+            "data/processed/ground_truth/inferlink_ground_truth_test.csv"
+        )
     elif eval_type == "FULL":
         inferlink_ground_truth = pd.read_csv(
             "data/processed/ground_truth/inferlink_ground_truth.csv"
         )
-        cdr_record_ids = inferlink_ground_truth["cdr_record_id"].tolist()
-        main_commodity = inferlink_ground_truth["commodity_observed_name"].tolist()
-    else:
-        raise ValueError(f"Unknown eval type: {eval_type}")
+
+    ids = inferlink_ground_truth[InferlinkEvalColumns.ID.value].tolist()
+    cdr_record_ids = inferlink_ground_truth[
+        InferlinkEvalColumns.CDR_RECORD_ID.value
+    ].tolist()
+    main_commodities = inferlink_ground_truth[
+        InferlinkEvalColumns.COMMODITY_OBSERVED_NAME.value
+    ].tolist()
 
     # For testing purpose. If None, extract from all PDF files
     if sample_size:
+        ids = ids[:sample_size]
         cdr_record_ids = cdr_record_ids[:sample_size]
-        main_commodity = main_commodity[:sample_size]
+        main_commodities = main_commodities[:sample_size]
 
     logger.info(f"Extracting entities from {len(cdr_record_ids)} PDF files")
 
@@ -772,7 +780,11 @@ def extract_from_inferlink_pdfs(
     # Create empty DataFrame with headers
     schema = MineralSiteMetadata.model_json_schema()
     empty_df = pd.DataFrame(
-        columns=["cdr_record_id"] + list(schema["properties"].keys())
+        columns=[
+            InferlinkEvalColumns.ID.value,
+            InferlinkEvalColumns.CDR_RECORD_ID.value,
+            *list(schema["properties"].keys()),
+        ]
     )
     empty_df.to_csv(output_file, index=False)
 
@@ -784,27 +796,31 @@ def extract_from_inferlink_pdfs(
         InferlinkEvalColumns.TOTAL_MINERAL_RESERVE_CONTAINED_METAL.value,
     ]
 
-    for i, (cdr_record_id, mc) in enumerate(
-        zip(cdr_record_ids, main_commodity, strict=False)
+    for i, (id, cdr_record_id, main_commodity) in enumerate(
+        zip(ids, cdr_record_ids, main_commodities, strict=False)
     ):
         logger.info(
-            f"{i + 1}/{len(cdr_record_ids)}: Extracting entities from {cdr_record_id} with main commodity {mc}"
+            f"{i + 1}/{len(ids)}: Extracting entities from {cdr_record_id} with main commodity {main_commodity}"
         )
 
         try:
-            # Replace <main_commodity> with the main commodity in the schema
+            # Replace <main_commodity> with the actual main commodity in the structured data schema
             schema_str = json.dumps(schema)
-            schema_str = schema_str.replace("<main_commodity>", mc)
+            schema_str = schema_str.replace("<main_commodity>", main_commodity)
             current_schema = json.loads(schema_str)
 
-            path = os.path.join(config_general.CDR_REPORTS_DIR, f"{cdr_record_id}.pdf")
-            entities = extract_from_pdf(path, current_schema, method=method)
+            # Extract entities from the PDF file
+            entities = extract_from_pdf(
+                os.path.join(config_general.CDR_REPORTS_DIR, f"{cdr_record_id}.pdf"),
+                current_schema,
+                method=method,
+            )
 
             if entities:
                 # Add record ID to entities
-                entities = {**{"cdr_record_id": cdr_record_id}, **entities}
+                entities = {**{"id": id, "cdr_record_id": cdr_record_id}, **entities}
 
-                # Convert to DataFrame and handle numerical columns
+                # Convert to DataFrame and convert unit of numerical columns to million tonnes
                 df_row = pd.DataFrame([entities])
                 for col in numerical_columns:
                     if col in df_row.columns:
@@ -815,7 +831,7 @@ def extract_from_inferlink_pdfs(
                 df_row.to_csv(output_file, mode="a", header=False, index=False)
 
         except Exception as e:
-            logger.error(f"Failed to extract from {path}: {e}")
+            logger.error(f"Failed to extract from {cdr_record_id}: {e}")
             continue
 
     # Read the final CSV file and return as DataFrame
@@ -908,9 +924,9 @@ if __name__ == "__main__":
     start_time = time()
 
     ################################# Configs #################################
-    sample_size = 1
+    sample_size = None
     method = "DPE MAP_REDUCE SELF RAG"
-    eval_type = "FULL"
+    eval_type = "TEST"
     ################################# Configs #################################
 
     df = extract_from_inferlink_pdfs(

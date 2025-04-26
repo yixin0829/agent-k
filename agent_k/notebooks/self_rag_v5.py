@@ -52,11 +52,11 @@ CLIENT = OpenAI()
 NUM_RETRIEVED_DOCS = 5
 GRADE_RETRIEVAL_MODEL = "gpt-4o-mini"
 GRADE_RETRIEVAL_TEMPERATURE = 0.1
-PYTHON_AGENT_MODEL = "gpt-4o-mini"
-GRADE_HALLUCINATION_MODEL = "gpt-4o-mini"
+GRADE_HALLUCINATION_MODEL = "o3-mini"
+GRADE_HALLUCINATION_TEMPERATURE = 0.1
 QUESTION_REWRITER_MODEL = "gpt-4o-mini"
 QUESTION_REWRITER_TEMPERATURE = 0.5
-REACT_AGENT_RECURSION_LIMIT = 10
+REACT_CODE_AGENT_RECURSION_LIMIT = 6
 
 
 def count_tokens(text):
@@ -192,7 +192,7 @@ def deep_extract_w_feedback(question, context, previous_messages) -> str:
             context=context,
             previous_messages="\n".join(previous_messages_str),
         ),
-        recursion_limit=REACT_AGENT_RECURSION_LIMIT,
+        recursion_limit=REACT_CODE_AGENT_RECURSION_LIMIT,
     )
     content = result["messages"][-1].content
 
@@ -216,7 +216,15 @@ class GradeHallucinations(BaseModel):
 
 
 # LLM with function call
-llm = ChatOpenAI(model=GRADE_HALLUCINATION_MODEL)
+if GRADE_HALLUCINATION_MODEL == "o3-mini":
+    llm = ChatOpenAI(model=GRADE_HALLUCINATION_MODEL)
+elif GRADE_HALLUCINATION_MODEL == "gpt-4o-mini":
+    llm = ChatOpenAI(
+        model=GRADE_HALLUCINATION_MODEL, temperature=GRADE_HALLUCINATION_TEMPERATURE
+    )
+else:
+    raise ValueError(f"Invalid hallucination model: {GRADE_HALLUCINATION_MODEL}")
+
 structured_llm_grader = llm.with_structured_output(GradeHallucinations)
 
 
@@ -266,14 +274,12 @@ class GraphState(TypedDict):
     generation: str
     documents: List[str]
 
-    # Added by Yixin
     retriever: Any
     hallucination_grade: str
     messages: Annotated[list[str], add]  # store prev generation + feedback
     previous_answers: Annotated[list[str], add]  # store prev ans for self consistency
 
 
-# %%
 ### Nodes
 
 
@@ -289,18 +295,6 @@ def retrieve(state):
     """
     logger.info("---RETRIEVE---")
     question = state["question"]
-
-    # Regex parse lines start with "**Question" and "**Description"
-    question_line = re.search(r"^.*?Question\s*(.*?)\s*$", question, re.DOTALL)
-    description_line = re.search(r"^.*?Description\s*(.*?)\s*$", question, re.DOTALL)
-
-    if question_line:
-        question = question_line.group(1).strip()
-
-    if description_line:
-        description = description_line.group(1).strip()
-
-    question = f"{question}\n\n{description}"
 
     # Retrieval
     documents = state["retriever"].invoke(question)
@@ -426,13 +420,11 @@ def check_hallucination(state):
     logger.info("---CHECK HALLUCINATIONS---")
     documents = state["documents"]
     generation = state["generation"]
-    previous_messages = state["messages"]
 
     score: GradeHallucinations = hallucination_grader.invoke(
         {
             "documents": documents,
             "generation": generation,
-            "previous_messages": previous_messages,
         }
     )
     grade = score.binary_score

@@ -196,15 +196,28 @@ QUESTION_TEMPLATE = """**Question:** What's the {field} of the mineral site in t
 
 
 # Deep Extraction code agent prompt
-DEEP_EXTRACT_SYSTEM_PROMPT = """You are a helpful AI agent that answers questions based on given context from a NI 43-101 mineral report. Your responses should be grounded in the report's content. You must use the code interpreter tool for numerical calculations. After you have a successful code execution output, structure your final response with XML tags.
+# DEEP_EXTRACT_SYSTEM_PROMPT = """You are a helpful AI agent that answers questions based on given context from a NI 43-101 mineral report. Your responses should be grounded in the report's content. You must use the code interpreter tool for numerical calculations. After you have a successful code execution output, structure your final response with XML tags.
 
-## General Workflow
-1. Reason and identify relevant facts in the context needed for answering the question.
-2. Use the code interpreter tool to perform aggregation operations like summation, multiplication, or other numerical operations.
-3. Structure your final response with XML tags as follows once you have a successful code execution output:
-    - Thinking: Explain your reasoning process within `<thinking>` tags.
-    - Code: Show the executed code within `<code>` tags.
-    - Answer: Provide the final calculation result within `<answer>` tags (e.g. `<answer>1000 tonnes</answer>`).
+# ## General Workflow
+# 1. Reason and identify relevant facts in the context needed for answering the question.
+# 2. Use the code interpreter tool to perform aggregation operations like summation, multiplication, or other numerical operations.
+# 3. Structure your final response with XML tags as follows once you have a successful code execution output:
+#     - Thinking: Explain your reasoning process within `<thinking>` tags.
+#     - Code: Show the executed code within `<code>` tags.
+#     - Answer: Provide the final calculation result within `<answer>` tags (e.g. `<answer>1000 tonnes</answer>`).
+
+# ## Key Constraints:
+# - No Hallucination: If the required information is unavailable, return the default value specified in the JSON schema in the `<answer>` tag."""
+
+DEEP_EXTRACT_SYSTEM_PROMPT = """You are an advanced AI assistant that answers questions based on the attached NI 43-101 mineral report. Your responses should be grounded in the report's content using the code interpreter tool for numerical calculations.
+
+## Guidelines
+1. Identify relevant facts in the context needed for answering the question. Pay special attention to the unit of the field (e.g. "Tonnes 000" means thousand tonnes).
+2. Perform calculations: Use the code interpreter tool for operations like summation, multiplication, or other numerical operations.
+3. Structure the Response Correctly: Format your final output with XML tags as follows
+    - Reasoning: Explain your retrieval or computation process within `<thinking>` tags.
+    - Code: Show the executed code within `<code>` tags
+    - Final Answer: Provide the final response within `<answer>` tags. Do not include other extra XML tags (e.g., `<output>`) or filler words.
 
 ## Key Constraints:
 - No Hallucination: If the required information is unavailable, return the default value specified in the JSON schema in the `<answer>` tag."""
@@ -236,10 +249,10 @@ Guidelines:
 
 Show your feedback and give a binary score 'yes' or 'no' and reasoning. 'Yes' means that the LLM generation is consistent with the retrieved documents and no hallucination."""
 
-GRADE_HALLUCINATION_USER_PROMPT = """# Retrieved Documents
+GRADE_HALLUCINATION_USER_PROMPT = """## Retrieved Documents
 {documents}
 
-# LLM Generation
+## LLM Generation
 {generation}
 
 ---

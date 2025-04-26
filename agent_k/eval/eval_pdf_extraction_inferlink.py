@@ -33,18 +33,20 @@ def load_data_and_process() -> pd.DataFrame:
     ]
 
     def standardize_string_column(df: pd.DataFrame, cols: list[str]) -> pd.DataFrame:
-        # Helper: Check if the string columns have "Not Found" values and no NaN values. If so, replace NaN with "Not Found".
+        """
+        Standardize string columns to "Not Found" if they have NaN values.
+        """
+        logger.info(f"Standardizing string columns: {cols} to 'Not Found'")
         for col in cols:
-            if df[col].isna().any():
-                logger.warning(f"Column {col} has NaN values")
             df[col] = df[col].fillna("Not Found")
         return df
 
     def standardize_float_column(df: pd.DataFrame, cols: list[str]) -> pd.DataFrame:
-        # Helper: Process float columns - replace NaN and "Not Found" with 0. Then cast to float.
+        """
+        Standardize float columns to 0 if they have NaN values.
+        """
+        logger.info(f"Standardizing float columns: {cols} to 0")
         for col in cols:
-            if df[col].isna().any():
-                logger.warning(f"Column {col} has NaN values")
             # Replace values containing "Not Found" with 0
             df[col] = df[col].replace(",", "").replace("Not Found", 0)
             # Convert to numeric using pd.to_numeric with errors='coerce'
@@ -69,9 +71,7 @@ def load_data_and_process() -> pd.DataFrame:
     logger.info(f"PDF extraction dataframe has {len(df_pdf_agent_extraction)} rows")
 
     # Load ground truth data
-    ground_truth_path = (
-        "data/processed/ground_truth/inferlink_ground_truth_filtered.csv"
-    )
+    ground_truth_path = "data/processed/ground_truth/inferlink_ground_truth.csv"
     df_gt = pd.read_csv(ground_truth_path)
     df_gt = standardize_string_column(df_gt, str_columns)
     df_gt = standardize_float_column(df_gt, float_columns)
@@ -81,7 +81,10 @@ def load_data_and_process() -> pd.DataFrame:
     df_merged = pd.merge(
         df_pdf_agent_extraction,
         df_gt,
-        on=InferlinkEvalColumns.CDR_RECORD_ID.value,
+        on=[
+            InferlinkEvalColumns.ID.value,
+            InferlinkEvalColumns.CDR_RECORD_ID.value,
+        ],
         how="inner",
     )
     logger.info(f"Merged dataframe has {len(df_merged)} rows")
@@ -156,6 +159,11 @@ def calculate_float_metrics(
         # Calculate metrics
         abs_mean_error = mean_absolute_error(gt_values, pdf_values)  # y_true, y_pred
         r_squared = r2_score(gt_values, pdf_values)  # y_true, y_pred
+
+        # Preprocess before calculating smape: if both ground truth and predicted values are 0, set them to a small value to avoid division by 0
+        # Important because 0/0 = NaN, and NaN will be excluded from the smape calculation, making the denominator smaller and smape larger (incorrect)
+        gt_values = np.where(gt_values == 0, 1e-6, gt_values)
+        pdf_values = np.where(pdf_values == 0, 1e-6, pdf_values)
 
         # Calculate symmetric mean absolute percentage error (SMAPE)
         smape = (
@@ -238,6 +246,7 @@ def main() -> None:
 
     # Save merged dataframe for error analysis
     reordered_columns = [
+        InferlinkEvalColumns.ID.value,
         InferlinkEvalColumns.CDR_RECORD_ID.value,
         InferlinkEvalColumns.MINERAL_SITE_NAME.value + "_x",
         InferlinkEvalColumns.STATE_OR_PROVINCE.value + "_x",
@@ -247,7 +256,7 @@ def main() -> None:
         InferlinkEvalColumns.TOTAL_MINERAL_RESOURCE_CONTAINED_METAL.value + "_x",
         InferlinkEvalColumns.TOTAL_MINERAL_RESERVE_CONTAINED_METAL.value + "_x",
         InferlinkEvalColumns.MAIN_COMMODITY.value,
-        InferlinkEvalColumns.COMMODITY.value,
+        InferlinkEvalColumns.COMMODITY_OBSERVED_NAME.value,
         InferlinkEvalColumns.MINERAL_SITE_NAME.value + "_y",
         InferlinkEvalColumns.STATE_OR_PROVINCE.value + "_y",
         InferlinkEvalColumns.COUNTRY.value + "_y",

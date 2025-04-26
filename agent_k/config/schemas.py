@@ -117,12 +117,13 @@ class EvalReport(BaseModel):
 
 
 class InferlinkEvalColumns(Enum):
+    ID = "id"
     CDR_RECORD_ID = "cdr_record_id"
     MINERAL_SITE_NAME = "mineral_site_name"
     COUNTRY = "country"
     STATE_OR_PROVINCE = "state_or_province"
     MAIN_COMMODITY = "main_commodity"
-    COMMODITY = "commodity_observed_name"
+    COMMODITY_OBSERVED_NAME = "commodity_observed_name"
     TOTAL_MINERAL_RESOURCE_TONNAGE = "total_mineral_resource_tonnage"
     TOTAL_MINERAL_RESERVE_TONNAGE = "total_mineral_reserve_tonnage"
     TOTAL_MINERAL_RESOURCE_CONTAINED_METAL = "total_mineral_resource_contained_metal"
@@ -134,13 +135,9 @@ COUNTRY_DESCRIPTION = "The country where the mineral site is located."
 STATE_OR_PROVINCE_DESCRIPTION = (
     "The state or province where the mineral site is located."
 )
-TOTAL_MINERAL_RESOURCE_TONNAGE_DESCRIPTION = """The total mineral resource tonnage of the mineral site converted to tonnes. The total mineral resource tonnage is calculated by summing up the tonnage of all individual inferred, indicated, and measured mineral resources across all the mineral zones.
+TOTAL_MINERAL_RESOURCE_TONNAGE_DESCRIPTION = """The total mineral resource tonnage of the site is calculated by summing the tonnage of inferred, indicated, and measured mineral resources across all mineral zones. The final value should be converted to tonnes. For example, if we have 1,000 tonnes of inferred mineral resources, 2,000 tonnes of indicated resources, and 3,000 tonnes of measured resources, the total mineral resource tonnage is 1,000 + 2,000 + 3,000 = 6,000 tonnes."""
 
-Example: if we have 1000 tonnes of inferred mineral resources, 2000 tonnes of indicated mineral resources, and 3000 tonnes of measured mineral resources, the total mineral resource tonnage is 1000 + 2000 + 3000 = 6000 tonnes."""
-
-TOTAL_MINERAL_RESERVE_TONNAGE_DESCRIPTION = """The total mineral reserve tonnage of the mineral site converted to tonnes. The total mineral reserve tonnage is calculated by summing up the tonnage of all individual proven and probable mineral reserves across all the mineral zones.
-
-Example: if we have 1000 tonnes of proven mineral reserves, 2000 tonnes of probable mineral reserves, the total mineral reserve tonnage is 1000 + 2000 = 3000 tonnes."""
+TOTAL_MINERAL_RESERVE_TONNAGE_DESCRIPTION = """The total mineral reserve tonnage of the site is calculated by summing the tonnage of proven and probable mineral reserves across all mineral zones. The final value should be converted to tonnes. For example, if we have 1,000 tonnes of proven mineral reserves and 2,000 tonnes of probable reserves, the total mineral reserve tonnage is 1,000 + 2,000 = 3,000 tonnes."""
 
 TOTAL_MINERAL_RESOURCE_CONTAINED_METAL_DESCRIPTION = """The total amount of <main_commodity> metal contained in all the mineral resources converted to tonnes.
 

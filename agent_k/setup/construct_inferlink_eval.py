@@ -7,10 +7,14 @@ import os
 
 import pandas as pd
 
+from agent_k.config.logger import logger
 from agent_k.config.schemas import InferlinkEvalColumns
 
+INFERLINK_43_101_ANNOTATIONS_DIR = "data/raw/ground_truth/inferlink_43-101_annotations"
+YIXIN_43_101_ANNOTATIONS_DIR = "data/raw/ground_truth/yixin_43-101_annotations"
 
-def read_metadata_files(base_dir="data/raw/ground_truth/inferlink"):
+
+def read_metadata_files(base_dir=INFERLINK_43_101_ANNOTATIONS_DIR):
     """
     Read all metadata.csv files in the specified directory. Enrich the dataframe with the cdr_record_id.
 
@@ -51,7 +55,7 @@ def read_metadata_files(base_dir="data/raw/ground_truth/inferlink"):
     return master_metadata_df
 
 
-def read_mineral_inventory_files(base_dir="data/raw/ground_truth/inferlink"):
+def read_mineral_inventory_files(base_dir=INFERLINK_43_101_ANNOTATIONS_DIR):
     """
     Read all mineral_inventory_minimal.csv files in the specified directory.
     Enrich the dataframe with the cdr_record_id.
@@ -105,8 +109,8 @@ def read_mineral_inventory_files(base_dir="data/raw/ground_truth/inferlink"):
         except Exception as e:
             print(f"Error processing {file_path}: {e}")
 
-    master_inventory_df[InferlinkEvalColumns.COMMODITY.value] = (
-        master_inventory_df[InferlinkEvalColumns.COMMODITY.value]
+    master_inventory_df[InferlinkEvalColumns.COMMODITY_OBSERVED_NAME.value] = (
+        master_inventory_df[InferlinkEvalColumns.COMMODITY_OBSERVED_NAME.value]
         .str.lower()
         .str.strip()
     )
@@ -315,7 +319,7 @@ if __name__ == "__main__":
             [
                 InferlinkEvalColumns.CDR_RECORD_ID.value,
                 InferlinkEvalColumns.MAIN_COMMODITY.value,
-                InferlinkEvalColumns.COMMODITY.value,
+                InferlinkEvalColumns.COMMODITY_OBSERVED_NAME.value,
                 "resource_or_reserve",
             ]
         )
@@ -333,7 +337,7 @@ if __name__ == "__main__":
         index=[
             InferlinkEvalColumns.CDR_RECORD_ID.value,
             InferlinkEvalColumns.MAIN_COMMODITY.value,
-            InferlinkEvalColumns.COMMODITY.value,
+            InferlinkEvalColumns.COMMODITY_OBSERVED_NAME.value,
         ],
         columns="resource_or_reserve",
         values=["normalized_ore_value", "contained_metal"],
@@ -370,22 +374,52 @@ if __name__ == "__main__":
     }
     master_df = master_df.rename(columns=cols_to_rename)
 
+    # Add unique identifier at the first column
+    master_df.insert(0, InferlinkEvalColumns.ID.value, range(1, len(master_df) + 1))
+
     master_df.to_csv(
         "data/processed/ground_truth/inferlink_ground_truth.csv", index=False
     )
 
-    # Filter for rows where commodity_observed_name appears in the main_commodity column
+    # (Validation set) Filter for rows where commodity_observed_name appears in the main_commodity column
+    logger.info("Filtering for validation set")
     for idx, row in master_df.iterrows():
         if (
             row[InferlinkEvalColumns.MAIN_COMMODITY.value]
-            in row[InferlinkEvalColumns.COMMODITY.value]
+            in row[InferlinkEvalColumns.COMMODITY_OBSERVED_NAME.value]
         ):
             master_df.at[idx, "is_main_commodity"] = True
         else:
             master_df.at[idx, "is_main_commodity"] = False
 
-    master_df = master_df[master_df["is_main_commodity"]]
+    validation_df = master_df[master_df["is_main_commodity"]]
+    validation_df.drop(columns=["is_main_commodity"], inplace=True)
     master_df.drop(columns=["is_main_commodity"], inplace=True)
-    master_df.to_csv(
-        "data/processed/ground_truth/inferlink_ground_truth_filtered.csv", index=False
+    validation_df.to_csv(
+        "data/processed/ground_truth/inferlink_ground_truth_val.csv", index=False
+    )
+
+    # (Test set) Filter for zinc and earth_metal
+    logger.info("Filtering for test set: mvt_zinc and earth_metals")
+    test_df = master_df[
+        (
+            (master_df[InferlinkEvalColumns.MAIN_COMMODITY.value] == "mvt_zinc")
+            & (master_df[InferlinkEvalColumns.COMMODITY_OBSERVED_NAME.value] == "zinc")
+        )
+        | (master_df[InferlinkEvalColumns.MAIN_COMMODITY.value] == "earth_metals")
+    ]
+
+    # Take the first instance for each cdr_record_id
+    test_df = (
+        test_df.groupby(InferlinkEvalColumns.CDR_RECORD_ID.value).first().reset_index()
+    )
+    # Sort by main_commodity and then commodity_observed_name
+    test_df = test_df.sort_values(
+        by=[
+            InferlinkEvalColumns.MAIN_COMMODITY.value,
+            InferlinkEvalColumns.COMMODITY_OBSERVED_NAME.value,
+        ]
+    )
+    test_df.to_csv(
+        "data/processed/ground_truth/inferlink_ground_truth_test.csv", index=False
     )

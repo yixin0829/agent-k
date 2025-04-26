@@ -11,7 +11,8 @@ from agent_k.config.prompts_fast_n_slow import DEEP_EXTRACT_SYSTEM_PROMPT
 from agent_k.tools.python_code_interpreter import PythonExecTool
 
 ################################# Configs #################################
-PYTHON_AGENT_MODEL = "gpt-4o-mini"
+PYTHON_AGENT_MODEL = "o3-mini"
+# Choose lower temperature to make generated code more deterministic (done an experiment with temp = 1 vs. 0.1)
 PYTHON_AGENT_TEMPERATURE = 0.1
 ################################# Configs #################################
 
@@ -22,8 +23,8 @@ def code_interpreter(reflection: str, code: str) -> str:
     Execute the provided Python code in a restricted Docker container and return the output.
 
     Args:
-        reflection: Reasoning on user question or previous code execution before generating the improved code.
-        code: Python code for calculating the final result. The last line of the code should be a print statement that prints the final result.
+        reflection: Reasoning before generate the code.
+        code: The Python code to execute. The last line of the code should be a print statement that prints the final result.
 
     Returns:
         The output of executing the Python code.
@@ -36,9 +37,14 @@ tools = [code_interpreter]
 tool_node = ToolNode(tools)
 
 # Bind the tools to the model
-model_with_tools = ChatOpenAI(
-    model=PYTHON_AGENT_MODEL, temperature=PYTHON_AGENT_TEMPERATURE
-).bind_tools(tools)
+if PYTHON_AGENT_MODEL in ["gpt-4o-mini", "gpt-4o", "gpt-4.1-mini"]:
+    model_with_tools = ChatOpenAI(
+        model=PYTHON_AGENT_MODEL, temperature=PYTHON_AGENT_TEMPERATURE
+    ).bind_tools(tools)
+elif PYTHON_AGENT_MODEL in ["o3-mini", "o4-mini"]:
+    model_with_tools = ChatOpenAI(model=PYTHON_AGENT_MODEL).bind_tools(tools)
+else:
+    raise ValueError(f"Invalid model: {PYTHON_AGENT_MODEL}")
 
 
 class State(TypedDict):
