@@ -7,14 +7,9 @@ from langgraph.graph.message import add_messages
 from langgraph.managed.is_last_step import RemainingSteps
 from langgraph.prebuilt import ToolNode
 
+import agent_k.config.experiment_config as config_experiment
 from agent_k.config.prompts_fast_n_slow import DEEP_EXTRACT_SYSTEM_PROMPT
 from agent_k.tools.python_code_interpreter import PythonExecTool
-
-################################# Configs #################################
-PYTHON_AGENT_MODEL = "o3-mini"
-# Choose lower temperature to make generated code more deterministic (done an experiment with temp = 1 vs. 0.1)
-PYTHON_AGENT_TEMPERATURE = 0.1
-################################# Configs #################################
 
 
 @tool
@@ -37,14 +32,17 @@ tools = [code_interpreter]
 tool_node = ToolNode(tools)
 
 # Bind the tools to the model
-if PYTHON_AGENT_MODEL in ["gpt-4o-mini", "gpt-4o", "gpt-4.1-mini"]:
+if config_experiment.PYTHON_AGENT_MODEL in ["gpt-4o-mini", "gpt-4o", "gpt-4.1-mini"]:
     model_with_tools = ChatOpenAI(
-        model=PYTHON_AGENT_MODEL, temperature=PYTHON_AGENT_TEMPERATURE
+        model=config_experiment.PYTHON_AGENT_MODEL,
+        temperature=config_experiment.PYTHON_AGENT_TEMPERATURE,
     ).bind_tools(tools)
-elif PYTHON_AGENT_MODEL in ["o3-mini", "o4-mini"]:
-    model_with_tools = ChatOpenAI(model=PYTHON_AGENT_MODEL).bind_tools(tools)
+elif config_experiment.PYTHON_AGENT_MODEL in ["o3-mini", "o4-mini"]:
+    model_with_tools = ChatOpenAI(
+        model=config_experiment.PYTHON_AGENT_MODEL
+    ).bind_tools(tools)
 else:
-    raise ValueError(f"Invalid model: {PYTHON_AGENT_MODEL}")
+    raise ValueError(f"Invalid model: {config_experiment.PYTHON_AGENT_MODEL}")
 
 
 class State(TypedDict):

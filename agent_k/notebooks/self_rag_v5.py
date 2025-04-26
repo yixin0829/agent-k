@@ -15,18 +15,17 @@ from typing import Annotated, Any, List, Optional
 import chromadb
 import tiktoken
 from dotenv import load_dotenv
-from IPython.display import Image, display
 from langchain.text_splitter import MarkdownHeaderTextSplitter
 from langchain_community.vectorstores import Chroma
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langgraph.graph import END, START, StateGraph
-from langgraph.pregel import RetryPolicy
 from openai import OpenAI
 from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
 
+import agent_k.config.experiment_config as config_experiment
 from agent_k.agents.code_agent_react import react_agent
 from agent_k.config.logger import logger
 from agent_k.config.prompts_fast_n_slow import (
@@ -45,18 +44,7 @@ from agent_k.config.schemas import (
 
 load_dotenv()
 
-# Retry for generate node (code interpreter easily fails)
-RETRY_POLICY = RetryPolicy(max_attempts=3)
-
 CLIENT = OpenAI()
-NUM_RETRIEVED_DOCS = 5
-GRADE_RETRIEVAL_MODEL = "gpt-4o-mini"
-GRADE_RETRIEVAL_TEMPERATURE = 0.1
-GRADE_HALLUCINATION_MODEL = "o3-mini"
-GRADE_HALLUCINATION_TEMPERATURE = 0.1
-QUESTION_REWRITER_MODEL = "gpt-4o-mini"
-QUESTION_REWRITER_TEMPERATURE = 0.5
-REACT_CODE_AGENT_RECURSION_LIMIT = 6
 
 
 def count_tokens(text):
@@ -88,6 +76,7 @@ def create_markdown_retriever(
             ("#", "Header 1"),
             ("##", "Header 2"),
             ("###", "Header 3"),
+            ("####", "Header 4"),
         ]
 
     # Read markdown file
@@ -142,7 +131,9 @@ def create_markdown_retriever(
             persist_directory=None,  # Keep in-memory to avoid persistence
         )
 
-        retriever = vectorstore.as_retriever(search_kwargs={"k": NUM_RETRIEVED_DOCS})
+        retriever = vectorstore.as_retriever(
+            search_kwargs={"k": config_experiment.NUM_RETRIEVED_DOCS}
+        )
         return retriever
     except Exception as e:
         logger.error(f"Error creating retriever: {e}")
@@ -163,7 +154,10 @@ class GradeDocuments(BaseModel):
 
 
 # LLM with function call
-llm = ChatOpenAI(model=GRADE_RETRIEVAL_MODEL, temperature=GRADE_RETRIEVAL_TEMPERATURE)
+llm = ChatOpenAI(
+    model=config_experiment.GRADE_RETRIEVAL_MODEL,
+    temperature=config_experiment.GRADE_RETRIEVAL_TEMPERATURE,
+)
 structured_llm_grader = llm.with_structured_output(GradeDocuments)
 
 
@@ -192,7 +186,7 @@ def deep_extract_w_feedback(question, context, previous_messages) -> str:
             context=context,
             previous_messages="\n".join(previous_messages_str),
         ),
-        recursion_limit=REACT_CODE_AGENT_RECURSION_LIMIT,
+        recursion_limit=config_experiment.REACT_CODE_AGENT_RECURSION_LIMIT,
     )
     content = result["messages"][-1].content
 
@@ -216,14 +210,17 @@ class GradeHallucinations(BaseModel):
 
 
 # LLM with function call
-if GRADE_HALLUCINATION_MODEL == "o3-mini":
-    llm = ChatOpenAI(model=GRADE_HALLUCINATION_MODEL)
-elif GRADE_HALLUCINATION_MODEL == "gpt-4o-mini":
+if config_experiment.GRADE_HALLUCINATION_MODEL == "o3-mini":
+    llm = ChatOpenAI(model=config_experiment.GRADE_HALLUCINATION_MODEL)
+elif config_experiment.GRADE_HALLUCINATION_MODEL == "gpt-4o-mini":
     llm = ChatOpenAI(
-        model=GRADE_HALLUCINATION_MODEL, temperature=GRADE_HALLUCINATION_TEMPERATURE
+        model=config_experiment.GRADE_HALLUCINATION_MODEL,
+        temperature=config_experiment.GRADE_HALLUCINATION_TEMPERATURE,
     )
 else:
-    raise ValueError(f"Invalid hallucination model: {GRADE_HALLUCINATION_MODEL}")
+    raise ValueError(
+        f"Invalid hallucination model: {config_experiment.GRADE_HALLUCINATION_MODEL}"
+    )
 
 structured_llm_grader = llm.with_structured_output(GradeHallucinations)
 
@@ -242,7 +239,8 @@ hallucination_grader = hallucination_prompt | structured_llm_grader
 
 # LLM
 llm = ChatOpenAI(
-    model=QUESTION_REWRITER_MODEL, temperature=QUESTION_REWRITER_TEMPERATURE
+    model=config_experiment.QUESTION_REWRITER_MODEL,
+    temperature=config_experiment.QUESTION_REWRITER_TEMPERATURE,
 )
 
 # Prompt
@@ -502,25 +500,14 @@ def answer_quality_router(state):
         return "regenerate"
 
 
-# %% [markdown]
 # ## Build Graph
-#
-
-
-# %%
-def viz_graph(graph):
-    try:
-        display(Image(graph.get_graph().draw_mermaid_png()))
-    except Exception:
-        pass
-
 
 self_rag_graph_builder = StateGraph(GraphState)
 
 # Define the nodes
 self_rag_graph_builder.add_node("retrieve", retrieve)
 self_rag_graph_builder.add_node("grade_documents", grade_documents)
-self_rag_graph_builder.add_node("generate", generate, retry=RETRY_POLICY)
+self_rag_graph_builder.add_node("generate", generate)
 self_rag_graph_builder.add_node("transform_query", transform_query)
 self_rag_graph_builder.add_node("check_hallucination", check_hallucination)
 
@@ -550,21 +537,13 @@ self_rag_graph_builder.add_conditional_edges(
 # Compile
 self_rag_graph = self_rag_graph_builder.compile()
 
-# Visualize the graph
-viz_graph(self_rag_graph)
-
-# %%
 # Run
 if __name__ == "__main__":
     question = QUESTION_TEMPLATE.format(
         field="total_mineral_resource_tonnage",
-        # field="total_mineral_reserve_contained_metal",
         dtype="float",
         default=0,
         description=TOTAL_MINERAL_RESOURCE_TONNAGE_DESCRIPTION,
-        # description=TOTAL_MINERAL_RESERVE_CONTAINED_METAL_DESCRIPTION.replace(
-        #     "<main_commodity>", "nickel"
-        # ),
     )
 
     retriever = create_markdown_retriever(

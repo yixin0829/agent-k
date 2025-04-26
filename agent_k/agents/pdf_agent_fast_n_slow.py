@@ -8,7 +8,6 @@ from typing import Annotated, Any, Literal, Optional
 import pandas as pd
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
-from langgraph.pregel import RetryPolicy
 from langgraph.types import Send
 from litellm import completion
 from openai import OpenAI
@@ -20,6 +19,7 @@ from tenacity import (
 )
 from typing_extensions import TypedDict
 
+import agent_k.config.experiment_config as config_experiment
 import agent_k.config.general as config_general
 from agent_k.config.logger import logger
 from agent_k.config.prompts_fast_n_slow import (
@@ -48,16 +48,7 @@ from agent_k.utils.general import (
     split_json_schema,
 )
 
-################################# Configs #################################
 CLIENT = OpenAI()
-SLOW_EXTRACT_VALIDATION_MODEL = "gpt-4o-mini"
-SLOW_EXTRACT_VALIDATION_TEMPERATURE = 0.1
-SLOW_EXTRACT_OPTIMIZER_MODEL = "gpt-4o-mini"
-SLOW_EXTRACT_OPTIMIZER_TEMPERATURE = 0.1
-RETRY_POLICY = RetryPolicy(max_attempts=3)
-RECURSION_LIMIT = 12  # Self-RAG recursion limit
-SELF_RAG_RETRY_LIMIT = 5
-################################# Configs #################################
 
 
 # Global variables
@@ -400,12 +391,12 @@ def slow_extraction_agent_map_reduce_self_rag(state: ComplexEntityState):
         global retry_count
         retry_count += 1
         logger.warning(
-            f"[{retry_state.attempt_number}/{SELF_RAG_RETRY_LIMIT}] Retrying... {retry_state.outcome.exception()}"
+            f"[{retry_state.attempt_number}/{config_experiment.SELF_RAG_RETRY_LIMIT}] Retrying... {retry_state.outcome.exception()}"
         )
 
     # Use tenacity to retry the graph invocation and output parsing with exponential backoff
     @retry(
-        stop=stop_after_attempt(SELF_RAG_RETRY_LIMIT),
+        stop=stop_after_attempt(config_experiment.SELF_RAG_RETRY_LIMIT),
         wait=wait_exponential(multiplier=1, min=2, max=10),
         retry=retry_if_exception_type(Exception),
         before_sleep=before_sleep_callback,
@@ -421,7 +412,7 @@ def slow_extraction_agent_map_reduce_self_rag(state: ComplexEntityState):
     try:
         content, parsed_output = invoke_self_rag_and_parse_with_retry(
             graph_inputs,
-            config={"recursion_limit": RECURSION_LIMIT},
+            config={"recursion_limit": config_experiment.RECURSION_LIMIT},
             entity_name=entity_name,
             dtype=dtype,
         )
@@ -429,9 +420,7 @@ def slow_extraction_agent_map_reduce_self_rag(state: ComplexEntityState):
         logger.error(
             f"All retries failed for {entity_name}: {e}. Returning default value."
         )
-        content = (
-            f"Failed to extract {entity_name} after {SELF_RAG_RETRY_LIMIT} attempts."
-        )
+        content = f"Failed to extract {entity_name} after {config_experiment.SELF_RAG_RETRY_LIMIT} attempts."
         parsed_output = default_value
 
     return {
@@ -464,8 +453,8 @@ def slow_extraction_optimizer(state: State):
     ]
 
     response = completion(
-        model=SLOW_EXTRACT_OPTIMIZER_MODEL,
-        temperature=SLOW_EXTRACT_OPTIMIZER_TEMPERATURE,
+        model=config_experiment.SLOW_EXTRACT_OPTIMIZER_MODEL,
+        temperature=config_experiment.SLOW_EXTRACT_OPTIMIZER_TEMPERATURE,
         messages=messages,
     )
     content = response.choices[0].message.content
@@ -507,8 +496,8 @@ def validate_extraction_result(state: State):
     ]
 
     response = completion(
-        model=SLOW_EXTRACT_VALIDATION_MODEL,
-        temperature=SLOW_EXTRACT_VALIDATION_TEMPERATURE,
+        model=config_experiment.SLOW_EXTRACT_VALIDATION_MODEL,
+        temperature=config_experiment.SLOW_EXTRACT_VALIDATION_TEMPERATURE,
         messages=messages,
     )
     logger.debug(f"Response: {response.choices[0].message.content}")
@@ -587,7 +576,6 @@ def build_dpe_w_map_reduce_graph():
     graph_builder.add_node(
         "slow_extraction_agent_map_reduce",
         slow_extraction_agent_map_reduce,
-        retry=RETRY_POLICY,
     )
     graph_builder.add_node("slow_extraction_optimizer", slow_extraction_optimizer)
     graph_builder.add_node("validate_extraction_result", validate_extraction_result)
@@ -630,7 +618,6 @@ def build_dpe_w_map_reduce_self_rag_graph():
     graph_builder.add_node(
         "slow_extraction_agent_map_reduce_self_rag",
         slow_extraction_agent_map_reduce_self_rag,
-        retry=RETRY_POLICY,
     )
     graph_builder.add_node("slow_extraction_optimizer", slow_extraction_optimizer)
     graph_builder.add_node("validate_extraction_result", validate_extraction_result)
@@ -690,7 +677,7 @@ def extract_from_pdf(
                     "json_schema": json_schema,
                     "method": method,
                 },
-                {"recursion_limit": RECURSION_LIMIT},
+                {"recursion_limit": config_experiment.RECURSION_LIMIT},
             )
         case "DPE MAP_REDUCE":
             graph = build_dpe_w_map_reduce_graph()
@@ -700,7 +687,7 @@ def extract_from_pdf(
                     "json_schema": json_schema,
                     "method": method,
                 },
-                {"recursion_limit": RECURSION_LIMIT},
+                {"recursion_limit": config_experiment.RECURSION_LIMIT},
             )
         case "DPE MAP_REDUCE SELF RAG":
             # Initialize the retriever with the markdown file path
@@ -720,7 +707,7 @@ def extract_from_pdf(
                     "method": method,
                     "retriever": retriever,
                 },
-                {"recursion_limit": RECURSION_LIMIT},
+                {"recursion_limit": config_experiment.RECURSION_LIMIT},
             )
         case _:
             raise ValueError(f"Unknown method: {method}")
@@ -772,9 +759,10 @@ def extract_from_inferlink_pdfs(
     os.makedirs(output_dir, exist_ok=True)
 
     # Create output evaluation file path
+    timestamp = get_current_timestamp()
     output_file = os.path.join(
         output_dir,
-        f"{method.lower().replace(' ', '_')}_extraction_results_{get_current_timestamp()}.csv",
+        f"{method.lower().replace(' ', '_')}_{timestamp}.csv",
     )
 
     # Create empty DataFrame with headers
@@ -831,11 +819,79 @@ def extract_from_inferlink_pdfs(
                 df_row.to_csv(output_file, mode="a", header=False, index=False)
 
         except Exception as e:
-            logger.error(f"Failed to extract from {cdr_record_id}: {e}")
+            logger.exception(f"Failed to extract from {cdr_record_id}: {e}")
             continue
 
-    # Read the final CSV file and return as DataFrame
+    # Read the final CSV file
     final_df = pd.read_csv(output_file)
+
+    # Write experiment configs and metadata to a yaml file
+    config_file = output_file.replace(".csv", "_config.yaml")
+    with open(config_file, "w") as f:
+        f.write("experiment_configurations:\n\n")
+
+        f.write("  code_agent_react_configs:\n")
+        f.write(f"    python_agent_model: {config_experiment.PYTHON_AGENT_MODEL}\n")
+        f.write(
+            f"    python_agent_temperature: {config_experiment.PYTHON_AGENT_TEMPERATURE}\n\n"
+        )
+
+        f.write("  self_rag_configs:\n")
+        f.write(f"    num_retrieved_docs: {config_experiment.NUM_RETRIEVED_DOCS}\n")
+        f.write(
+            f"    grade_retrieval_model: {config_experiment.GRADE_RETRIEVAL_MODEL}\n"
+        )
+        f.write(
+            f"    grade_retrieval_temperature: {config_experiment.GRADE_RETRIEVAL_TEMPERATURE}\n"
+        )
+        f.write(
+            f"    grade_hallucination_model: {config_experiment.GRADE_HALLUCINATION_MODEL}\n"
+        )
+        f.write(
+            f"    grade_hallucination_temperature: {config_experiment.GRADE_HALLUCINATION_TEMPERATURE}\n"
+        )
+        f.write(
+            f"    question_rewriter_model: {config_experiment.QUESTION_REWRITER_MODEL}\n"
+        )
+        f.write(
+            f"    question_rewriter_temperature: {config_experiment.QUESTION_REWRITER_TEMPERATURE}\n"
+        )
+        f.write(
+            f"    react_code_agent_recursion_limit: {config_experiment.REACT_CODE_AGENT_RECURSION_LIMIT}\n\n"
+        )
+
+        f.write("  pdf_agent_configs:\n")
+        f.write(
+            f"    slow_extract_validation_model: {config_experiment.SLOW_EXTRACT_VALIDATION_MODEL}\n"
+        )
+        f.write(
+            f"    slow_extract_validation_temperature: {config_experiment.SLOW_EXTRACT_VALIDATION_TEMPERATURE}\n"
+        )
+        f.write(
+            f"    slow_extract_optimizer_model: {config_experiment.SLOW_EXTRACT_OPTIMIZER_MODEL}\n"
+        )
+        f.write(
+            f"    slow_extract_optimizer_temperature: {config_experiment.SLOW_EXTRACT_OPTIMIZER_TEMPERATURE}\n"
+        )
+        f.write(f"    recursion_limit: {config_experiment.RECURSION_LIMIT}\n")
+        f.write(
+            f"    self_rag_retry_limit: {config_experiment.SELF_RAG_RETRY_LIMIT}\n\n"
+        )
+
+        f.write("  experiment_parameters:\n")
+        f.write(f"    method: {method}\n")
+        f.write(f"    evaluation_type: {eval_type}\n")
+        f.write(
+            f"    sample_size: {'100%' if sample_size is None else f'{sample_size}%'}\n\n"
+        )
+
+        f.write("  experiment_metadata:\n")
+        f.write(f"    code_agent_retry_count: {retry_count}\n")
+        f.write(
+            f"    average_code_agent_retry_count_per_pdf: {retry_count / len(final_df):.2f}\n"
+        )
+        f.write(f"    number_of_pdfs_processed: {len(final_df)}\n")
+        f.write(f"    number_of_entities_extracted: {len(final_df.index)}\n")
 
     return final_df
 
@@ -924,9 +980,9 @@ if __name__ == "__main__":
     start_time = time()
 
     ################################# Configs #################################
-    sample_size = None
-    method = "DPE MAP_REDUCE SELF RAG"
-    eval_type = "TEST"
+    sample_size = config_experiment.PDF_EXTRACTION_SAMPLE_SIZE
+    method = config_experiment.PDF_EXTRACTION_METHOD
+    eval_type = config_experiment.PDF_EXTRACTION_EVAL_TYPE
     ################################# Configs #################################
 
     df = extract_from_inferlink_pdfs(
@@ -937,10 +993,56 @@ if __name__ == "__main__":
 
     logger.info("Extracting entities from all PDF files")
     # Experiment hyperparameters
-    logger.info(f"Code agent retry limit: {SELF_RAG_RETRY_LIMIT}")
-    logger.info(f"Sample size: {'100%' if sample_size is None else sample_size}%")
+    logger.info(f"Code agent retry limit: {config_experiment.SELF_RAG_RETRY_LIMIT}")
+    logger.info(f"Sample size: {'100%' if sample_size is None else f'{sample_size}%'}")
     logger.info(f"Method: {method}")
     logger.info(f"Evaluation type: {eval_type}")
+
+    # Log experiment configurations
+    logger.info("Experiment Configurations:")
+    logger.info("Code Agent React Configs:")
+    logger.info(f"  - PYTHON_AGENT_MODEL: {config_experiment.PYTHON_AGENT_MODEL}")
+    logger.info(
+        f"  - PYTHON_AGENT_TEMPERATURE: {config_experiment.PYTHON_AGENT_TEMPERATURE}"
+    )
+
+    logger.info("Self RAG Configs:")
+    logger.info(f"  - NUM_RETRIEVED_DOCS: {config_experiment.NUM_RETRIEVED_DOCS}")
+    logger.info(f"  - GRADE_RETRIEVAL_MODEL: {config_experiment.GRADE_RETRIEVAL_MODEL}")
+    logger.info(
+        f"  - GRADE_RETRIEVAL_TEMPERATURE: {config_experiment.GRADE_RETRIEVAL_TEMPERATURE}"
+    )
+    logger.info(
+        f"  - GRADE_HALLUCINATION_MODEL: {config_experiment.GRADE_HALLUCINATION_MODEL}"
+    )
+    logger.info(
+        f"  - GRADE_HALLUCINATION_TEMPERATURE: {config_experiment.GRADE_HALLUCINATION_TEMPERATURE}"
+    )
+    logger.info(
+        f"  - QUESTION_REWRITER_MODEL: {config_experiment.QUESTION_REWRITER_MODEL}"
+    )
+    logger.info(
+        f"  - QUESTION_REWRITER_TEMPERATURE: {config_experiment.QUESTION_REWRITER_TEMPERATURE}"
+    )
+    logger.info(
+        f"  - REACT_CODE_AGENT_RECURSION_LIMIT: {config_experiment.REACT_CODE_AGENT_RECURSION_LIMIT}"
+    )
+
+    logger.info("PDF Agent Configs:")
+    logger.info(
+        f"  - SLOW_EXTRACT_VALIDATION_MODEL: {config_experiment.SLOW_EXTRACT_VALIDATION_MODEL}"
+    )
+    logger.info(
+        f"  - SLOW_EXTRACT_VALIDATION_TEMPERATURE: {config_experiment.SLOW_EXTRACT_VALIDATION_TEMPERATURE}"
+    )
+    logger.info(
+        f"  - SLOW_EXTRACT_OPTIMIZER_MODEL: {config_experiment.SLOW_EXTRACT_OPTIMIZER_MODEL}"
+    )
+    logger.info(
+        f"  - SLOW_EXTRACT_OPTIMIZER_TEMPERATURE: {config_experiment.SLOW_EXTRACT_OPTIMIZER_TEMPERATURE}"
+    )
+    logger.info(f"  - RECURSION_LIMIT: {config_experiment.RECURSION_LIMIT}")
+    logger.info(f"  - SELF_RAG_RETRY_LIMIT: {config_experiment.SELF_RAG_RETRY_LIMIT}")
 
     # Metadata
     logger.info(f"Code agent retry count: {retry_count}")
