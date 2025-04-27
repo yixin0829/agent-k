@@ -9,7 +9,6 @@ from sklearn.metrics import mean_absolute_error, r2_score
 import agent_k.config.general as config_general
 from agent_k.config.logger import logger
 from agent_k.config.schemas import InferlinkEvalColumns
-from agent_k.utils.eval_helper import load_latest_pdf_extraction
 from agent_k.utils.general import get_current_timestamp
 
 
@@ -56,12 +55,10 @@ def load_data_and_process() -> pd.DataFrame:
         return df
 
     # Note: Load PDF extraction data. Can be replaced with the following line to load a specific extraction file
-    # df_pdf_agent_extraction = pd.read_csv(
-    #     "data/processed/inferlink_extraction_v3_filtered.csv"
+    df_pdf_agent_extraction = pd.read_csv("data/processed/inferlink_extraction_v3.csv")
+    # df_pdf_agent_extraction = load_latest_pdf_extraction(
+    #     dir=os.path.join(config_general.PDF_AGENT_CACHE_DIR, "inferlink")
     # )
-    df_pdf_agent_extraction = load_latest_pdf_extraction(
-        dir=os.path.join(config_general.PDF_AGENT_CACHE_DIR, "inferlink")
-    )
     df_pdf_agent_extraction = standardize_string_column(
         df_pdf_agent_extraction, str_columns
     )
@@ -70,8 +67,10 @@ def load_data_and_process() -> pd.DataFrame:
     )
     logger.info(f"PDF extraction dataframe has {len(df_pdf_agent_extraction)} rows")
 
-    # Load ground truth data
-    ground_truth_path = "data/processed/ground_truth/inferlink_ground_truth.csv"
+    # Load ground truth data (inner join will only keep rows that have both a PDF extraction and a ground truth)
+    ground_truth_path = (
+        "data/processed/ground_truth/inferlink_ground_truth_test_val.csv"
+    )
     df_gt = pd.read_csv(ground_truth_path)
     df_gt = standardize_string_column(df_gt, str_columns)
     df_gt = standardize_float_column(df_gt, float_columns)
@@ -86,6 +85,7 @@ def load_data_and_process() -> pd.DataFrame:
             InferlinkEvalColumns.CDR_RECORD_ID.value,
         ],
         how="inner",
+        suffixes=("_pred", "_gt"),
     )
     logger.info(f"Merged dataframe has {len(df_merged)} rows")
 
@@ -211,27 +211,33 @@ def main() -> None:
 
     # Evaluate metrics
     string_columns = [
-        ("mineral_site_name_x", InferlinkEvalColumns.MINERAL_SITE_NAME.value + "_y"),
-        ("state_or_province_x", InferlinkEvalColumns.STATE_OR_PROVINCE.value + "_y"),
-        ("country_x", InferlinkEvalColumns.COUNTRY.value + "_y"),
+        (
+            "mineral_site_name_pred",
+            InferlinkEvalColumns.MINERAL_SITE_NAME.value + "_gt",
+        ),
+        (
+            "state_or_province_pred",
+            InferlinkEvalColumns.STATE_OR_PROVINCE.value + "_gt",
+        ),
+        ("country_pred", InferlinkEvalColumns.COUNTRY.value + "_gt"),
     ]
 
     float_columns = [
         (
-            "total_mineral_resource_tonnage_x",
-            InferlinkEvalColumns.TOTAL_MINERAL_RESOURCE_TONNAGE.value + "_y",
+            "total_mineral_resource_tonnage_pred",
+            InferlinkEvalColumns.TOTAL_MINERAL_RESOURCE_TONNAGE.value + "_gt",
         ),
         (
-            "total_mineral_reserve_tonnage_x",
-            InferlinkEvalColumns.TOTAL_MINERAL_RESERVE_TONNAGE.value + "_y",
+            "total_mineral_reserve_tonnage_pred",
+            InferlinkEvalColumns.TOTAL_MINERAL_RESERVE_TONNAGE.value + "_gt",
         ),
         (
-            "total_mineral_resource_contained_metal_x",
-            InferlinkEvalColumns.TOTAL_MINERAL_RESOURCE_CONTAINED_METAL.value + "_y",
+            "total_mineral_resource_contained_metal_pred",
+            InferlinkEvalColumns.TOTAL_MINERAL_RESOURCE_CONTAINED_METAL.value + "_gt",
         ),
         (
-            "total_mineral_reserve_contained_metal_x",
-            InferlinkEvalColumns.TOTAL_MINERAL_RESERVE_CONTAINED_METAL.value + "_y",
+            "total_mineral_reserve_contained_metal_pred",
+            InferlinkEvalColumns.TOTAL_MINERAL_RESERVE_CONTAINED_METAL.value + "_gt",
         ),
     ]
 
@@ -248,22 +254,22 @@ def main() -> None:
     reordered_columns = [
         InferlinkEvalColumns.ID.value,
         InferlinkEvalColumns.CDR_RECORD_ID.value,
-        InferlinkEvalColumns.MINERAL_SITE_NAME.value + "_x",
-        InferlinkEvalColumns.STATE_OR_PROVINCE.value + "_x",
-        InferlinkEvalColumns.COUNTRY.value + "_x",
-        InferlinkEvalColumns.TOTAL_MINERAL_RESOURCE_TONNAGE.value + "_x",
-        InferlinkEvalColumns.TOTAL_MINERAL_RESERVE_TONNAGE.value + "_x",
-        InferlinkEvalColumns.TOTAL_MINERAL_RESOURCE_CONTAINED_METAL.value + "_x",
-        InferlinkEvalColumns.TOTAL_MINERAL_RESERVE_CONTAINED_METAL.value + "_x",
-        InferlinkEvalColumns.MAIN_COMMODITY.value,
-        InferlinkEvalColumns.COMMODITY_OBSERVED_NAME.value,
-        InferlinkEvalColumns.MINERAL_SITE_NAME.value + "_y",
-        InferlinkEvalColumns.STATE_OR_PROVINCE.value + "_y",
-        InferlinkEvalColumns.COUNTRY.value + "_y",
-        InferlinkEvalColumns.TOTAL_MINERAL_RESOURCE_TONNAGE.value + "_y",
-        InferlinkEvalColumns.TOTAL_MINERAL_RESERVE_TONNAGE.value + "_y",
-        InferlinkEvalColumns.TOTAL_MINERAL_RESOURCE_CONTAINED_METAL.value + "_y",
-        InferlinkEvalColumns.TOTAL_MINERAL_RESERVE_CONTAINED_METAL.value + "_y",
+        InferlinkEvalColumns.MINERAL_SITE_NAME.value + "_pred",
+        InferlinkEvalColumns.STATE_OR_PROVINCE.value + "_pred",
+        InferlinkEvalColumns.COUNTRY.value + "_pred",
+        InferlinkEvalColumns.TOTAL_MINERAL_RESOURCE_TONNAGE.value + "_pred",
+        InferlinkEvalColumns.TOTAL_MINERAL_RESERVE_TONNAGE.value + "_pred",
+        InferlinkEvalColumns.TOTAL_MINERAL_RESOURCE_CONTAINED_METAL.value + "_pred",
+        InferlinkEvalColumns.TOTAL_MINERAL_RESERVE_CONTAINED_METAL.value + "_pred",
+        InferlinkEvalColumns.MAIN_COMMODITY.value + "_gt",
+        InferlinkEvalColumns.COMMODITY_OBSERVED_NAME.value + "_gt",
+        InferlinkEvalColumns.MINERAL_SITE_NAME.value + "_gt",
+        InferlinkEvalColumns.STATE_OR_PROVINCE.value + "_gt",
+        InferlinkEvalColumns.COUNTRY.value + "_gt",
+        InferlinkEvalColumns.TOTAL_MINERAL_RESOURCE_TONNAGE.value + "_gt",
+        InferlinkEvalColumns.TOTAL_MINERAL_RESERVE_TONNAGE.value + "_gt",
+        InferlinkEvalColumns.TOTAL_MINERAL_RESOURCE_CONTAINED_METAL.value + "_gt",
+        InferlinkEvalColumns.TOTAL_MINERAL_RESERVE_CONTAINED_METAL.value + "_gt",
     ]
     df_merged = df_merged[reordered_columns]
 

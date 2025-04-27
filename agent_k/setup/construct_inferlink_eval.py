@@ -171,7 +171,7 @@ def normalize_ore_units(df):
                         f"Unit '{row['ore_unit_observed_name']}' not recognized"
                     )
         except Exception as e:
-            print(f"Error normalizing row {idx}: {e}")
+            print(f"Error normalizing ore units for row {idx}: {e}")
             # Keep original values if there's an error
 
     return df
@@ -202,6 +202,7 @@ def normalize_grade_units(df):
         "g/tonne": 0.0001,  # Grams per tonne (spelled out)
         "grams/tonne": 0.0001,  # Grams per tonne (fully spelled)
         "ppm": 0.0001,  # Parts per million (1 ppm = 0.0001%)
+        "parts per million": 0.0001,  # Parts per million (spelled out)
         "oz/t": 0.00343,  # Troy ounces per short ton (1 oz/t ≈ 0.00343%)
         "oz/ton": 0.00343,  # Troy ounces per ton
         "opt": 0.00343,  # Ounces per ton abbreviation
@@ -234,7 +235,7 @@ def normalize_grade_units(df):
                         f"Grade unit '{row['grade_unit_observed_name']}' not recognized"
                     )
         except Exception as e:
-            print(f"Error normalizing grade in row {idx}: {e}")
+            print(f"Error normalizing grade units for row {idx}: {e}")
             # Keep original values if there's an error
 
     return df
@@ -381,7 +382,9 @@ if __name__ == "__main__":
         "data/processed/ground_truth/inferlink_ground_truth.csv", index=False
     )
 
+    ####################################################################################
     # (Validation set) Filter for rows where commodity_observed_name appears in the main_commodity column
+    ####################################################################################
     logger.info("Filtering for validation set")
     for idx, row in master_df.iterrows():
         if (
@@ -399,7 +402,9 @@ if __name__ == "__main__":
         "data/processed/ground_truth/inferlink_ground_truth_val.csv", index=False
     )
 
+    ####################################################################################
     # (Test set) Filter for zinc and earth_metal
+    ####################################################################################
     logger.info("Filtering for test set: mvt_zinc and earth_metals")
     test_df = master_df[
         (
@@ -407,12 +412,15 @@ if __name__ == "__main__":
             & (master_df[InferlinkEvalColumns.COMMODITY_OBSERVED_NAME.value] == "zinc")
         )
         | (master_df[InferlinkEvalColumns.MAIN_COMMODITY.value] == "earth_metals")
-    ]
+    ].copy()
 
-    # Take the first instance for each cdr_record_id
-    test_df = (
-        test_df.groupby(InferlinkEvalColumns.CDR_RECORD_ID.value).first().reset_index()
+    # Partion on CDR_RECORD_ID and add a rank column
+    test_df["cdr_record_id_rank"] = (
+        test_df.groupby(InferlinkEvalColumns.CDR_RECORD_ID.value).cumcount() + 1
     )
+    # Take the first instance for each cdr_record_id
+    test_df = test_df[test_df["cdr_record_id_rank"] == 1]
+    test_df.drop(columns=["cdr_record_id_rank"], inplace=True)
     # Sort by main_commodity and then commodity_observed_name
     test_df = test_df.sort_values(
         by=[
@@ -422,4 +430,16 @@ if __name__ == "__main__":
     )
     test_df.to_csv(
         "data/processed/ground_truth/inferlink_ground_truth_test.csv", index=False
+    )
+
+    ####################################################################################
+    # Combine validation and test set
+    ####################################################################################
+    combined_df = pd.concat([validation_df, test_df], ignore_index=True)
+    combined_df.sort_values(
+        by=[InferlinkEvalColumns.ID.value],
+        inplace=True,
+    )
+    combined_df.to_csv(
+        "data/processed/ground_truth/inferlink_ground_truth_test_val.csv", index=False
     )
