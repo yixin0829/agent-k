@@ -185,3 +185,32 @@ class MineralSiteMetadata(BaseModel):
         default=0,
         description=TOTAL_MINERAL_RESERVE_CONTAINED_METAL_DESCRIPTION,
     )
+
+
+class MineralSiteMetadataResponseAPI(BaseModel):
+    """
+    Used for Structured Output with LiteLLM. Default values are not natively supported.
+    Explicitly set default values in the description.
+    """
+
+    mineral_site_name: str = Field(..., description=MINERAL_SITE_NAME_DESCRIPTION)
+    country: str = Field(
+        description=COUNTRY_DESCRIPTION + " Default value: Not Found",
+    )
+    state_or_province: str = Field(
+        description=STATE_OR_PROVINCE_DESCRIPTION + " Default value: Not Found",
+    )
+    total_mineral_resource_tonnage: float = Field(
+        description=TOTAL_MINERAL_RESOURCE_TONNAGE_DESCRIPTION + " Default value: 0",
+    )
+    total_mineral_reserve_tonnage: float = Field(
+        description=TOTAL_MINERAL_RESERVE_TONNAGE_DESCRIPTION + " Default value: 0",
+    )
+    total_mineral_resource_contained_metal: float = Field(
+        description=TOTAL_MINERAL_RESOURCE_CONTAINED_METAL_DESCRIPTION
+        + " Default value: 0",
+    )
+    total_mineral_reserve_contained_metal: float = Field(
+        description=TOTAL_MINERAL_RESERVE_CONTAINED_METAL_DESCRIPTION
+        + " Default value: 0",
+    )

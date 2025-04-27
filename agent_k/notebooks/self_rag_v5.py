@@ -57,6 +57,7 @@ def create_markdown_retriever(
     collection_name: str,
     headers_to_split_on: Optional[list[tuple[str, str]]] = None,
     embedding_model: str = "text-embedding-3-small",
+    k: int = config_experiment.NUM_RETRIEVED_DOCS,
 ) -> Chroma:
     """
     Creates a Chroma retriever from a markdown document.
@@ -131,9 +132,7 @@ def create_markdown_retriever(
             persist_directory=None,  # Keep in-memory to avoid persistence
         )
 
-        retriever = vectorstore.as_retriever(
-            search_kwargs={"k": config_experiment.NUM_RETRIEVED_DOCS}
-        )
+        retriever = vectorstore.as_retriever(search_kwargs={"k": k})
         return retriever
     except Exception as e:
         logger.error(f"Error creating retriever: {e}")

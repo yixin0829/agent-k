@@ -4,14 +4,16 @@ from autogen_ext.models.openai import OpenAIChatCompletionClient
 from dotenv import load_dotenv
 from openai import AsyncClient
 
-from agent_k.utils.general import get_current_timestamp
+from agent_k.utils.general import get_curr_ts
 
 load_dotenv()
 
 # Note: Commodity is used for naming files and defining the scope of the data
 COMMODITY = "nickel"
 
-# MinMod API endpoint
+# --------------------------------------------------------------------------------------
+# MinMod API
+# --------------------------------------------------------------------------------------
 MINMOD_API_URL = "https://minmod.isi.edu/api/v1"
 DEDUP_MINERAL_SITES_ENDPOINT = "/dedup-mineral-sites"
 
@@ -26,7 +28,9 @@ DOCUMENTS_ENDPOINT = "/docs/documents"
 DOCUMENT_BY_ID_ENDPOINT = "/docs/document/{doc_id}"  # for querying pdf document by id
 PROVENANCE_ENDPOINT = "/docs/documents/q/provenance/url"  # for querying record id based on source id (e.g. https://w3id.org/usgs/z/4530692/5CAAGFXV)
 
+# --------------------------------------------------------------------------------------
 # Data directories
+# --------------------------------------------------------------------------------------
 DATA_DIR = "data"
 RAW_DIR = os.path.join(DATA_DIR, "raw")
 PROCESSED_DIR = os.path.join(DATA_DIR, "processed")
@@ -40,6 +44,23 @@ GROUND_TRUTH_DIR = os.path.join(PROCESSED_DIR, "ground_truth")
 EVAL_DIR = os.path.join(DATA_DIR, "eval")
 
 
+# --------------------------------------------------------------------------------------
+# Inferlink Ground Truth
+# --------------------------------------------------------------------------------------
+INFERLINK_GROUND_TRUTH_TEST_VAL_PATH = os.path.join(
+    GROUND_TRUTH_DIR, "inferlink_ground_truth_test_val.csv"
+)
+INFERLINK_GROUND_TRUTH_TEST_PATH = os.path.join(
+    GROUND_TRUTH_DIR, "inferlink_ground_truth_test.csv"
+)
+INFERLINK_GROUND_TRUTH_VAL_PATH = os.path.join(
+    GROUND_TRUTH_DIR, "inferlink_ground_truth_val.csv"
+)
+
+
+# --------------------------------------------------------------------------------------
+# MinMod Hyper Response
+# --------------------------------------------------------------------------------------
 def hyper_reponse_file(commodity: str):
     """Returns the filename for the hyper response CSV file."""
     return f"minmod_hyper_response_{commodity}.csv"
@@ -57,17 +78,17 @@ def eval_set_matched_based_file(commodity: str, version: str = "vX"):
 
 def eval_results_file(commodity: str):
     """Returns the filename for the eval results file."""
-    return f"eval_results_{commodity}_{get_current_timestamp()}.csv"
+    return f"eval_results_{commodity}_{get_curr_ts()}.csv"
 
 
 def avg_metrics_file(commodity: str):
     """Returns the filename for the average metrics file."""
-    return f"avg_metrics_{commodity}_{get_current_timestamp()}.json"
+    return f"avg_metrics_{commodity}_{get_curr_ts()}.json"
 
 
 def extraction_evaluation_metrics_file(commodity: str):
     """Returns the filename for the extraction evaluation metrics file."""
-    return f"pdf_extraction_eval_{commodity}_{get_current_timestamp()}.csv"
+    return f"pdf_extraction_eval_{commodity}_{get_curr_ts()}.csv"
 
 
 MRDS_DTYPE = {
@@ -119,9 +140,12 @@ MRDS_DTYPE = {
     "score": "category",
 }
 
+
+# --------------------------------------------------------------------------------------
+# Autogen Settings
+# --------------------------------------------------------------------------------------
 AGENT_CACHE_DIR = os.path.join(DATA_DIR, "agent_cache")
-# Autogen settings
-DB_AGENT_CACHE_DIR = os.path.join(AGENT_CACHE_DIR, "db_agent", get_current_timestamp())
+DB_AGENT_CACHE_DIR = os.path.join(AGENT_CACHE_DIR, "db_agent", get_curr_ts())
 OPENAI_MODEL_CLIENT = OpenAIChatCompletionClient(
     model="gpt-4o-mini",
     api_key=os.getenv("OPENAI_API_KEY"),

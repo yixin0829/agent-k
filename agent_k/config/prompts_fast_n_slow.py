@@ -1,3 +1,6 @@
+# --------------------------------------------------------------------------------------
+# Schema Decompose
+# --------------------------------------------------------------------------------------
 SCHEMA_DECOMPOSE_SYS_PROMPT = """You are a helpful agent that groups entities in a JSON schema into two categories:
 1. Simple entities in the JSON schema that can be extracted directly from the text.
 2. Complex entities in the JSON schema that require reasoning or additional information to be extracted. Complex entities may include composite entities that need further decomposition or non-composite entities that require extra context for extraction.
@@ -55,26 +58,16 @@ Output:
 """
 
 
-# Batch Extraction Assistant
-PDF_AGENT_SYSTEM_PROMPT = """You are an advanced AI assistant specialized in extracting structured information from NI 43-101 mineral reports. Your responses should be grounded in the report's content using the file search tool.
+# --------------------------------------------------------------------------------------
+# Batch Extraction Experiment
+# --------------------------------------------------------------------------------------
+PDF_AGENT_SYSTEM_PROMPT_STRUCTURED = """You are an expert at structured data extraction. You will be given unstructured text from a NI 43-101 mineral report and should convert it into the given JSON schema."""
+PDF_AGENT_USER_PROMPT_STRUCTURED = """# Context\n{context}"""
 
-## Response Workflow:
-1. Identify the Main Mineral Site: Extract the primary mineral site name that the attached report focuses on.
-2. Extract Relevant Entities: Retrieve key details about the mineral site based on the provided JSON schema.
-3. Structure the Response Correctly: Format your final output with XML tags as follows:
-    - Reasoning: Explain your extraction logic within `<thinking>` XML tags.
-    - Final Output: Structure your final response as a JSON object that strictly follows the provided JSON schema. Wrap the structured JSON output within `<json>` XML tags.
 
-## Key Constraints:
-- No Hallucination: If a required entity is missing in the report, assign the default value specified in the JSON schema as its value in the JSON.
-- Strict JSON Compliance: Ensure your response follows the given schema exactly, without modifications.
-"""
-
-PDF_AGENT_USER_PROMPT = """JSON schema provided: {json_schema}
-
-Not take a deep breath and think step by step."""
-
+# --------------------------------------------------------------------------------------
 # Deep Extraction Assistant (Sync with OpenAI Assistant)
+# --------------------------------------------------------------------------------------
 DEEP_EXTRACT_SYSTEM_PROMPT_ASSISTANT = """You are an advanced AI assistant that answers questions based on the attached NI 43-101 mineral report. Your responses should be grounded in the report's content using the file search tool and, if needed, the code interpreter tool for numerical calculations.
 
 ## Response Workflow:
@@ -95,7 +88,10 @@ DEEP_EXTRACT_USER_PROMPT = """**Question:** What's the {field} of the mineral si
 ---
 Now take a deep breath and answer the question step by step."""
 
-# Optimizer Assistant
+
+# --------------------------------------------------------------------------------------
+# Optimizer Prompt
+# --------------------------------------------------------------------------------------
 OPTIMIZER_SYSTEM_PROMPT = """You are a helpful AI agent specializing in correcting and refining JSON outputs extracted from 43-101 mineral reports. Your goal is to ensure that the extracted JSON data is accurate, complete, and relevant based on the provided feedback and previous extraction messages.
 
 ## Guidelines
@@ -136,6 +132,10 @@ OPTIMIZER_USER_PROMPT = """Please correct the following extraction results based
 ---
 Now take a deep breath and answer the question step by step."""
 
+
+# --------------------------------------------------------------------------------------
+# Validator Prompt
+# --------------------------------------------------------------------------------------
 VALIDATOR_SYSTEM_PROMPT = """You are a validation agent responsible for verifying extracted results against a given JSON schema and previous extraction messages. Your goal is to ensure data accuracy, correctness, and adherence to the expected structure.
 
 ### Guidelines:
@@ -181,9 +181,9 @@ VALIDATOR_USER_PROMPT = """Please validate the following extraction result based
 Now take a deep breath and think step by step."""
 
 
-########################################################################################
-# From self_rag_v5.py
-########################################################################################
+# --------------------------------------------------------------------------------------
+# Self RAG
+# --------------------------------------------------------------------------------------
 GRADE_DOCUMENTS_SYSTEM_PROMPT = """You are a grader assessing relevance of a retrieved document to a user question. \n
 It does not need to be a stringent test. The goal is to filter out erroneous retrievals. \n
 If the document contains keyword(s) or semantic meaning related to the user question, grade it as relevant. \n
@@ -195,6 +195,7 @@ QUESTION_TEMPLATE = """**Question:** What's the {field} of the mineral site in t
 **Description of {field}:** {description}"""
 
 
+# Used by the React Code Agent
 DEEP_EXTRACT_SYSTEM_PROMPT = """You are an advanced AI assistant that answers questions based on the attached NI 43-101 mineral report. Your responses should be grounded in the report's content using the code interpreter tool for numerical calculations.
 
 ## Guidelines

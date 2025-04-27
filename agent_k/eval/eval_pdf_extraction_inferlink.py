@@ -9,7 +9,7 @@ from sklearn.metrics import mean_absolute_error, r2_score
 import agent_k.config.general as config_general
 from agent_k.config.logger import logger
 from agent_k.config.schemas import InferlinkEvalColumns
-from agent_k.utils.general import get_current_timestamp
+from agent_k.utils.general import get_curr_ts
 
 
 def load_data_and_process() -> pd.DataFrame:
@@ -55,7 +55,9 @@ def load_data_and_process() -> pd.DataFrame:
         return df
 
     # Note: Load PDF extraction data. Can be replaced with the following line to load a specific extraction file
-    df_pdf_agent_extraction = pd.read_csv("data/processed/inferlink_extraction_v3.csv")
+    df_pdf_agent_extraction = pd.read_csv(
+        "data/experiments/250426_batch_extraction/2025-04-27_17-45-31_batch_extraction.csv"
+    )
     # df_pdf_agent_extraction = load_latest_pdf_extraction(
     #     dir=os.path.join(config_general.PDF_AGENT_CACHE_DIR, "inferlink")
     # )
@@ -196,7 +198,7 @@ def save_metrics(df_metrics: pd.DataFrame) -> None:
     output_file = os.path.join(
         config_general.EVAL_DIR,
         "inferlink",
-        f"pdf_extraction_metrics_{get_current_timestamp()}.csv",
+        f"pdf_extraction_metrics_{get_curr_ts()}.csv",
     )
     df_metrics.to_csv(output_file, index=False)
     logger.info(f"Evaluation metrics saved to {output_file}")
@@ -261,8 +263,8 @@ def main() -> None:
         InferlinkEvalColumns.TOTAL_MINERAL_RESERVE_TONNAGE.value + "_pred",
         InferlinkEvalColumns.TOTAL_MINERAL_RESOURCE_CONTAINED_METAL.value + "_pred",
         InferlinkEvalColumns.TOTAL_MINERAL_RESERVE_CONTAINED_METAL.value + "_pred",
-        InferlinkEvalColumns.MAIN_COMMODITY.value + "_gt",
-        InferlinkEvalColumns.COMMODITY_OBSERVED_NAME.value + "_gt",
+        InferlinkEvalColumns.MAIN_COMMODITY.value,
+        InferlinkEvalColumns.COMMODITY_OBSERVED_NAME.value,
         InferlinkEvalColumns.MINERAL_SITE_NAME.value + "_gt",
         InferlinkEvalColumns.STATE_OR_PROVINCE.value + "_gt",
         InferlinkEvalColumns.COUNTRY.value + "_gt",
@@ -296,9 +298,7 @@ def main() -> None:
             if row[pdf_col] == 0 and row[hyper_col] == 0:
                 df_merged.at[idx, f"{pdf_col}_smape"] = 0
 
-    df_merged.to_csv(
-        f"data/eval/inferlink/df_merged_{get_current_timestamp()}.csv", index=False
-    )
+    df_merged.to_csv(f"data/eval/inferlink/df_merged_{get_curr_ts()}.csv", index=False)
 
 
 if __name__ == "__main__":

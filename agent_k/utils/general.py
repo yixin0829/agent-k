@@ -82,7 +82,7 @@ def load_list_to_df(data: list[list[str]], selected_cols: list[str]) -> pd.DataF
     return df
 
 
-def get_current_timestamp():
+def get_curr_ts():
     """Get the current timestamp in the format YYYY-MM-DD_HH-MM-SS."""
     return datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
@@ -149,6 +149,21 @@ def parse_json_code_block(content: str) -> dict[str, Any]:
     else:
         logger.error(f"Failed to parse JSON code block: {content}")
         return {}
+
+
+def extract_xml(text: str, tag: str) -> str:
+    """
+    Extracts the content of the specified XML tag from the given text. Used for parsing structured responses
+
+    Args:
+        text: The text containing the XML.
+        tag: The XML tag to extract content from.
+
+    Returns:
+        The content of the specified XML tag, or an empty string if the tag is not found.
+    """
+    match = re.search(f"<{tag}>(.*?)</{tag}>", text, re.DOTALL)
+    return match.group(1) if match else ""
 
 
 def prompt_openai_assistant(assistant: Assistant, messages: list[dict]) -> str:

@@ -42,16 +42,14 @@ from agent_k.notebooks.self_rag_v5 import (
 )
 from agent_k.setup.load_43_101 import list_43_101_reports
 from agent_k.utils.general import (
-    get_current_timestamp,
+    get_curr_ts,
     parse_json_code_block,
     prompt_openai_assistant,
     split_json_schema,
 )
 
-CLIENT = OpenAI()
-
-
 # Global variables
+CLIENT = OpenAI()
 filename_to_id_map = list_43_101_reports()
 retry_count = 0
 
@@ -59,9 +57,11 @@ retry_count = 0
 def batch_extract(
     pdf_path: str,
     json_schema: dict,
+    code_interpreter: bool = False,
 ) -> str:
     """
-    Extract entities from a PDF file using OpenAI Assistant.
+    Extract entities from a PDF file using OpenAI Assistant with Format-Restricting Instruction
+    i.e. Provide the JSON schema in the prompt and parse <json> tags in the response.
     """
 
     json_schema_str = json.dumps(json_schema)
@@ -70,6 +70,10 @@ def batch_extract(
 
     filename = pdf_path.split("/")[-1]
     file_id = filename_to_id_map[filename]
+
+    tools = [{"type": "file_search"}]
+    if code_interpreter:
+        tools.append({"type": "code_interpreter"})
 
     messages = [
         {
@@ -80,10 +84,7 @@ def batch_extract(
             "attachments": [
                 {
                     "file_id": file_id,
-                    "tools": [
-                        {"type": "file_search"},
-                        {"type": "code_interpreter"},
-                    ],
+                    "tools": tools,
                 }
             ],
         },
@@ -759,7 +760,7 @@ def extract_from_inferlink_pdfs(
     os.makedirs(output_dir, exist_ok=True)
 
     # Create output evaluation file path
-    timestamp = get_current_timestamp()
+    timestamp = get_curr_ts()
     output_file = os.path.join(
         output_dir,
         f"{method.lower().replace(' ', '_')}_{timestamp}.csv",
@@ -967,7 +968,7 @@ def extract_from_all_pdfs(
     df.to_csv(
         os.path.join(
             config_general.PDF_AGENT_CACHE_DIR,
-            f"pdf_agent_extraction_{get_current_timestamp()}.csv",
+            f"pdf_agent_extraction_{get_curr_ts()}.csv",
         ),
         index=False,
     )
