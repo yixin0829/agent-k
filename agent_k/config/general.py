@@ -147,7 +147,7 @@ MRDS_DTYPE = {
 AGENT_CACHE_DIR = os.path.join(DATA_DIR, "agent_cache")
 DB_AGENT_CACHE_DIR = os.path.join(AGENT_CACHE_DIR, "db_agent", get_curr_ts())
 OPENAI_MODEL_CLIENT = OpenAIChatCompletionClient(
-    model="gpt-4o-mini",
+    model="gpt-4o-mini-2024-07-18",
     api_key=os.getenv("OPENAI_API_KEY"),
 )
 
@@ -156,6 +156,6 @@ OPENAI_ASSISTANT_CLIENT = AsyncClient(
     base_url="https://api.openai.com/v1",
 )
 
-OPENAI_ASSISTANT_MODEL = "gpt-4o-mini"
+OPENAI_ASSISTANT_MODEL = "gpt-4o-mini-2024-07-18"
 
 PDF_AGENT_CACHE_DIR = os.path.join(AGENT_CACHE_DIR, "pdf_agent")

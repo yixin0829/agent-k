@@ -92,7 +92,7 @@ async def resolve_filter_conditions(
         for filter_value in filter_values:
             prompt = f"Given the filter value {filter_value} for unique values in the filter column {filter_column}, find all all values similar to the filter value. Unique values: {col_unique_values}.\nReturn the similar values in JSON format."
             completion = client.beta.chat.completions.parse(
-                model="gpt-4o-mini",
+                model="gpt-4o-mini-2024-07-18",
                 messages=[{"role": "user", "content": prompt}],
                 response_format=ResolvedFilterValues,
             )

@@ -45,7 +45,7 @@ def parse_json_code_block(assistant_response: str) -> dict[str, Any]:
 
 def extract_relevant_entities(question: str) -> RelevantEntities:
     completion = client.beta.chat.completions.parse(
-        model="gpt-4o-mini",
+        model="gpt-4o-mini-2024-07-18",
         messages=[
             {
                 "role": "system",
@@ -101,7 +101,7 @@ def extract_from_pdf(
             {"type": "file_search"},
             {"type": "code_interpreter"},
         ],
-        model="gpt-4o-mini",
+        model="gpt-4o-mini-2024-07-18",
     )
 
     logger.info("Creating thread with user message and file")

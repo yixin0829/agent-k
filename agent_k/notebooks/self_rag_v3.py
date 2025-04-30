@@ -42,7 +42,7 @@ load_dotenv()
 
 CLIENT = OpenAI()
 NUM_RETRIEVED_DOCS = 5
-MODEL = "gpt-4o-mini"
+MODEL = "gpt-4o-mini-2024-07-18"
 
 
 def count_tokens(text):
@@ -157,7 +157,7 @@ class GradeDocuments(BaseModel):
 
 
 # LLM with function call
-llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.1)
+llm = ChatOpenAI(model="gpt-4o-mini-2024-07-18", temperature=0.1)
 structured_llm_grader = llm.with_structured_output(GradeDocuments)
 
 # Prompt
@@ -310,7 +310,7 @@ json_schema_openai_standard = {
 
 
 # LLM with function call
-llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.1)
+llm = ChatOpenAI(model="gpt-4o-mini-2024-07-18", temperature=0.1)
 structured_llm_grader = llm.with_structured_output(GradeHallucinations)
 
 # Prompt (Update in OpenAI Assistant)
@@ -391,7 +391,7 @@ class GradeAnswer(BaseModel):
 
 
 # LLM with function call
-llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.1)
+llm = ChatOpenAI(model="gpt-4o-mini-2024-07-18", temperature=0.1)
 structured_llm_grader = llm.with_structured_output(GradeAnswer)
 
 # Prompt
@@ -416,7 +416,7 @@ answer_grader = answer_prompt | structured_llm_grader
 ### Question Re-writer
 
 # LLM
-llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.1)
+llm = ChatOpenAI(model="gpt-4o-mini-2024-07-18", temperature=0.1)
 
 # Prompt
 system = """You a question re-writer that converts an input question to a better version that is optimized for vectorstore retrieval. Look at the input and try to reason about the underlying semantic intent / meaning."""

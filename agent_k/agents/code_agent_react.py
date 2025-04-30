@@ -32,12 +32,16 @@ tools = [code_interpreter]
 tool_node = ToolNode(tools)
 
 # Bind the tools to the model
-if config_experiment.PYTHON_AGENT_MODEL in ["gpt-4o-mini", "gpt-4o", "gpt-4.1-mini"]:
+if config_experiment.PYTHON_AGENT_MODEL in [
+    "gpt-4o-mini-2024-07-18",
+    "gpt-4o",
+    "gpt-4.1-mini",
+]:
     model_with_tools = ChatOpenAI(
         model=config_experiment.PYTHON_AGENT_MODEL,
         temperature=config_experiment.PYTHON_AGENT_TEMPERATURE,
     ).bind_tools(tools)
-elif config_experiment.PYTHON_AGENT_MODEL in ["o3-mini", "o4-mini"]:
+elif config_experiment.PYTHON_AGENT_MODEL in ["o3-mini", "o4-mini-2025-04-16"]:
     model_with_tools = ChatOpenAI(
         model=config_experiment.PYTHON_AGENT_MODEL
     ).bind_tools(tools)

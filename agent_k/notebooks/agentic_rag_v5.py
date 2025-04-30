@@ -209,9 +209,9 @@ class GradeHallucinations(BaseModel):
 
 
 # LLM with function call
-if config_experiment.GRADE_HALLUCINATION_MODEL in ["o3-mini", "o4-mini"]:
+if config_experiment.GRADE_HALLUCINATION_MODEL in ["o3-mini", "o4-mini-2025-04-16"]:
     llm = ChatOpenAI(model=config_experiment.GRADE_HALLUCINATION_MODEL)
-elif config_experiment.GRADE_HALLUCINATION_MODEL == "gpt-4o-mini":
+elif config_experiment.GRADE_HALLUCINATION_MODEL == "gpt-4o-mini-2024-07-18":
     llm = ChatOpenAI(
         model=config_experiment.GRADE_HALLUCINATION_MODEL,
         temperature=config_experiment.GRADE_HALLUCINATION_TEMPERATURE,
@@ -501,19 +501,19 @@ def answer_quality_router(state):
 
 # ## Build Graph
 
-self_rag_graph_builder = StateGraph(GraphState)
+agentic_rag_graph_builder = StateGraph(GraphState)
 
 # Define the nodes
-self_rag_graph_builder.add_node("retrieve", retrieve)
-self_rag_graph_builder.add_node("grade_documents", grade_documents)
-self_rag_graph_builder.add_node("generate", generate)
-self_rag_graph_builder.add_node("transform_query", transform_query)
-self_rag_graph_builder.add_node("check_hallucination", check_hallucination)
+agentic_rag_graph_builder.add_node("retrieve", retrieve)
+agentic_rag_graph_builder.add_node("grade_documents", grade_documents)
+agentic_rag_graph_builder.add_node("generate", generate)
+agentic_rag_graph_builder.add_node("transform_query", transform_query)
+agentic_rag_graph_builder.add_node("check_hallucination", check_hallucination)
 
 # Build graph
-self_rag_graph_builder.add_edge(START, "retrieve")
-self_rag_graph_builder.add_edge("retrieve", "grade_documents")
-self_rag_graph_builder.add_conditional_edges(
+agentic_rag_graph_builder.add_edge(START, "retrieve")
+agentic_rag_graph_builder.add_edge("retrieve", "grade_documents")
+agentic_rag_graph_builder.add_conditional_edges(
     "grade_documents",
     retriever_router,
     {
@@ -522,9 +522,9 @@ self_rag_graph_builder.add_conditional_edges(
     },
 )
 # self_rag_graph_builder.add_edge("generate", "check_hallucination")
-self_rag_graph_builder.add_edge("generate", "check_hallucination")
-self_rag_graph_builder.add_edge("transform_query", "retrieve")
-self_rag_graph_builder.add_conditional_edges(
+agentic_rag_graph_builder.add_edge("generate", "check_hallucination")
+agentic_rag_graph_builder.add_edge("transform_query", "retrieve")
+agentic_rag_graph_builder.add_conditional_edges(
     "check_hallucination",
     hallucination_router,
     {
@@ -534,7 +534,7 @@ self_rag_graph_builder.add_conditional_edges(
 )
 
 # Compile
-self_rag_graph = self_rag_graph_builder.compile()
+self_rag_graph = agentic_rag_graph_builder.compile()
 
 # Run
 if __name__ == "__main__":

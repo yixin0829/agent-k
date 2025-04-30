@@ -11,116 +11,26 @@
 # 7. Run 1st eval
 
 # %%
-from typing import Any, List, Optional
+from typing import Any, List
 
-import tiktoken
 from IPython.display import Image, display
-from langchain.text_splitter import MarkdownHeaderTextSplitter
-from langchain_community.vectorstores import Chroma
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain_openai import ChatOpenAI
 from langgraph.graph import END, START, StateGraph
 from openai import OpenAI
 from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
 
+import agent_k.config.experiment_config as config_experiment
 from agent_k.config.logger import logger
 from agent_k.config.schemas import TOTAL_MINERAL_RESOURCE_TONNAGE_DESCRIPTION
+from agent_k.notebooks.agentic_rag_v5 import create_markdown_retriever
 from agent_k.utils.general import (
     prompt_openai_assistant,
 )
 
 CLIENT = OpenAI()
-NUM_RETRIEVED_DOCS = 4
-MODEL = "gpt-4o-mini"
-
-
-def count_tokens(text):
-    try:
-        encoding = tiktoken.get_encoding("cl100k_base")
-        return len(encoding.encode(text))
-    except Exception as e:
-        logger.warning(f"Error counting tokens: {e}")
-        logger.warning("Falling back to rough approximation (4 tokens per character)")
-        return len(text) // 4
-
-
-def create_markdown_retriever(
-    markdown_path: str,
-    collection_name: str = "rag-chroma",
-    headers_to_split_on: Optional[list[tuple[str, str]]] = None,
-    embedding_model: str = "text-embedding-3-small",
-) -> Chroma:
-    """
-    Creates a Chroma retriever from a markdown document.
-
-    Args:
-        markdown_path: Path to the markdown file
-        collection_name: Name for the Chroma collection
-        headers_to_split_on: List of tuples containing markdown header levels and their names
-        embedding_model: Name of the OpenAI embedding model to use
-
-    Returns:
-        Chroma retriever object
-    """
-    # Set default headers if none provided
-    if headers_to_split_on is None:
-        headers_to_split_on = [
-            ("#", "Header 1"),
-            ("##", "Header 2"),
-            ("###", "Header 3"),
-        ]
-
-    # Read markdown file
-    try:
-        with open(markdown_path, "r", encoding="utf-8") as file:
-            markdown_document = file.read()
-    except Exception as e:
-        logger.error(f"Error reading markdown file: {e}")
-        raise
-
-    # Split document
-    markdown_splitter = MarkdownHeaderTextSplitter(
-        headers_to_split_on=headers_to_split_on
-    )
-    doc_splits = markdown_splitter.split_text(markdown_document)
-
-    # Log splitting information
-    try:
-        markdown_document_tokens = count_tokens(markdown_document)
-        doc_splits_len = len(doc_splits)
-        avg_tokens = markdown_document_tokens / doc_splits_len
-
-        logger.info(f"Number of tokens: {markdown_document_tokens}")
-        logger.info(f"Number of splits: {doc_splits_len}")
-        logger.info(f"Average tokens per split: {avg_tokens:.0f}")
-    except Exception as e:
-        logger.warning(f"Could not log token statistics: {e}")
-
-    # Create vectorstore and retriever
-    try:
-        vectorstore = Chroma.from_documents(
-            documents=doc_splits,
-            collection_name=collection_name,
-            embedding=OpenAIEmbeddings(model=embedding_model),
-        )
-
-        retriever = vectorstore.as_retriever(search_kwargs={"k": NUM_RETRIEVED_DOCS})
-        return retriever
-    except Exception as e:
-        logger.error(f"Error creating retriever: {e}")
-        raise
-
-
-# Example usage:
-# retriever = create_markdown_retriever(
-#     "data/processed/43-101/02a2b93ee61f2863bcb417b27855cb63d63a3c53b73622174f7c5688b0d4dc159c.md",
-#     collection_name="rag-chroma"
-# )
-
-# results = retriever.invoke("What's the mineral site name?")
-# results
 
 # %%
 ### Retrieval Grader
@@ -138,7 +48,10 @@ class GradeDocuments(BaseModel):
 
 
 # LLM with function call
-llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.1)
+llm = ChatOpenAI(
+    model=config_experiment.SELF_RAG_GRADE_RETRIEVAL_MODEL,
+    temperature=config_experiment.SELF_RAG_GRADE_RETRIEVAL_TEMPERATURE,
+)
 structured_llm_grader = llm.with_structured_output(GradeDocuments)
 
 # Prompt
@@ -209,7 +122,15 @@ prompt_w_feedback = ChatPromptTemplate.from_messages(
 )
 
 # LLM
-llm = ChatOpenAI(model_name="gpt-4o-mini", temperature=0.1)
+if config_experiment.SELF_RAG_GENERATION_MODEL in ["o3-mini", "o4-mini"]:
+    llm = ChatOpenAI(
+        model_name=config_experiment.SELF_RAG_GENERATION_MODEL,
+    )
+else:
+    llm = ChatOpenAI(
+        model_name=config_experiment.SELF_RAG_GENERATION_MODEL,
+        temperature=config_experiment.SELF_RAG_GENERATION_TEMPERATURE,
+    )
 
 
 # Post-processing
@@ -285,7 +206,15 @@ class GradeHallucinations(BaseModel):
 
 
 # LLM with function call
-llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.1)
+if config_experiment.SELF_RAG_GRADE_HALLUCINATION_MODEL in ["o3-mini", "o4-mini"]:
+    llm = ChatOpenAI(
+        model=config_experiment.SELF_RAG_GRADE_HALLUCINATION_MODEL,
+    )
+else:
+    llm = ChatOpenAI(
+        model=config_experiment.SELF_RAG_GRADE_HALLUCINATION_MODEL,
+        temperature=config_experiment.SELF_RAG_GRADE_HALLUCINATION_TEMPERATURE,
+    )
 structured_llm_grader = llm.with_structured_output(GradeHallucinations)
 
 # Prompt
@@ -327,7 +256,15 @@ class GradeAnswer(BaseModel):
 
 
 # LLM with function call
-llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.1)
+if config_experiment.SELF_RAG_GRADE_ANSWER_MODEL in ["o3-mini", "o4-mini"]:
+    llm = ChatOpenAI(
+        model=config_experiment.SELF_RAG_GRADE_ANSWER_MODEL,
+    )
+else:
+    llm = ChatOpenAI(
+        model=config_experiment.SELF_RAG_GRADE_ANSWER_MODEL,
+        temperature=config_experiment.SELF_RAG_GRADE_ANSWER_TEMPERATURE,
+    )
 structured_llm_grader = llm.with_structured_output(GradeAnswer)
 
 # Prompt
@@ -349,7 +286,10 @@ answer_grader = answer_prompt | structured_llm_grader
 ### Question Re-writer
 
 # LLM
-llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.1)
+llm = ChatOpenAI(
+    model=config_experiment.SELF_RAG_QUESTION_REWRITER_MODEL,
+    temperature=config_experiment.SELF_RAG_QUESTION_REWRITER_TEMPERATURE,
+)
 
 # Prompt
 system = """You a question re-writer that converts an input question to a better version that is optimized for vectorstore retrieval. Look at the input and try to reason about the underlying semantic intent / meaning."""
@@ -385,7 +325,6 @@ class GraphState(TypedDict):
     retriever: Any
     documents: List[str]
 
-    # Added by Yixin
     hallucination_grade: str
     hallucination_grader_reasoning: str
     answer_grade: str
@@ -434,26 +373,27 @@ def generate(state):
     if hallucination_grade == "no" and hallucination_grader_reasoning:
         # RAG generation with hallucination grader feedback
         previous_generation = state["generation"]
-        # generation = rag_chain_w_feedback.invoke(
-        #     {
-        #         "context": documents,
-        #         "question": question,
-        #         "previous_generation": previous_generation,
-        #         "hallucination_grader_reasoning": hallucination_grader_reasoning,
-        #     }
-        # )
-        generation = deep_extract_w_feedback(
-            question, documents, previous_generation, hallucination_grader_reasoning
+        # Note: Set to always use without feedback to mirror the original implementation
+        generation = rag_chain_wo_feedback.invoke(
+            {
+                "context": documents,
+                "question": question,
+                # "previous_generation": previous_generation,
+                # "hallucination_grader_reasoning": hallucination_grader_reasoning,
+            }
         )
+        # generation = deep_extract_w_feedback(
+        #     question, documents, previous_generation, hallucination_grader_reasoning
+        # )
     else:
         # Initial RAG generation without hallucination grader feedback
-        # generation = rag_chain_wo_feedback.invoke(
-        #     {
-        #         "context": documents,
-        #         "question": question,
-        #     }
-        # )
-        generation = deep_extract_wo_feedback(question, documents)
+        generation = rag_chain_wo_feedback.invoke(
+            {
+                "context": documents,
+                "question": question,
+            }
+        )
+        # generation = deep_extract_wo_feedback(question, documents)
 
     return {"generation": generation}
 
@@ -692,6 +632,38 @@ viz_graph(self_rag_graph)
 # %%
 # Run
 if __name__ == "__main__":
+    # Log Self RAG Experiment hyper-parameters
+    logger.info(
+        f"SELF_RAG_GRADE_RETRIEVAL_MODEL: {config_experiment.SELF_RAG_GRADE_RETRIEVAL_MODEL}"
+    )
+    logger.info(
+        f"SELF_RAG_GRADE_RETRIEVAL_TEMPERATURE: {config_experiment.SELF_RAG_GRADE_RETRIEVAL_TEMPERATURE}"
+    )
+    logger.info(
+        f"SELF_RAG_GENERATION_MODEL: {config_experiment.SELF_RAG_GENERATION_MODEL}"
+    )
+    logger.info(
+        f"SELF_RAG_GENERATION_TEMPERATURE: {config_experiment.SELF_RAG_GENERATION_TEMPERATURE}"
+    )
+    logger.info(
+        f"SELF_RAG_GRADE_HALLUCINATION_MODEL: {config_experiment.SELF_RAG_GRADE_HALLUCINATION_MODEL}"
+    )
+    logger.info(
+        f"SELF_RAG_GRADE_HALLUCINATION_TEMPERATURE: {config_experiment.SELF_RAG_GRADE_HALLUCINATION_TEMPERATURE}"
+    )
+    logger.info(
+        f"SELF_RAG_GRADE_ANSWER_MODEL: {config_experiment.SELF_RAG_GRADE_ANSWER_MODEL}"
+    )
+    logger.info(
+        f"SELF_RAG_GRADE_ANSWER_TEMPERATURE: {config_experiment.SELF_RAG_GRADE_ANSWER_TEMPERATURE}"
+    )
+    logger.info(
+        f"SELF_RAG_QUESTION_REWRITER_MODEL: {config_experiment.SELF_RAG_QUESTION_REWRITER_MODEL}"
+    )
+    logger.info(
+        f"SELF_RAG_QUESTION_REWRITER_TEMPERATURE: {config_experiment.SELF_RAG_QUESTION_REWRITER_TEMPERATURE}"
+    )
+
     question = QUESTION_TEMPLATE.format(
         field="total_mineral_resource_tonnage",
         dtype="float",
