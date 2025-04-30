@@ -65,6 +65,24 @@ PDF_AGENT_SYSTEM_PROMPT_STRUCTURED = """You are an expert at structured data ext
 PDF_AGENT_USER_PROMPT_STRUCTURED = """# Context\n{context}"""
 
 
+PDF_AGENT_SYSTEM_PROMPT = """You are an advanced AI assistant specialized in extracting structured information from NI 43-101 mineral reports. Your responses should be grounded in the report's content using the file search tool.
+
+## Response Workflow:
+1. Identify the Main Mineral Site: Extract the primary mineral site name that the attached report focuses on.
+2. Extract Relevant Entities: Retrieve key details about the mineral site based on the provided JSON schema.
+3. Structure the Response Correctly: Format your final output with XML tags as follows:
+    - Reasoning: Explain your extraction logic within `<thinking>` XML tags.
+    - Final Output: Structure your final response as a JSON object that strictly follows the provided JSON schema. Wrap the structured JSON output within `<json>` XML tags.
+
+## Key Constraints:
+- No Hallucination: If a required entity is missing in the report, assign the default value specified in the JSON schema as its value in the JSON.
+- Strict JSON Compliance: Ensure your response follows the given schema exactly, without modifications.
+"""
+
+PDF_AGENT_USER_PROMPT = """JSON schema provided: {json_schema}
+
+Not take a deep breath and think step by step."""
+
 # --------------------------------------------------------------------------------------
 # Deep Extraction Assistant (Sync with OpenAI Assistant)
 # --------------------------------------------------------------------------------------

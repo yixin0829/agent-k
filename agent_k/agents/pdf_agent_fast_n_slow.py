@@ -3,9 +3,12 @@ import operator
 import os
 import re
 from time import time
-from typing import Annotated, Any, Literal, Optional
+from typing import Annotated, Any, Literal
 
 import pandas as pd
+import yaml
+from IPython.display import Image, display
+from langchain_core.runnables.graph import MermaidDrawMethod
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
 from langgraph.types import Send
@@ -33,7 +36,6 @@ from agent_k.config.prompts_fast_n_slow import (
 from agent_k.config.schemas import (
     InferlinkEvalColumns,
     MineralSiteMetadata,
-    MinModHyperCols,
 )
 from agent_k.notebooks.self_rag_v5 import (
     QUESTION_TEMPLATE,
@@ -136,7 +138,7 @@ def deep_extract(pdf_path: str, field, default, description, dtype):
 class State(TypedDict):
     pdf_path: str  # 43-101 report record ID
     json_schema: dict  # Predefined JSON schema (Assumed it's available)
-    method: Literal["F&S", "DPE", "DPE MAP_REDUCE", "DPE MAP_REDUCE SELF RAG"]
+    method: Literal["F&S", "DPE", "DPE MAP_REDUCE", "F&S AGENTIC RAG", "F&S SELF RAG"]
     retriever: Any  # Retriever for self-RAG
 
     # Populated by LLMs
@@ -145,11 +147,10 @@ class State(TypedDict):
     fast_schema: dict
     slow_schema: dict
     fast_extraction_agent_result: dict[str, Any]
-    slow_extraction_agent_result_map_reduce: Annotated[list, operator.add]
+    slow_extraction_agent_result_map: Annotated[list, operator.add]
     slow_extraction_agent_result: dict[str, Any]
     slow_extraction_validation: Literal["YES", "NO"]
     feedback: Annotated[list, add_messages]
-
     messages: Annotated[list, add_messages]
     final_extraction_result: MineralSiteMetadata
 
@@ -219,7 +220,6 @@ def schema_decompose(state: State):
 
 def fast_and_slow_route(state: State):
     logger.info("Routing to the appropriate extraction agent")
-
     next_nodes = []
 
     if state["fast_schema"]["properties"]:
@@ -228,7 +228,7 @@ def fast_and_slow_route(state: State):
     if state["slow_schema"]["properties"]:
         if state["method"] == "DPE":
             next_nodes.append("slow_extraction_agent_dpe")
-        elif state["method"] in ["DPE MAP_REDUCE", "DPE MAP_REDUCE SELF RAG"]:
+        elif state["method"] in ["DPE MAP_REDUCE", "F&S AGENTIC RAG", "F&S SELF RAG"]:
             # Map reduce extraction of complex entities to parallel nodes
             for entity_name, entity_schema in state["slow_schema"][
                 "properties"
@@ -236,8 +236,10 @@ def fast_and_slow_route(state: State):
                 match state["method"]:
                     case "DPE MAP_REDUCE":
                         map_reduce_node = "slow_extraction_agent_map_reduce"
-                    case "DPE MAP_REDUCE SELF RAG":
-                        map_reduce_node = "slow_extraction_agent_map_reduce_self_rag"
+                    case "F&S AGENTIC RAG":
+                        map_reduce_node = "map_slow_extraction_agent_agentic_rag"
+                    case "F&S SELF RAG":
+                        map_reduce_node = "map_slow_extraction_agent_self_rag"
                     case _:
                         raise ValueError(f"Unknown method: {state['method']}")
                 next_nodes.append(
@@ -245,22 +247,14 @@ def fast_and_slow_route(state: State):
                         map_reduce_node,
                         {
                             "pdf_path": state["pdf_path"],
-                            "retriever": state["retriever"],
                             "entity_name": entity_name,
                             "default_value": entity_schema.get("default", None),
                             "description": entity_schema.get("description", None),
                             "dtype": entity_schema.get("type", None),
+                            "retriever": state["retriever"],
                         },
                     )
                 )
-        else:
-            # Default to batch extraction
-            next_nodes.append("slow_extraction_agent")
-
-    if not next_nodes:
-        raise ValueError(
-            "No next nodes found. Possibly because both simple and complex entities are empty."
-        )
 
     return next_nodes
 
@@ -270,11 +264,6 @@ def fast_extraction_agent(state: State):
 
     fast_schema = state["fast_schema"]
     logger.debug(f"Fast schema: {fast_schema}")
-
-    if fast_schema["properties"] == {}:
-        raise ValueError(
-            "No simple entities to extract. Returning empty dict as result."
-        )
 
     content = batch_extract(state["pdf_path"], fast_schema)
     parsed_json = parse_json_code_block(content)
@@ -303,7 +292,7 @@ def slow_extraction_output_parser(
     content: str,
     entity_name: str,
     dtype: Literal["string", "number", "boolean", "array", "object"],
-):
+) -> Any:
     # Corner cases
     if "not found" in content.lower():
         return "Not Found"
@@ -364,11 +353,15 @@ def slow_extraction_agent_map_reduce(state: ComplexEntityState):
 
     return {
         "messages": [{"role": "assistant", "content": content}],
-        "slow_extraction_agent_result_map_reduce": [{entity_name: parsed_output}],
+        "slow_extraction_agent_result_map": [{entity_name: parsed_output}],
     }
 
 
-def slow_extraction_agent_map_reduce_self_rag(state: ComplexEntityState):
+def map_slow_extraction_agent_self_rag(state: ComplexEntityState):
+    pass
+
+
+def map_slow_extraction_agent_agentic_rag(state: ComplexEntityState):
     entity_name = state["entity_name"]
     default_value = state["default_value"]
     description = state["description"]
@@ -392,12 +385,12 @@ def slow_extraction_agent_map_reduce_self_rag(state: ComplexEntityState):
         global retry_count
         retry_count += 1
         logger.warning(
-            f"[{retry_state.attempt_number}/{config_experiment.SELF_RAG_RETRY_LIMIT}] Retrying... {retry_state.outcome.exception()}"
+            f"[{retry_state.attempt_number}/{config_experiment.SLOW_WORKFLOW_RETRY_LIMIT}] Retrying... {retry_state.outcome.exception()}"
         )
 
     # Use tenacity to retry the graph invocation and output parsing with exponential backoff
     @retry(
-        stop=stop_after_attempt(config_experiment.SELF_RAG_RETRY_LIMIT),
+        stop=stop_after_attempt(config_experiment.SLOW_WORKFLOW_RETRY_LIMIT),
         wait=wait_exponential(multiplier=1, min=2, max=10),
         retry=retry_if_exception_type(Exception),
         before_sleep=before_sleep_callback,
@@ -421,12 +414,12 @@ def slow_extraction_agent_map_reduce_self_rag(state: ComplexEntityState):
         logger.error(
             f"All retries failed for {entity_name}: {e}. Returning default value."
         )
-        content = f"Failed to extract {entity_name} after {config_experiment.SELF_RAG_RETRY_LIMIT} attempts."
+        content = f"Failed to extract {entity_name} after {config_experiment.SLOW_WORKFLOW_RETRY_LIMIT} attempts."
         parsed_output = default_value
 
     return {
         "messages": [{"role": "assistant", "content": content}],
-        "slow_extraction_agent_result_map_reduce": [{entity_name: parsed_output}],
+        "slow_extraction_agent_result_map": [{entity_name: parsed_output}],
     }
 
 
@@ -467,12 +460,12 @@ def slow_extraction_optimizer(state: State):
     }
 
 
-def merge_map_reduce_results(state: State):
+def reduce_slow_extraction_results(state: State):
     """
-    Merges the results from multiple map-reduce operations into a single dictionary.
+    Reduces the results from multiple map-reduce operations into a single dictionary.
     """
     merged_result = {}
-    for d in state["slow_extraction_agent_result_map_reduce"]:
+    for d in state["slow_extraction_agent_result_map"]:
         for k, v in d.items():
             merged_result[k] = v
 
@@ -480,7 +473,9 @@ def merge_map_reduce_results(state: State):
 
 
 def validate_extraction_result(state: State):
-    # Validate the extraction result
+    """
+    Validate the slow extracted entities holistically
+    """
     logger.info("Validating slow extraction result")
     slow_schema = state["slow_schema"]
 
@@ -514,20 +509,15 @@ def validate_extraction_result(state: State):
 
 def validate_extraction_result_route(state: State):
     logger.info("Validating extraction result route")
-    next_nodes = []
-    if state["slow_extraction_validation"].lower().strip() == "no":
-        next_nodes.append("slow_extraction_optimizer")
-    elif state["slow_extraction_validation"].lower().strip() == "yes":
-        next_nodes.append("slow_extraction_finish")
+
+    if state["slow_extraction_validation"].lower().strip() == "yes":
+        return "slow_extraction_end"
     else:
-        # Go back to the slow extraction agent by default
-        next_nodes.append("slow_extraction_optimizer")
-
-    return next_nodes
+        return "slow_extraction_optimizer"
 
 
-def slow_extraction_finish(state: State):
-    return {"slow_extraction_finish": True}
+def slow_extraction_end(state: State):
+    return {"slow_extraction_end": True}
 
 
 def extraction_synthesis(state: State):
@@ -580,8 +570,10 @@ def build_dpe_w_map_reduce_graph():
     )
     graph_builder.add_node("slow_extraction_optimizer", slow_extraction_optimizer)
     graph_builder.add_node("validate_extraction_result", validate_extraction_result)
-    graph_builder.add_node("slow_extraction_finish", slow_extraction_finish)
-    graph_builder.add_node("merge_map_reduce_results", merge_map_reduce_results)
+    graph_builder.add_node("slow_extraction_end", slow_extraction_end)
+    graph_builder.add_node(
+        "reduce_slow_extraction_results", reduce_slow_extraction_results
+    )
     graph_builder.add_node("extraction_synthesis", extraction_synthesis)
     graph_builder.add_edge(START, "schema_decompose")
     graph_builder.add_conditional_edges(
@@ -590,20 +582,21 @@ def build_dpe_w_map_reduce_graph():
         ["fast_extraction_agent", "slow_extraction_agent_map_reduce"],
     )
     graph_builder.add_edge(
-        "slow_extraction_agent_map_reduce", "merge_map_reduce_results"
+        "slow_extraction_agent_map_reduce", "reduce_slow_extraction_results"
     )
-    graph_builder.add_edge("merge_map_reduce_results", "validate_extraction_result")
+    graph_builder.add_edge(
+        "reduce_slow_extraction_results", "validate_extraction_result"
+    )
     graph_builder.add_conditional_edges(
         "validate_extraction_result",
         validate_extraction_result_route,
-        ["slow_extraction_optimizer", "slow_extraction_finish"],
+        ["slow_extraction_optimizer", "slow_extraction_end"],
     )
     graph_builder.add_edge("slow_extraction_optimizer", "validate_extraction_result")
     graph_builder.add_edge(
-        ["fast_extraction_agent", "slow_extraction_finish"], "extraction_synthesis"
+        ["fast_extraction_agent", "slow_extraction_end"], "extraction_synthesis"
     )
     graph_builder.add_edge("extraction_synthesis", END)
-    # Compile the graph
     graph = graph_builder.compile()
 
     return graph
@@ -617,44 +610,104 @@ def build_dpe_w_map_reduce_self_rag_graph():
     graph_builder.add_node("schema_decompose", schema_decompose)
     graph_builder.add_node("fast_extraction_agent", fast_extraction_agent)
     graph_builder.add_node(
-        "slow_extraction_agent_map_reduce_self_rag",
-        slow_extraction_agent_map_reduce_self_rag,
+        "map_slow_extraction_agent_self_rag",
+        map_slow_extraction_agent_self_rag,
     )
-    graph_builder.add_node("slow_extraction_optimizer", slow_extraction_optimizer)
-    graph_builder.add_node("validate_extraction_result", validate_extraction_result)
-    graph_builder.add_node("slow_extraction_finish", slow_extraction_finish)
-    graph_builder.add_node("merge_map_reduce_results", merge_map_reduce_results)
+    graph_builder.add_node(
+        "reduce_slow_extraction_results", reduce_slow_extraction_results
+    )
     graph_builder.add_node("extraction_synthesis", extraction_synthesis)
     graph_builder.add_edge(START, "schema_decompose")
     graph_builder.add_conditional_edges(
         "schema_decompose",
         fast_and_slow_route,
-        ["fast_extraction_agent", "slow_extraction_agent_map_reduce_self_rag"],
+        ["fast_extraction_agent", "map_slow_extraction_agent_self_rag"],
     )
     graph_builder.add_edge(
-        "slow_extraction_agent_map_reduce_self_rag", "merge_map_reduce_results"
+        "map_slow_extraction_agent_self_rag", "reduce_slow_extraction_results"
     )
-    graph_builder.add_edge("merge_map_reduce_results", "validate_extraction_result")
-    graph_builder.add_conditional_edges(
-        "validate_extraction_result",
-        validate_extraction_result_route,
-        ["slow_extraction_optimizer", "slow_extraction_finish"],
-    )
-    graph_builder.add_edge("slow_extraction_optimizer", "validate_extraction_result")
     graph_builder.add_edge(
-        ["fast_extraction_agent", "slow_extraction_finish"], "extraction_synthesis"
+        ["fast_extraction_agent", "reduce_slow_extraction_results"],
+        "extraction_synthesis",
     )
     graph_builder.add_edge("extraction_synthesis", END)
-    # Compile the graph
+
     graph = graph_builder.compile()
 
     return graph
 
 
+display(
+    Image(
+        build_dpe_w_map_reduce_self_rag_graph()
+        .get_graph()
+        .draw_mermaid_png(
+            draw_method=MermaidDrawMethod.API,
+        )
+    )
+)
+
+
+def build_dpe_w_map_reduce_agentic_rag_graph():
+    """
+    DPE with map reduce agentic rag graph.
+    """
+    graph_builder = StateGraph(State)
+    graph_builder.add_node("schema_decompose", schema_decompose)
+    graph_builder.add_node("fast_extraction_agent", fast_extraction_agent)
+    graph_builder.add_node(
+        "map_slow_extraction_agent_agentic_rag",
+        map_slow_extraction_agent_agentic_rag,
+    )
+    graph_builder.add_node("slow_extraction_optimizer", slow_extraction_optimizer)
+    graph_builder.add_node("validate_extraction_result", validate_extraction_result)
+    graph_builder.add_node("slow_extraction_end", slow_extraction_end)
+    graph_builder.add_node(
+        "reduce_slow_extraction_results", reduce_slow_extraction_results
+    )
+    graph_builder.add_node("extraction_synthesis", extraction_synthesis)
+    graph_builder.add_edge(START, "schema_decompose")
+    graph_builder.add_conditional_edges(
+        "schema_decompose",
+        fast_and_slow_route,
+        ["fast_extraction_agent", "map_slow_extraction_agent_agentic_rag"],
+    )
+    graph_builder.add_edge(
+        "map_slow_extraction_agent_agentic_rag", "reduce_slow_extraction_results"
+    )
+    graph_builder.add_edge(
+        "reduce_slow_extraction_results", "validate_extraction_result"
+    )
+    graph_builder.add_conditional_edges(
+        "validate_extraction_result",
+        validate_extraction_result_route,
+        ["slow_extraction_optimizer", "slow_extraction_end"],
+    )
+    graph_builder.add_edge("slow_extraction_optimizer", "validate_extraction_result")
+    graph_builder.add_edge(
+        ["fast_extraction_agent", "slow_extraction_end"], "extraction_synthesis"
+    )
+    graph_builder.add_edge("extraction_synthesis", END)
+    graph = graph_builder.compile()
+
+    return graph
+
+
+display(
+    Image(
+        build_dpe_w_map_reduce_agentic_rag_graph()
+        .get_graph()
+        .draw_mermaid_png(
+            draw_method=MermaidDrawMethod.API,
+        )
+    )
+)
+
+
 def extract_from_pdf(
     pdf_path: str,
     json_schema: dict,
-    method: Literal["F&S", "DPE MAP_REDUCE", "DPE MAP_REDUCE SELF RAG"],
+    method: Literal["F&S", "DPE MAP_REDUCE", "F&S AGENTIC RAG", "F&S SELF RAG"],
 ) -> dict:
     """
     Extract information from a PDF file using different extraction methods.
@@ -668,6 +721,11 @@ def extract_from_pdf(
     Returns:
         dict: Extracted information as a dictionary from MineralSiteMetadata Pydantic model
     """
+
+    # Initialize the retriever with the markdown file path
+    markdown_filename = pdf_path.split("/")[-1].replace(".pdf", ".md")
+    markdown_path = os.path.join("data/processed/43-101-refined", markdown_filename)
+    retriever = create_markdown_retriever(markdown_path, collection_name=markdown_path)
 
     match method:
         case "F&S":
@@ -690,17 +748,19 @@ def extract_from_pdf(
                 },
                 {"recursion_limit": config_experiment.RECURSION_LIMIT},
             )
-        case "DPE MAP_REDUCE SELF RAG":
-            # Initialize the retriever with the markdown file path
-            markdown_filename = pdf_path.split("/")[-1].replace(".pdf", ".md")
-            markdown_path = os.path.join(
-                "data/processed/43-101-refined", markdown_filename
-            )
-            retriever = create_markdown_retriever(
-                markdown_path, collection_name=markdown_path
-            )
-
+        case "F&S SELF RAG":
             graph = build_dpe_w_map_reduce_self_rag_graph()
+            result = graph.invoke(
+                {
+                    "pdf_path": pdf_path,
+                    "json_schema": json_schema,
+                    "method": method,
+                    "retriever": retriever,
+                },
+                {"recursion_limit": config_experiment.RECURSION_LIMIT},
+            )
+        case "F&S AGENTIC RAG":
+            graph = build_dpe_w_map_reduce_agentic_rag_graph()
             result = graph.invoke(
                 {
                     "pdf_path": pdf_path,
@@ -719,8 +779,10 @@ def extract_from_pdf(
 
 def extract_from_inferlink_pdfs(
     sample_size: int,
-    method: Literal["F&S", "DPE MAP_REDUCE", "DPE MAP_REDUCE SELF RAG"],
+    method: Literal["F&S", "DPE MAP_REDUCE", "F&S AGENTIC RAG"],
     eval_type: Literal["FULL", "VAL", "TEST"],
+    output_dir: str,
+    output_filename: str,
 ) -> pd.DataFrame:
     """
     Extract entities from all the PDF files in parallel and return as a DataFrame.
@@ -756,17 +818,10 @@ def extract_from_inferlink_pdfs(
     logger.info(f"Extracting entities from {len(cdr_record_ids)} PDF files")
 
     # Create output directory if it doesn't exist
-    output_dir = os.path.join(config_general.PDF_AGENT_CACHE_DIR, "inferlink")
     os.makedirs(output_dir, exist_ok=True)
+    output_file_path = os.path.join(output_dir, output_filename)
 
-    # Create output evaluation file path
-    timestamp = get_curr_ts()
-    output_file = os.path.join(
-        output_dir,
-        f"{method.lower().replace(' ', '_')}_{timestamp}.csv",
-    )
-
-    # Create empty DataFrame with headers
+    # Create empty DataFrame with IDs and extracted columns
     schema = MineralSiteMetadata.model_json_schema()
     empty_df = pd.DataFrame(
         columns=[
@@ -775,7 +830,7 @@ def extract_from_inferlink_pdfs(
             *list(schema["properties"].keys()),
         ]
     )
-    empty_df.to_csv(output_file, index=False)
+    empty_df.to_csv(output_file_path, index=False)
 
     # Define numerical columns for conversion
     numerical_columns = [
@@ -817,238 +872,88 @@ def extract_from_inferlink_pdfs(
                         df_row[col] = df_row[col] / 1e6
 
                 # Append to CSV file
-                df_row.to_csv(output_file, mode="a", header=False, index=False)
+                df_row.to_csv(output_file_path, mode="a", header=False, index=False)
 
         except Exception as e:
             logger.exception(f"Failed to extract from {cdr_record_id}: {e}")
             continue
 
     # Read the final CSV file
-    final_df = pd.read_csv(output_file)
-
-    # Write experiment configs and metadata to a yaml file
-    config_file = output_file.replace(".csv", "_config.yaml")
-    with open(config_file, "w") as f:
-        f.write("experiment_configurations:\n\n")
-
-        f.write("  code_agent_react_configs:\n")
-        f.write(f"    python_agent_model: {config_experiment.PYTHON_AGENT_MODEL}\n")
-        f.write(
-            f"    python_agent_temperature: {config_experiment.PYTHON_AGENT_TEMPERATURE}\n\n"
-        )
-
-        f.write("  self_rag_configs:\n")
-        f.write(f"    num_retrieved_docs: {config_experiment.NUM_RETRIEVED_DOCS}\n")
-        f.write(
-            f"    grade_retrieval_model: {config_experiment.GRADE_RETRIEVAL_MODEL}\n"
-        )
-        f.write(
-            f"    grade_retrieval_temperature: {config_experiment.GRADE_RETRIEVAL_TEMPERATURE}\n"
-        )
-        f.write(
-            f"    grade_hallucination_model: {config_experiment.GRADE_HALLUCINATION_MODEL}\n"
-        )
-        f.write(
-            f"    grade_hallucination_temperature: {config_experiment.GRADE_HALLUCINATION_TEMPERATURE}\n"
-        )
-        f.write(
-            f"    question_rewriter_model: {config_experiment.QUESTION_REWRITER_MODEL}\n"
-        )
-        f.write(
-            f"    question_rewriter_temperature: {config_experiment.QUESTION_REWRITER_TEMPERATURE}\n"
-        )
-        f.write(
-            f"    react_code_agent_recursion_limit: {config_experiment.REACT_CODE_AGENT_RECURSION_LIMIT}\n\n"
-        )
-
-        f.write("  pdf_agent_configs:\n")
-        f.write(
-            f"    slow_extract_validation_model: {config_experiment.SLOW_EXTRACT_VALIDATION_MODEL}\n"
-        )
-        f.write(
-            f"    slow_extract_validation_temperature: {config_experiment.SLOW_EXTRACT_VALIDATION_TEMPERATURE}\n"
-        )
-        f.write(
-            f"    slow_extract_optimizer_model: {config_experiment.SLOW_EXTRACT_OPTIMIZER_MODEL}\n"
-        )
-        f.write(
-            f"    slow_extract_optimizer_temperature: {config_experiment.SLOW_EXTRACT_OPTIMIZER_TEMPERATURE}\n"
-        )
-        f.write(f"    recursion_limit: {config_experiment.RECURSION_LIMIT}\n")
-        f.write(
-            f"    self_rag_retry_limit: {config_experiment.SELF_RAG_RETRY_LIMIT}\n\n"
-        )
-
-        f.write("  experiment_parameters:\n")
-        f.write(f"    method: {method}\n")
-        f.write(f"    evaluation_type: {eval_type}\n")
-        f.write(
-            f"    sample_size: {'100%' if sample_size is None else f'{sample_size}%'}\n\n"
-        )
-
-        f.write("  experiment_metadata:\n")
-        f.write(f"    code_agent_retry_count: {retry_count}\n")
-        f.write(
-            f"    average_code_agent_retry_count_per_pdf: {retry_count / len(final_df):.2f}\n"
-        )
-        f.write(f"    number_of_pdfs_processed: {len(final_df)}\n")
-        f.write(f"    number_of_entities_extracted: {len(final_df.index)}\n")
-
+    final_df = pd.read_csv(output_file_path)
     return final_df
-
-
-def extract_from_all_pdfs(
-    mineral_report_dir: str = config_general.CDR_REPORTS_DIR,
-    sample_size: Optional[int] = None,
-    manually_checked_pdf_paths: Optional[list[str]] = None,
-    method: Literal[
-        "F&S", "DPE MAP_REDUCE", "DPE MAP_REDUCE SELF RAG"
-    ] = "DPE MAP_REDUCE",
-) -> pd.DataFrame:
-    """
-    Extract entities from all the PDF files in parallel and return as a DataFrame
-    """
-    # Load PDF paths used for evaluation
-    pdf_paths = []
-    for _i, pdf_path in enumerate(os.listdir(mineral_report_dir)):
-        pdf_paths.append(os.path.join(mineral_report_dir, pdf_path))
-
-    if sample_size:
-        pdf_paths = pdf_paths[:sample_size]
-
-    if manually_checked_pdf_paths:
-        pdf_paths = [path for path in pdf_paths if path in manually_checked_pdf_paths]
-
-    # Load ground truth data
-    ground_truth_path = os.path.join(
-        config_general.GROUND_TRUTH_DIR,
-        "minmod_hyper_response_enriched_nickel_subset_43_101_gt.csv",
-    )
-    df_hyper_43_101_subset = pd.read_csv(ground_truth_path)
-    hyper_record_ids = df_hyper_43_101_subset[MinModHyperCols.RECORD_VALUE.value].values
-    logger.info(
-        f"Hyper dataframe (subset 43-101) filtered to {len(df_hyper_43_101_subset)} rows"
-    )
-
-    data_rows = []
-    schema = MineralSiteMetadata.model_json_schema()
-    for i, path in enumerate(pdf_paths):
-        # Skip if the PDF file is not in the subset of ground truth
-        cdr_record_id = path.split("/")[-1].split(".")[0]
-        if cdr_record_id not in hyper_record_ids:
-            logger.warning(
-                f"{i + 1}/{len(pdf_paths)}: Skipping {path} because it is not in the ground truth"
-            )
-            continue
-
-        logger.info(f"{i + 1}/{len(pdf_paths)}: Extracting entities from {path}")
-        try:
-            entities = extract_from_pdf(path, schema, method=method)
-        except Exception as e:
-            logger.error(f"Failed to extract from {path}: {e}")
-
-        try:
-            if entities:
-                entities = entities.model_dump(mode="json")
-                entities.update({"cdr_record_id": cdr_record_id})
-                data_rows.append(entities)
-        except Exception as e:
-            logger.error(f"Failed to process entities for {path}: {e}")
-
-    # Filter out empty results
-    data_rows = [row for row in data_rows if row]
-
-    df = pd.DataFrame(data_rows)
-
-    if not os.path.exists(config_general.PDF_AGENT_CACHE_DIR):
-        logger.info(f"Creating directory {config_general.PDF_AGENT_CACHE_DIR}")
-        os.makedirs(config_general.PDF_AGENT_CACHE_DIR)
-
-    logger.info(f"Saving extraction results to {config_general.PDF_AGENT_CACHE_DIR}")
-    df.to_csv(
-        os.path.join(
-            config_general.PDF_AGENT_CACHE_DIR,
-            f"pdf_agent_extraction_{get_curr_ts()}.csv",
-        ),
-        index=False,
-    )
-
-    return df
 
 
 if __name__ == "__main__":
     # Log metadata about the extraction (total time, number of PDFs, number of entities extracted)
     start_time = time()
 
-    ################################# Configs #################################
+    # ----------------------------------------------------------------------------------
+    # Configs
+    # ----------------------------------------------------------------------------------
     sample_size = config_experiment.PDF_EXTRACTION_SAMPLE_SIZE
     method = config_experiment.PDF_EXTRACTION_METHOD
     eval_type = config_experiment.PDF_EXTRACTION_EVAL_TYPE
-    ################################# Configs #################################
 
-    df = extract_from_inferlink_pdfs(
+    final_df = extract_from_inferlink_pdfs(
         sample_size=sample_size,
         method=method,
         eval_type=eval_type,
+        output_dir=os.path.join(config_general.PDF_AGENT_CACHE_DIR, "inferlink"),
+        output_filename=f"{method.lower().replace(' ', '_')}_{get_curr_ts()}.csv",
     )
 
-    logger.info("Extracting entities from all PDF files")
-    # Experiment hyperparameters
-    logger.info(f"Code agent retry limit: {config_experiment.SELF_RAG_RETRY_LIMIT}")
-    logger.info(f"Sample size: {'100%' if sample_size is None else f'{sample_size}%'}")
-    logger.info(f"Method: {method}")
-    logger.info(f"Evaluation type: {eval_type}")
+    # Write experiment configs and metadata to a yaml file
+    output_file_path = os.path.join(
+        os.path.join(config_general.PDF_AGENT_CACHE_DIR, "inferlink"),
+        f"{method.lower().replace(' ', '_')}_{get_curr_ts()}.csv",
+    )
+    config_file = output_file_path.replace(".csv", "_config.yaml")
 
-    # Log experiment configurations
-    logger.info("Experiment Configurations:")
-    logger.info("Code Agent React Configs:")
-    logger.info(f"  - PYTHON_AGENT_MODEL: {config_experiment.PYTHON_AGENT_MODEL}")
-    logger.info(
-        f"  - PYTHON_AGENT_TEMPERATURE: {config_experiment.PYTHON_AGENT_TEMPERATURE}"
-    )
+    # Create a dictionary to hold all YAML data
+    yaml_data = {
+        "experiment_configurations": {
+            "code_agent_react_configs": {
+                "python_agent_model": config_experiment.PYTHON_AGENT_MODEL,
+                "python_agent_temperature": config_experiment.PYTHON_AGENT_TEMPERATURE,
+            },
+            "self_rag_configs": {
+                "num_retrieved_docs": config_experiment.NUM_RETRIEVED_DOCS,
+                "grade_retrieval_model": config_experiment.GRADE_RETRIEVAL_MODEL,
+                "grade_retrieval_temperature": config_experiment.GRADE_RETRIEVAL_TEMPERATURE,
+                "grade_hallucination_model": config_experiment.GRADE_HALLUCINATION_MODEL,
+                "grade_hallucination_temperature": config_experiment.GRADE_HALLUCINATION_TEMPERATURE,
+                "question_rewriter_model": config_experiment.QUESTION_REWRITER_MODEL,
+                "question_rewriter_temperature": config_experiment.QUESTION_REWRITER_TEMPERATURE,
+                "react_code_agent_recursion_limit": config_experiment.REACT_CODE_AGENT_RECURSION_LIMIT,
+            },
+            "pdf_agent_configs": {
+                "slow_extract_validation_model": config_experiment.SLOW_EXTRACT_VALIDATION_MODEL,
+                "slow_extract_validation_temperature": config_experiment.SLOW_EXTRACT_VALIDATION_TEMPERATURE,
+                "slow_extract_optimizer_model": config_experiment.SLOW_EXTRACT_OPTIMIZER_MODEL,
+                "slow_extract_optimizer_temperature": config_experiment.SLOW_EXTRACT_OPTIMIZER_TEMPERATURE,
+                "recursion_limit": config_experiment.RECURSION_LIMIT,
+                "self_rag_retry_limit": config_experiment.SLOW_WORKFLOW_RETRY_LIMIT,
+            },
+            "experiment_parameters": {
+                "method": method,
+                "evaluation_type": eval_type,
+                "sample_size": "100%" if sample_size is None else sample_size,
+            },
+            "experiment_metadata": {
+                "code_agent_retry_count": retry_count,
+                "average_code_agent_retry_count_per_pdf": round(
+                    retry_count / len(final_df), 2
+                ),
+                "number_of_pdfs_processed": len(final_df),
+                "number_of_entities_extracted": len(final_df.index),
+                "total_time_taken": time() - start_time,
+                "average_time_per_pdf": round((time() - start_time) / len(final_df), 2),
+                "output_file_path": output_file_path,
+                "config_file_path": config_file,
+            },
+        }
+    }
 
-    logger.info("Self RAG Configs:")
-    logger.info(f"  - NUM_RETRIEVED_DOCS: {config_experiment.NUM_RETRIEVED_DOCS}")
-    logger.info(f"  - GRADE_RETRIEVAL_MODEL: {config_experiment.GRADE_RETRIEVAL_MODEL}")
-    logger.info(
-        f"  - GRADE_RETRIEVAL_TEMPERATURE: {config_experiment.GRADE_RETRIEVAL_TEMPERATURE}"
-    )
-    logger.info(
-        f"  - GRADE_HALLUCINATION_MODEL: {config_experiment.GRADE_HALLUCINATION_MODEL}"
-    )
-    logger.info(
-        f"  - GRADE_HALLUCINATION_TEMPERATURE: {config_experiment.GRADE_HALLUCINATION_TEMPERATURE}"
-    )
-    logger.info(
-        f"  - QUESTION_REWRITER_MODEL: {config_experiment.QUESTION_REWRITER_MODEL}"
-    )
-    logger.info(
-        f"  - QUESTION_REWRITER_TEMPERATURE: {config_experiment.QUESTION_REWRITER_TEMPERATURE}"
-    )
-    logger.info(
-        f"  - REACT_CODE_AGENT_RECURSION_LIMIT: {config_experiment.REACT_CODE_AGENT_RECURSION_LIMIT}"
-    )
-
-    logger.info("PDF Agent Configs:")
-    logger.info(
-        f"  - SLOW_EXTRACT_VALIDATION_MODEL: {config_experiment.SLOW_EXTRACT_VALIDATION_MODEL}"
-    )
-    logger.info(
-        f"  - SLOW_EXTRACT_VALIDATION_TEMPERATURE: {config_experiment.SLOW_EXTRACT_VALIDATION_TEMPERATURE}"
-    )
-    logger.info(
-        f"  - SLOW_EXTRACT_OPTIMIZER_MODEL: {config_experiment.SLOW_EXTRACT_OPTIMIZER_MODEL}"
-    )
-    logger.info(
-        f"  - SLOW_EXTRACT_OPTIMIZER_TEMPERATURE: {config_experiment.SLOW_EXTRACT_OPTIMIZER_TEMPERATURE}"
-    )
-    logger.info(f"  - RECURSION_LIMIT: {config_experiment.RECURSION_LIMIT}")
-    logger.info(f"  - SELF_RAG_RETRY_LIMIT: {config_experiment.SELF_RAG_RETRY_LIMIT}")
-
-    # Metadata
-    logger.info(f"Code agent retry count: {retry_count}")
-    logger.info(f"Average code agent retry count per PDF: {retry_count / len(df):.2f}")
-    logger.info(f"Total time taken: {time() - start_time:.2f} seconds")
-    logger.info(f"Average time per PDF: {(time() - start_time) / len(df):.2f} seconds")
-    logger.info(f"Number of PDFs: {len(df)}")
-    logger.info(f"Number of entities extracted: {len(df.index)}")
+    # Write the dictionary to YAML file
+    with open(config_file, "w") as f:
+        yaml.dump(yaml_data, f, sort_keys=False, default_flow_style=False)

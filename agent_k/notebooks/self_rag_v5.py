@@ -209,7 +209,7 @@ class GradeHallucinations(BaseModel):
 
 
 # LLM with function call
-if config_experiment.GRADE_HALLUCINATION_MODEL == "o3-mini":
+if config_experiment.GRADE_HALLUCINATION_MODEL in ["o3-mini", "o4-mini"]:
     llm = ChatOpenAI(model=config_experiment.GRADE_HALLUCINATION_MODEL)
 elif config_experiment.GRADE_HALLUCINATION_MODEL == "gpt-4o-mini":
     llm = ChatOpenAI(
