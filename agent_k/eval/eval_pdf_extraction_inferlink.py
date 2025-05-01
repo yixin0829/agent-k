@@ -56,7 +56,7 @@ def load_data_and_process() -> pd.DataFrame:
 
     # Note: Load PDF extraction data. Can be replaced with the following line to load a specific extraction file
     df_pdf_agent_extraction = pd.read_csv(
-        "data/agent_cache/pdf_agent/inferlink/f&s_self_rag_2025-04-30_01-32-42.csv"
+        "data/experiments/250430-fns-agentic-rag/o4-mini/f&s_agentic_rag_2025-04-30_14-37-49.csv"
     )
     # df_pdf_agent_extraction = load_latest_pdf_extraction(
     #     dir=os.path.join(config_general.PDF_AGENT_CACHE_DIR, "inferlink")

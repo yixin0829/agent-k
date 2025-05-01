@@ -391,7 +391,7 @@ def map_slow_extraction_agent(state: ComplexEntityState):
         retry=retry_if_exception_type(Exception),
         before_sleep=before_sleep_callback,
     )
-    def invoke_self_rag_and_parse_with_retry(
+    def invoke_rag_and_parse_with_retry(
         question, retriever, config, entity_name, dtype
     ):
         # Compile a new graph for each slow entity extraction to avoid mixed memory
@@ -423,7 +423,7 @@ def map_slow_extraction_agent(state: ComplexEntityState):
         return content, parsed_output
 
     try:
-        content, parsed_output = invoke_self_rag_and_parse_with_retry(
+        content, parsed_output = invoke_rag_and_parse_with_retry(
             question,
             retriever,
             config={"recursion_limit": config_experiment.RECURSION_LIMIT},
@@ -547,7 +547,9 @@ def extraction_synthesis(state: State):
         **state["fast_extraction_agent_result"],
         **state["slow_extraction_agent_result"],
     }
-    return {"final_extraction_result": MineralSiteMetadata(**final_extraction_result)}
+    # Removed pydantic model to avoid validation error ("Not Found" is parsed as 0 during evaluation)
+    # The point is to focus on functionality correctness instead of correctness of the output format
+    return {"final_extraction_result": final_extraction_result}
 
 
 def build_batch_extraction_graph():
@@ -793,7 +795,7 @@ def extract_from_pdf(
         case _:
             raise ValueError(f"Unknown method: {method}")
 
-    result = result["final_extraction_result"].model_dump(mode="json")
+    result = result["final_extraction_result"]
     return result
 
 

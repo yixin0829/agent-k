@@ -33,9 +33,11 @@ tool_node = ToolNode(tools)
 
 # Bind the tools to the model
 if config_experiment.PYTHON_AGENT_MODEL in [
+    "gpt-4o-mini",
     "gpt-4o-mini-2024-07-18",
     "gpt-4o",
     "gpt-4.1-mini",
+    "gpt-4.1",
 ]:
     model_with_tools = ChatOpenAI(
         model=config_experiment.PYTHON_AGENT_MODEL,

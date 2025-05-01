@@ -211,7 +211,11 @@ class GradeHallucinations(BaseModel):
 # LLM with function call
 if config_experiment.GRADE_HALLUCINATION_MODEL in ["o3-mini", "o4-mini-2025-04-16"]:
     llm = ChatOpenAI(model=config_experiment.GRADE_HALLUCINATION_MODEL)
-elif config_experiment.GRADE_HALLUCINATION_MODEL == "gpt-4o-mini-2024-07-18":
+elif config_experiment.GRADE_HALLUCINATION_MODEL in [
+    "gpt-4o-mini",
+    "gpt-4o-mini-2024-07-18",
+    "gpt-4.1",
+]:
     llm = ChatOpenAI(
         model=config_experiment.GRADE_HALLUCINATION_MODEL,
         temperature=config_experiment.GRADE_HALLUCINATION_TEMPERATURE,
