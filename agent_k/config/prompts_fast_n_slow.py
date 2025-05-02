@@ -227,6 +227,17 @@ DEEP_EXTRACT_SYSTEM_PROMPT = """You are an advanced AI assistant that answers qu
 ## Key Constraints:
 - No Hallucination: If the required information is unavailable, return the default value specified in the JSON schema in the `<answer>` tag."""
 
+GENERATION_USER_PROMPT_WO_FEEDBACK = """You are an assistant for question-answering tasks. Use the following retrieved context to answer the question. If you don't know the answer, just return the default value of the field in the question.
+
+## Context
+{context}
+
+## Question
+{question}
+
+---
+Now take a deep breath and answer the question step by step."""
+
 GENERATION_USER_PROMPT_W_FEEDBACK = """You are an assistant for question-answering tasks. Use the following retrieved context and previous feedback (if any) to answer the question. If you don't know the answer, just return the default value of the field in the question.
 
 ## Context

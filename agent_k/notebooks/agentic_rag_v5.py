@@ -32,6 +32,7 @@ from agent_k.config.logger import logger
 from agent_k.config.prompts_fast_n_slow import (
     DEEP_EXTRACT_SYSTEM_PROMPT,
     GENERATION_USER_PROMPT_W_FEEDBACK,
+    GENERATION_USER_PROMPT_WO_FEEDBACK,
     GRADE_DOCUMENTS_SYSTEM_PROMPT,
     GRADE_HALLUCINATION_SYSTEM_PROMPT,
     GRADE_HALLUCINATION_USER_PROMPT,
@@ -195,6 +196,20 @@ def deep_extract_w_feedback_wo_ci(question, context, previous_messages) -> str:
         ],
     )
     content = response["choices"][0]["message"]["content"]
+    return content
+
+
+def deep_extract_wo_feedback(question, context) -> str:
+    result = react_agent(
+        DEEP_EXTRACT_SYSTEM_PROMPT,
+        GENERATION_USER_PROMPT_WO_FEEDBACK.format(
+            question=question,
+            context=context,
+        ),
+        recursion_limit=config_experiment.REACT_CODE_AGENT_RECURSION_LIMIT,
+    )
+    content = result["messages"][-1].content
+
     return content
 
 
@@ -363,10 +378,11 @@ def generate(state):
     else:
         previous_messages = state["messages"]
 
-        generation = deep_extract_w_feedback(question, documents, previous_messages)
+        # generation = deep_extract_w_feedback(question, documents, previous_messages)
         # generation = deep_extract_w_feedback_wo_ci(
         #     question, documents, previous_messages
         # )
+        generation = deep_extract_wo_feedback(question, documents)
 
     try:
         parsed_output = generation.split("<answer>")[1].split("</answer>")[0].strip()
@@ -539,7 +555,7 @@ agentic_rag_graph_builder.add_node("retrieve", retrieve)
 agentic_rag_graph_builder.add_node("grade_documents", grade_documents)
 agentic_rag_graph_builder.add_node("generate", generate)
 agentic_rag_graph_builder.add_node("transform_query", transform_query)
-# agentic_rag_graph_builder.add_node("check_hallucination", check_hallucination)
+agentic_rag_graph_builder.add_node("check_hallucination", check_hallucination)
 
 # Build graph
 agentic_rag_graph_builder.add_edge(START, "retrieve")
@@ -552,17 +568,17 @@ agentic_rag_graph_builder.add_conditional_edges(
         "generate": "generate",
     },
 )
-# agentic_rag_graph_builder.add_edge("generate", "check_hallucination")
-agentic_rag_graph_builder.add_edge("generate", END)
+agentic_rag_graph_builder.add_edge("generate", "check_hallucination")
+# agentic_rag_graph_builder.add_edge("generate", END)
 agentic_rag_graph_builder.add_edge("transform_query", "retrieve")
-# agentic_rag_graph_builder.add_conditional_edges(
-#     "check_hallucination",
-#     hallucination_router,
-#     {
-#         END: END,
-#         "regenerate": "generate",
-#     },
-# )
+agentic_rag_graph_builder.add_conditional_edges(
+    "check_hallucination",
+    hallucination_router,
+    {
+        END: END,
+        "regenerate": "generate",
+    },
+)
 
 # Compile
 agentic_rag_graph = agentic_rag_graph_builder.compile()
