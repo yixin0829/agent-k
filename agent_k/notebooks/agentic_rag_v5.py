@@ -363,10 +363,10 @@ def generate(state):
     else:
         previous_messages = state["messages"]
 
-        # generation = deep_extract_w_feedback(question, documents, previous_messages)
-        generation = deep_extract_w_feedback_wo_ci(
-            question, documents, previous_messages
-        )
+        generation = deep_extract_w_feedback(question, documents, previous_messages)
+        # generation = deep_extract_w_feedback_wo_ci(
+        #     question, documents, previous_messages
+        # )
 
     try:
         parsed_output = generation.split("<answer>")[1].split("</answer>")[0].strip()
@@ -539,7 +539,7 @@ agentic_rag_graph_builder.add_node("retrieve", retrieve)
 agentic_rag_graph_builder.add_node("grade_documents", grade_documents)
 agentic_rag_graph_builder.add_node("generate", generate)
 agentic_rag_graph_builder.add_node("transform_query", transform_query)
-agentic_rag_graph_builder.add_node("check_hallucination", check_hallucination)
+# agentic_rag_graph_builder.add_node("check_hallucination", check_hallucination)
 
 # Build graph
 agentic_rag_graph_builder.add_edge(START, "retrieve")
@@ -552,20 +552,20 @@ agentic_rag_graph_builder.add_conditional_edges(
         "generate": "generate",
     },
 )
-# self_rag_graph_builder.add_edge("generate", "check_hallucination")
-agentic_rag_graph_builder.add_edge("generate", "check_hallucination")
+# agentic_rag_graph_builder.add_edge("generate", "check_hallucination")
+agentic_rag_graph_builder.add_edge("generate", END)
 agentic_rag_graph_builder.add_edge("transform_query", "retrieve")
-agentic_rag_graph_builder.add_conditional_edges(
-    "check_hallucination",
-    hallucination_router,
-    {
-        END: END,
-        "regenerate": "generate",
-    },
-)
+# agentic_rag_graph_builder.add_conditional_edges(
+#     "check_hallucination",
+#     hallucination_router,
+#     {
+#         END: END,
+#         "regenerate": "generate",
+#     },
+# )
 
 # Compile
-self_rag_graph = agentic_rag_graph_builder.compile()
+agentic_rag_graph = agentic_rag_graph_builder.compile()
 
 # Run
 if __name__ == "__main__":
@@ -588,7 +588,7 @@ if __name__ == "__main__":
         "hallucination_grade": "N/A",
     }
 
-    value = self_rag_graph.invoke(graph_inputs, config={"recursion_limit": 12})
+    value = agentic_rag_graph.invoke(graph_inputs, config={"recursion_limit": 12})
 
     # Final generation
     logger.info("---FINAL GENERATION---")
