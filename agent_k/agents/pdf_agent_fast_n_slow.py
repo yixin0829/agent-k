@@ -746,7 +746,9 @@ def extract_from_pdf(
 
     # Initialize the retriever with the markdown file path
     markdown_filename = pdf_path.split("/")[-1].replace(".pdf", ".md")
-    markdown_path = os.path.join("data/processed/43-101", markdown_filename)
+
+    # markdown_path = os.path.join("data/processed/43-101", markdown_filename)
+    markdown_path = os.path.join("data/processed/43-101-refined", markdown_filename)
     retriever = create_markdown_retriever(markdown_path, collection_name=markdown_path)
 
     match method:

@@ -13,6 +13,7 @@ from operator import add
 from typing import Annotated, Any, List, Optional
 
 import chromadb
+import litellm
 import tiktoken
 from dotenv import load_dotenv
 from langchain.text_splitter import MarkdownHeaderTextSplitter
@@ -173,6 +174,28 @@ retrieval_grader = grade_prompt | structured_llm_grader
 
 # %%
 ### Generate
+
+
+def deep_extract_w_feedback_wo_ci(question, context, previous_messages) -> str:
+    # Convert previous messages to a list of strings from a list of dicts
+    previous_messages_str = [str(msg) for msg in previous_messages]
+    response = litellm.completion(
+        model=config_experiment.PYTHON_AGENT_MODEL,
+        temperature=config_experiment.PYTHON_AGENT_TEMPERATURE,
+        messages=[
+            {"role": "system", "content": DEEP_EXTRACT_SYSTEM_PROMPT},
+            {
+                "role": "user",
+                "content": GENERATION_USER_PROMPT_W_FEEDBACK.format(
+                    question=question,
+                    context=context,
+                    previous_messages="\n".join(previous_messages_str),
+                ),
+            },
+        ],
+    )
+    content = response["choices"][0]["message"]["content"]
+    return content
 
 
 def deep_extract_w_feedback(question, context, previous_messages) -> str:
@@ -339,7 +362,11 @@ def generate(state):
         generation = f"<reasoning>Detect looping. Use self consistency to choose the most popular answer from previous generations.</reasoning><answer>{mode_answer}</answer>"
     else:
         previous_messages = state["messages"]
-        generation = deep_extract_w_feedback(question, documents, previous_messages)
+
+        # generation = deep_extract_w_feedback(question, documents, previous_messages)
+        generation = deep_extract_w_feedback_wo_ci(
+            question, documents, previous_messages
+        )
 
     try:
         parsed_output = generation.split("<answer>")[1].split("</answer>")[0].strip()
