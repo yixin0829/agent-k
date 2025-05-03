@@ -378,11 +378,11 @@ def generate(state):
     else:
         previous_messages = state["messages"]
 
-        # generation = deep_extract_w_feedback(question, documents, previous_messages)
+        generation = deep_extract_w_feedback(question, documents, previous_messages)
         # generation = deep_extract_w_feedback_wo_ci(
         #     question, documents, previous_messages
         # )
-        generation = deep_extract_wo_feedback(question, documents)
+        # generation = deep_extract_wo_feedback(question, documents)
 
     try:
         parsed_output = generation.split("<answer>")[1].split("</answer>")[0].strip()
