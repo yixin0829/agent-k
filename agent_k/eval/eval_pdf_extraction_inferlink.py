@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Tuple
 import numpy as np
 import pandas as pd
 from Levenshtein import distance
-from sklearn.metrics import mean_absolute_error, r2_score
+from sklearn.metrics import r2_score
 
 import agent_k.config.general as config_general
 from agent_k.config.logger import logger
@@ -56,8 +56,7 @@ def load_data_and_process() -> pd.DataFrame:
 
     # Note: Load PDF extraction data. Can be replaced with the following line to load a specific extraction file
     agent_extractions = [
-        "data/experiments/250504-fns-agentic-rag-split-lvl3/gpt-4o-mini/f&s_agentic_rag_2025-05-03_22-15-03.csv",
-        "data/experiments/250504-fns-agentic-rag-split-lvl3/gpt-4o-mini/f&s_agentic_rag_2025-05-04_11-43-09.csv",
+        "data/experiments/250501-ablation-analysis-lvl3/wo-relevant-grader-rewriter/f&s_agentic_rag_2025-05-04_13-55-17.csv",
     ]
     df_pdf_agent_extraction = pd.concat(
         [pd.read_csv(agent_extraction) for agent_extraction in agent_extractions]
@@ -121,12 +120,14 @@ def calculate_string_metrics(
     """
     string_metrics_rows = []
 
+    meta_distances = []
     for pdf_col, hyper_col in string_columns:
         distances = []
         for _idx, row in df_merged.iterrows():
             if pd.notna(row[pdf_col]) and pd.notna(row[hyper_col]):
                 dist = distance(str(row[pdf_col]).lower(), str(row[hyper_col]).lower())
                 distances.append(dist)
+                meta_distances.append(dist)
 
         if distances:
             metrics = {
@@ -139,6 +140,18 @@ def calculate_string_metrics(
                 "exact_matches": sum(d == 0 for d in distances) / len(distances),
             }
             string_metrics_rows.append(metrics)
+
+    # Calculate meta metrics
+    meta_metrics = {
+        "column": "meta_string_columns",
+        "metric_type": "string",
+        "support": len(meta_distances),
+        "mean_edit_distance": np.mean(meta_distances),
+        "median_edit_distance": np.median(meta_distances),
+        "max_edit_distance": max(meta_distances),
+        "exact_matches": sum(d == 0 for d in meta_distances) / len(meta_distances),
+    }
+    string_metrics_rows.append(meta_metrics)
 
     return string_metrics_rows
 
@@ -158,30 +171,44 @@ def calculate_float_metrics(
     """
     float_metrics_rows = []
 
+    meta_metrics = {
+        "meta_abs_mean_errors": [],
+        "meta_smapes": [],
+        "meta_pass_1s": [],
+    }
     for pdf_col, gt_col in float_columns:
         # Convert to numeric values, coercing errors to NaN
         gt_values = pd.to_numeric(df_merged[gt_col], errors="coerce")
         pdf_values = pd.to_numeric(df_merged[pdf_col], errors="coerce")
 
-        # Calculate metrics
-        abs_mean_error = mean_absolute_error(gt_values, pdf_values)  # y_true, y_pred
+        # Calculate absolute mean error
+        abs_mean_error = np.abs(
+            gt_values - pdf_values
+        )  # Calculate absolute differences
+        meta_metrics["meta_abs_mean_errors"].extend(abs_mean_error.tolist())
+        abs_mean_error = np.mean(abs_mean_error)
+
+        # Calculate R-squared
         r_squared = r2_score(gt_values, pdf_values)  # y_true, y_pred
 
+        # Calculate symmetric mean absolute percentage error (SMAPE)
         # Preprocess before calculating smape: if both ground truth and predicted values are 0, set them to a small value to avoid division by 0
         # Important because 0/0 = NaN, and NaN will be excluded from the smape calculation, making the denominator smaller and smape larger (incorrect)
         gt_values = np.where(gt_values == 0, 1e-6, gt_values)
         pdf_values = np.where(pdf_values == 0, 1e-6, pdf_values)
 
-        # Calculate symmetric mean absolute percentage error (SMAPE)
         smape = (
             2
             * np.abs(gt_values - pdf_values)
             / (np.abs(gt_values) + np.abs(pdf_values))
         )
+        meta_metrics["meta_smapes"].extend(smape.tolist())
         smape = np.mean(smape)
 
-        # pass@1
-        pass_1 = np.mean(np.isclose(pdf_values, gt_values, atol=1e-6))
+        # Calculate pass@1
+        pass_1 = np.isclose(pdf_values, gt_values, atol=1e-6)
+        meta_metrics["meta_pass_1s"].extend(pass_1.tolist())
+        pass_1 = np.mean(pass_1)
 
         metrics = {
             "column": pdf_col,
@@ -193,6 +220,22 @@ def calculate_float_metrics(
             "pass@1": pass_1,
         }
         float_metrics_rows.append(metrics)
+
+    # Calculate meta metrics
+    assert (
+        len(meta_metrics["meta_abs_mean_errors"])
+        == len(meta_metrics["meta_smapes"])
+        == len(meta_metrics["meta_pass_1s"])
+    )
+    meta_metrics = {
+        "column": "meta_float_columns",
+        "metric_type": "float",
+        "support": len(meta_metrics["meta_abs_mean_errors"]),
+        "abs_mean_error": np.mean(meta_metrics["meta_abs_mean_errors"]),
+        "smape": np.mean(meta_metrics["meta_smapes"]),
+        "pass@1": np.mean(meta_metrics["meta_pass_1s"]),
+    }
+    float_metrics_rows.append(meta_metrics)
 
     return float_metrics_rows
 
