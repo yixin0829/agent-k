@@ -7,7 +7,7 @@ SCHEMA_DECOMPOSE_SYS_PROMPT = """You are a helpful agent that groups entities in
 
 You should enclose your reasoning within <thinking> XML tags and output the result within <answer> XML tags."""
 
-DECOMPOSE_USER_PROMPT_TEMPLATE = """# Example 1
+DECOMPOSE_USER_PROMPT_TEMPLATE = """## Example 1
 Given the following JSON schema:
 ```
 {{"properties": {{"name": {{"title": "Name", "type": "string"}}, "address": {{"title": "Address", "type": "string"}}, "total_attendees": {{"title": "Total Attendees", "type": "integer"}}, "oldest_attendee": {{"title": "Oldest Attendee", "type": "string"}}}}, "required": ["name", "address", "total_attendees", "oldest_attendee"], "title": "Example", "type": "object"}}
@@ -21,7 +21,7 @@ Output:
 2. Complex entities: ["total_attendees", "oldest_attendee"]
 </answer>
 
-# Example 2
+## Example 2
 Given the following JSOn schema:
 ```
 {{"properties": {{"product_name": {{"title": "Product Name", "type": "string"}}, "product_type": {{"title": "Product Type", "type": "string"}}, "price": {{"title": "Price", "type": "number"}}, "discount": {{"title": "Discount", "type": "number"}}}}, "required": ["product_name", "product_type", "price", "discount"], "title": "Example2", "type": "object"}}
@@ -35,7 +35,7 @@ Output:
 2. Complex entities: ["discount"]
 </answer>
 
-# Example 3
+## Example 3
 Given the following JSON schema:
 ```
 {{"properties": {{"address": {{"title": "Address", "type": "string"}}, "province": {{"title": "Province", "type": "string"}}, "country": {{"title": "Country", "type": "string"}}, "total_sales": {{"title": "Total Sales", "type": "number"}}}}, "required": ["address", "province", "country", "total_sales"], "title": "Example3", "type": "object"}}
@@ -49,7 +49,7 @@ Output:
 2. Complex entities: ["total_sales"]
 </answer>
 
-# Example 4
+## Example 4
 Given the following JSON schema:
 ```
 {json_schema}
@@ -64,7 +64,7 @@ Output:
 PDF_AGENT_SYSTEM_PROMPT_STRUCTURED = """You are an expert at structured data extraction. You will be given unstructured text from a NI 43-101 mineral report and should convert it into the given JSON schema."""
 PDF_AGENT_USER_PROMPT_STRUCTURED = """# Context\n{context}"""
 
-
+# Used by OpenAI Assistant
 PDF_AGENT_SYSTEM_PROMPT = """You are an advanced AI assistant specialized in extracting structured information from NI 43-101 mineral reports. Your responses should be grounded in the report's content using the file search tool.
 
 ## Response Workflow:

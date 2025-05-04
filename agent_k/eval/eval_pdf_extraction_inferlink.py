@@ -55,9 +55,14 @@ def load_data_and_process() -> pd.DataFrame:
         return df
 
     # Note: Load PDF extraction data. Can be replaced with the following line to load a specific extraction file
-    df_pdf_agent_extraction = pd.read_csv(
-        "data/experiments/250501-ablation-analysis/wo-global-slow-validator/f&s_agentic_rag_2025-05-02_10-25-43.csv"
+    agent_extractions = [
+        "data/experiments/250504-fns-agentic-rag-split-lvl3/gpt-4o-mini/f&s_agentic_rag_2025-05-03_22-15-03.csv",
+        "data/experiments/250504-fns-agentic-rag-split-lvl3/gpt-4o-mini/f&s_agentic_rag_2025-05-04_11-43-09.csv",
+    ]
+    df_pdf_agent_extraction = pd.concat(
+        [pd.read_csv(agent_extraction) for agent_extraction in agent_extractions]
     )
+
     # df_pdf_agent_extraction = load_latest_pdf_extraction(
     #     dir=os.path.join(config_general.PDF_AGENT_CACHE_DIR, "inferlink")
     # )
@@ -173,7 +178,10 @@ def calculate_float_metrics(
             * np.abs(gt_values - pdf_values)
             / (np.abs(gt_values) + np.abs(pdf_values))
         )
-        smape = np.mean(smape) * 100
+        smape = np.mean(smape)
+
+        # pass@1
+        pass_1 = np.mean(np.isclose(pdf_values, gt_values, atol=1e-6))
 
         metrics = {
             "column": pdf_col,
@@ -182,6 +190,7 @@ def calculate_float_metrics(
             "abs_mean_error": abs_mean_error,
             "r_squared": r_squared,
             "smape": smape,
+            "pass@1": pass_1,
         }
         float_metrics_rows.append(metrics)
 
@@ -292,11 +301,18 @@ def main() -> None:
                     * np.abs(row[hyper_col] - row[pdf_col])
                     / (np.abs(row[hyper_col]) + np.abs(row[pdf_col]))
                 )
-                df_merged.at[idx, f"{pdf_col}_smape"] = smape * 100
+                df_merged.at[idx, f"{pdf_col}_smape"] = smape
 
             # If both values are 0, set the smape to 0
             if row[pdf_col] == 0 and row[hyper_col] == 0:
                 df_merged.at[idx, f"{pdf_col}_smape"] = 0
+
+        for pdf_col, hyper_col in float_columns:
+            # pass@1
+            if np.isclose(row[pdf_col], row[hyper_col], atol=1e-6):
+                df_merged.at[idx, f"{pdf_col}_pass@1"] = 1
+            else:
+                df_merged.at[idx, f"{pdf_col}_pass@1"] = 0
 
     df_merged.to_csv(f"data/eval/inferlink/df_merged_{get_curr_ts()}.csv", index=False)
 

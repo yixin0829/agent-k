@@ -681,12 +681,12 @@ def build_dpe_w_map_reduce_agentic_rag_graph():
         "map_slow_extraction_agent",
         map_slow_extraction_agent,
     )
-    # graph_builder.add_node("slow_extraction_optimizer", slow_extraction_optimizer)
-    # graph_builder.add_node("validate_extraction_result", validate_extraction_result)
-    # graph_builder.add_node("slow_extraction_end", slow_extraction_end)
+    graph_builder.add_node("slow_extraction_optimizer", slow_extraction_optimizer)
+    graph_builder.add_node("validate_extraction_result", validate_extraction_result)
     graph_builder.add_node(
         "reduce_slow_extraction_results", reduce_slow_extraction_results
     )
+    graph_builder.add_node("slow_extraction_end", slow_extraction_end)
     graph_builder.add_node("extraction_synthesis", extraction_synthesis)
     graph_builder.add_edge(START, "schema_decompose")
     graph_builder.add_conditional_edges(
@@ -697,25 +697,25 @@ def build_dpe_w_map_reduce_agentic_rag_graph():
     graph_builder.add_edge(
         "map_slow_extraction_agent", "reduce_slow_extraction_results"
     )
-    # graph_builder.add_edge(
-    #     "reduce_slow_extraction_results", "validate_extraction_result"
-    # )
+    graph_builder.add_edge(
+        "reduce_slow_extraction_results", "validate_extraction_result"
+    )
     # graph_builder.add_edge(
     #     "reduce_slow_extraction_results", "slow_extraction_end"
     # )
-    # graph_builder.add_conditional_edges(
-    #     "validate_extraction_result",
-    #     validate_extraction_result_route,
-    #     ["slow_extraction_optimizer", "slow_extraction_end"],
-    # )
-    # graph_builder.add_edge("slow_extraction_optimizer", "validate_extraction_result")
-    # graph_builder.add_edge(
-    #     ["fast_extraction_agent", "slow_extraction_end"], "extraction_synthesis"
-    # )
-    graph_builder.add_edge(
-        ["fast_extraction_agent", "reduce_slow_extraction_results"],
-        "extraction_synthesis",
+    graph_builder.add_conditional_edges(
+        "validate_extraction_result",
+        validate_extraction_result_route,
+        ["slow_extraction_optimizer", "slow_extraction_end"],
     )
+    graph_builder.add_edge("slow_extraction_optimizer", "validate_extraction_result")
+    graph_builder.add_edge(
+        ["fast_extraction_agent", "slow_extraction_end"], "extraction_synthesis"
+    )
+    # graph_builder.add_edge(
+    #     ["fast_extraction_agent", "reduce_slow_extraction_results"],
+    #     "extraction_synthesis",
+    # )
     graph_builder.add_edge("extraction_synthesis", END)
     graph = graph_builder.compile()
 

@@ -17,7 +17,7 @@ import litellm
 import tiktoken
 from dotenv import load_dotenv
 from langchain.text_splitter import MarkdownHeaderTextSplitter
-from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
@@ -60,6 +60,7 @@ def create_markdown_retriever(
     headers_to_split_on: Optional[list[tuple[str, str]]] = None,
     embedding_model: str = "text-embedding-3-small",
     k: int = config_experiment.NUM_RETRIEVED_DOCS,
+    max_tokens_per_batch: int = 250000,
 ) -> Chroma:
     """
     Creates a Chroma retriever from a markdown document.
@@ -79,7 +80,6 @@ def create_markdown_retriever(
             ("#", "Header 1"),
             ("##", "Header 2"),
             ("###", "Header 3"),
-            ("####", "Header 4"),
         ]
 
     # Read markdown file
@@ -127,12 +127,25 @@ def create_markdown_retriever(
             pass
 
         # Create a new vectorstore with persist_directory=None to keep it in-memory
-        vectorstore = Chroma.from_documents(
-            documents=doc_splits,
+        embeddings = OpenAIEmbeddings(model=embedding_model)
+        vectorstore = Chroma(
+            client=client,
             collection_name=hashed_collection_name,
-            embedding=OpenAIEmbeddings(model=embedding_model),
+            embedding_function=embeddings,
             persist_directory=None,  # Keep in-memory to avoid persistence
         )
+
+        batch, batch_token_count = [], 0
+        for doc in doc_splits:
+            batch_token_count += count_tokens(str(doc))
+            if batch_token_count > max_tokens_per_batch:
+                logger.info(
+                    f"Batch token count: {batch_token_count}. Adding batch to vectorstore and resetting batch."
+                )
+                vectorstore.add_documents(documents=batch)
+                batch, batch_token_count = [], 0
+            batch.append(doc)
+        vectorstore.add_documents(documents=batch)
 
         retriever = vectorstore.as_retriever(search_kwargs={"k": k})
         return retriever
@@ -593,7 +606,7 @@ if __name__ == "__main__":
     )
 
     retriever = create_markdown_retriever(
-        "data/processed/43-101-refined/0200a1c6d2cfafeb485d815d95966961d4c119e8662b8babec74e05b59ba4759d2.md",
+        "data/processed/43-101-refined/022b81881794b6910528a035b50a214fc960c52f89d7f84a35ce1b75b96f3759f0.md",
         collection_name="rag-chroma",
     )
 
