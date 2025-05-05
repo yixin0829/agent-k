@@ -16,10 +16,12 @@ import chromadb
 import litellm
 import tiktoken
 from dotenv import load_dotenv
+from IPython.display import Image, display
 from langchain.text_splitter import MarkdownHeaderTextSplitter
 from langchain_chroma import Chroma
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables.graph import MermaidDrawMethod
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langgraph.graph import END, START, StateGraph
 from openai import OpenAI
@@ -560,18 +562,20 @@ def answer_quality_router(state):
 
 
 # ## Build Graph
-
 agentic_rag_graph_builder = StateGraph(GraphState)
 
-# Define the nodes
+# Define the nodes and edges
 agentic_rag_graph_builder.add_node("retrieve", retrieve)
 agentic_rag_graph_builder.add_node("grade_documents", grade_documents)
 agentic_rag_graph_builder.add_node("generate", generate)
 agentic_rag_graph_builder.add_node("transform_query", transform_query)
 agentic_rag_graph_builder.add_node("check_hallucination", check_hallucination)
 
-# Build graph
 agentic_rag_graph_builder.add_edge(START, "retrieve")
+
+# --------------------------------------------------------------------------------------
+# Document relevance grader + question re-writer
+# --------------------------------------------------------------------------------------
 agentic_rag_graph_builder.add_edge("retrieve", "grade_documents")
 agentic_rag_graph_builder.add_conditional_edges(
     "grade_documents",
@@ -581,9 +585,18 @@ agentic_rag_graph_builder.add_conditional_edges(
         "generate": "generate",
     },
 )
-agentic_rag_graph_builder.add_edge("generate", "check_hallucination")
-# agentic_rag_graph_builder.add_edge("generate", END)
 agentic_rag_graph_builder.add_edge("transform_query", "retrieve")
+
+# --------------------------------------------------------------------------------------
+# No document relevance check
+# --------------------------------------------------------------------------------------
+# agentic_rag_graph_builder.add_edge("retrieve", "generate")
+
+
+# --------------------------------------------------------------------------------------
+# Hallucination check
+# --------------------------------------------------------------------------------------
+agentic_rag_graph_builder.add_edge("generate", "check_hallucination")
 agentic_rag_graph_builder.add_conditional_edges(
     "check_hallucination",
     hallucination_router,
@@ -593,10 +606,22 @@ agentic_rag_graph_builder.add_conditional_edges(
     },
 )
 
-# Compile
-agentic_rag_graph = agentic_rag_graph_builder.compile()
+# --------------------------------------------------------------------------------------
+# No hallucination check
+# --------------------------------------------------------------------------------------
+# agentic_rag_graph_builder.add_edge("generate", END)
 
-# Run
+display(
+    Image(
+        agentic_rag_graph_builder.compile()
+        .get_graph()
+        .draw_mermaid_png(
+            draw_method=MermaidDrawMethod.API,
+        )
+    )
+)
+
+
 if __name__ == "__main__":
     question = QUESTION_TEMPLATE.format(
         field="total_mineral_resource_tonnage",
@@ -617,6 +642,8 @@ if __name__ == "__main__":
         "hallucination_grade": "N/A",
     }
 
+    # Compile graph and invoke
+    agentic_rag_graph = agentic_rag_graph_builder.compile()
     value = agentic_rag_graph.invoke(graph_inputs, config={"recursion_limit": 12})
 
     # Final generation

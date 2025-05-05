@@ -18,7 +18,7 @@ dependencies = [
     "langchain-community==0.3.18",
     "langchain-openai>=0.3.6",
     "langchain[openai]>=0.3.19",
-    "langgraph>=0.2.74",
+    "langgraph>=0.4.1",
     "levenshtein>=0.26.1",
     "litellm==1.67.0",
     "loguru>=0.7.3",
