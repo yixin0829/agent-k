@@ -21,22 +21,19 @@ MAX_NUM_RETRIEVED_DOCS = 5
 
 
 # --------------------------------------------------------------------------------------
-# PDF Extraction Configs
+# PDF Extraction Eval Configs
 # --------------------------------------------------------------------------------------
 PDF_EXTRACTION_SAMPLE_SIZE = None
-PDF_EXTRACTION_METHOD = "F&S AGENTIC RAG"
+
+
+class ExtractionMethod(Enum):
+    FS = "F&S"
+    FS_AGENTIC_RAG = "F&S AGENTIC RAG"
+    FS_SELF_RAG = "F&S SELF RAG"
+
+
+PDF_EXTRACTION_METHOD = ExtractionMethod.FS_AGENTIC_RAG
 PDF_EXTRACTION_EVAL_TYPE = "FULL"
-
-
-# --------------------------------------------------------------------------------------
-#  Slow Extraction Workflow Configs
-# --------------------------------------------------------------------------------------
-SLOW_EXTRACT_VALIDATION_MODEL = "gpt-4o-mini-2024-07-18"
-SLOW_EXTRACT_VALIDATION_TEMPERATURE = 0.1
-SLOW_EXTRACT_OPTIMIZER_MODEL = "gpt-4o-mini-2024-07-18"
-SLOW_EXTRACT_OPTIMIZER_TEMPERATURE = 0.1
-RECURSION_LIMIT = 12
-SLOW_WORKFLOW_RETRY_LIMIT = 5
 
 
 # --------------------------------------------------------------------------------------
@@ -44,11 +41,11 @@ SLOW_WORKFLOW_RETRY_LIMIT = 5
 # --------------------------------------------------------------------------------------
 SELF_RAG_GRADE_RETRIEVAL_MODEL = "gpt-4o-mini-2024-07-18"
 SELF_RAG_GRADE_RETRIEVAL_TEMPERATURE = 0.1
-SELF_RAG_GENERATION_MODEL = "o4-mini"
+SELF_RAG_GENERATION_MODEL = "gpt-4o-mini-2024-07-18"
 SELF_RAG_GENERATION_TEMPERATURE = 0.1
-SELF_RAG_GRADE_HALLUCINATION_MODEL = "o4-mini"
+SELF_RAG_GRADE_HALLUCINATION_MODEL = "gpt-4o-mini-2024-07-18"
 SELF_RAG_GRADE_HALLUCINATION_TEMPERATURE = 0.1
-SELF_RAG_GRADE_ANSWER_MODEL = "o4-mini"
+SELF_RAG_GRADE_ANSWER_MODEL = "gpt-4o-mini-2024-07-18"
 SELF_RAG_GRADE_ANSWER_TEMPERATURE = 0.1
 SELF_RAG_QUESTION_REWRITER_MODEL = "gpt-4o-mini-2024-07-18"
 SELF_RAG_QUESTION_REWRITER_TEMPERATURE = 0.5
@@ -57,6 +54,17 @@ SELF_RAG_QUESTION_REWRITER_TEMPERATURE = 0.5
 # --------------------------------------------------------------------------------------
 # Agentic RAG Configs
 # --------------------------------------------------------------------------------------
+
+#  Slow Extraction global workflow configs
+SLOW_EXTRACT_VALIDATION_MODEL = "gpt-4o-mini-2024-07-18"
+SLOW_EXTRACT_VALIDATION_TEMPERATURE = 0.1
+SLOW_EXTRACT_OPTIMIZER_MODEL = "gpt-4o-mini-2024-07-18"
+SLOW_EXTRACT_OPTIMIZER_TEMPERATURE = 0.1
+RECURSION_LIMIT = 12
+SLOW_WORKFLOW_RETRY_LIMIT = 5
+
+
+# Main Slow Extraction Workflow Configs
 NUM_RETRIEVED_DOCS = 5
 GRADE_RETRIEVAL_MODEL = "gpt-4o-mini-2024-07-18"
 GRADE_RETRIEVAL_TEMPERATURE = 0.1

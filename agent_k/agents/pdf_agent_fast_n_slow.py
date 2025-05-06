@@ -936,7 +936,7 @@ if __name__ == "__main__":
     # Configs
     # ----------------------------------------------------------------------------------
     sample_size = config_experiment.PDF_EXTRACTION_SAMPLE_SIZE
-    method = config_experiment.PDF_EXTRACTION_METHOD
+    method = config_experiment.PDF_EXTRACTION_METHOD.value
     eval_type = config_experiment.PDF_EXTRACTION_EVAL_TYPE
 
     final_df = extract_from_inferlink_pdfs(

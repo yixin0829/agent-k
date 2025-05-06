@@ -56,8 +56,8 @@ def load_data_and_process() -> pd.DataFrame:
 
     # Note: Load PDF extraction data. Can be replaced with the following line to load a specific extraction file
     agent_extractions = [
-        "data/experiments/250501-ablation-analysis-lvl3/wo-relevant-grader-rewriter/f&s_agentic_rag_2025-05-04_13-55-17.csv",
-        "data/experiments/250501-ablation-analysis-lvl3/wo-relevant-grader-rewriter/f&s_agentic_rag_2025-05-04_22-26-51.csv",
+        "data/experiments/250504-fns-self-rag-lvl3/gpt-4.1/f&s_self_rag_2025-05-05_19-05-26.csv",
+        "data/experiments/250429-fns-self-rag/gpt-4.1/f&s_self_rag_2025-04-30_00-45-21.csv",
     ]
     df_pdf_agent_extraction = pd.concat(
         [pd.read_csv(agent_extraction) for agent_extraction in agent_extractions]
