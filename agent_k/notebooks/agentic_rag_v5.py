@@ -14,7 +14,6 @@ from typing import Annotated, Any, List, Optional
 
 import chromadb
 import litellm
-import tiktoken
 from dotenv import load_dotenv
 from IPython.display import Image, display
 from langchain.text_splitter import MarkdownHeaderTextSplitter
@@ -45,15 +44,11 @@ from agent_k.config.prompts_fast_n_slow import (
 from agent_k.config.schemas import (
     TOTAL_MINERAL_RESOURCE_TONNAGE_DESCRIPTION,
 )
+from agent_k.utils.general import count_tokens
 
 load_dotenv()
 
 CLIENT = OpenAI()
-
-
-def count_tokens(text):
-    encoding = tiktoken.get_encoding("cl100k_base")
-    return len(encoding.encode(text))
 
 
 def create_markdown_retriever(

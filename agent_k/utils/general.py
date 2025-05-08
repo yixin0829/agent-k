@@ -6,6 +6,7 @@ from typing import Any
 
 import httpx
 import pandas as pd
+import tiktoken
 from openai import OpenAI
 from openai.types.beta import Assistant
 from tqdm import tqdm
@@ -198,3 +199,9 @@ def prompt_openai_assistant(assistant: Assistant, messages: list[dict]) -> str:
     # logger.debug("\n".join(citations))
 
     return message_content.value
+
+
+def count_tokens(text: str, encoder: str = "cl100k_base") -> int:
+    """Count the number of tokens in a text using the specified encoder."""
+    encoding = tiktoken.get_encoding(encoder)
+    return len(encoding.encode(text))
