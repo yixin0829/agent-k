@@ -1,0 +1,4 @@
+[core]
+    remote = datastore
+['remote "datastore"']
+    url = s3://minmod-poc-dvc-store/agent-k

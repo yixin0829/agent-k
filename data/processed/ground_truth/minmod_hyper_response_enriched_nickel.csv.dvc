@@ -1,0 +1,5 @@
+outs:
+- md5: e462f26149314845277ac5cda67f972d
+  size: 1806829
+  hash: md5
+  path: minmod_hyper_response_enriched_nickel.csv

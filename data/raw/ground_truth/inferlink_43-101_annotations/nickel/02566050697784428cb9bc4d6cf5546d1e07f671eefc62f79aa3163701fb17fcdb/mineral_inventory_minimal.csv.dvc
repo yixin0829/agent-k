@@ -1,0 +1,5 @@
+outs:
+- md5: 133a188548a31b6d6cfa9f3d01d02623
+  size: 331
+  hash: md5
+  path: mineral_inventory_minimal.csv

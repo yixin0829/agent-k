@@ -1,0 +1,5 @@
+outs:
+- md5: 0a0f898e2b7c2ec217eba41f1b3e1959
+  size: 189085
+  hash: md5
+  path: inferlink_inventory.csv

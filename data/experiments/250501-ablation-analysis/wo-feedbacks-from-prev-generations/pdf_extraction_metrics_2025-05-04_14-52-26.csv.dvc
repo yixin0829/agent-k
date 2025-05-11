@@ -1,0 +1,5 @@
+outs:
+- md5: 1bcff44fdc2e5b9013531686866b80d8
+  size: 1005
+  hash: md5
+  path: pdf_extraction_metrics_2025-05-04_14-52-26.csv

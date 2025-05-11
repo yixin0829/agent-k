@@ -1,0 +1,5 @@
+outs:
+- md5: 3780b29ddd1e97531ce0512843f5d831
+  size: 857395
+  hash: md5
+  path: b008.json

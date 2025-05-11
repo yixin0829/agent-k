@@ -1,0 +1,5 @@
+outs:
+- md5: 0bbaaedd44facb98ff8edf7e67f15aae
+  size: 166
+  hash: md5
+  path: metadata.csv

@@ -1,0 +1,5 @@
+outs:
+- md5: 3e0dbe31e9437423536a4f6a53957cbd
+  size: 798720
+  hash: md5
+  path: minmod.duckdb

@@ -1,0 +1,5 @@
+outs:
+- md5: 31868dc7121290a5da3ee4c5a35629b5
+  size: 984
+  hash: md5
+  path: dpe_map_reduce_self_rag_2025-04-26_14-16-56_config.yaml

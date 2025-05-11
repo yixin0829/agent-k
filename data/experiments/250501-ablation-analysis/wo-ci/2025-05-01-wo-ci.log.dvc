@@ -1,0 +1,5 @@
+outs:
+- md5: 2f9fbcadbabc4b709a369a354b3f2661
+  size: 702049
+  hash: md5
+  path: 2025-05-01-wo-ci.log

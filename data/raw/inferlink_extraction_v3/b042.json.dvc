@@ -1,0 +1,5 @@
+outs:
+- md5: 9532a068bf1c44eaaaf8f5ddc0732ab4
+  size: 1012672
+  hash: md5
+  path: b042.json

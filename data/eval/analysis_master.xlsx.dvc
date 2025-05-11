@@ -1,0 +1,5 @@
+outs:
+- md5: ddf1e51bafe87dd9f5e49a0c897dff1c
+  size: 103894
+  hash: md5
+  path: analysis_master.xlsx

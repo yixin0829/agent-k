@@ -1,0 +1,5 @@
+outs:
+- md5: ff32a10928f7e8f735856f719b2b2349
+  size: 6303744
+  hash: md5
+  path: mrds.duckdb

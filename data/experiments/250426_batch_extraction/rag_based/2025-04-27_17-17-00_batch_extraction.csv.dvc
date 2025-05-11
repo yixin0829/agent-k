@@ -1,0 +1,5 @@
+outs:
+- md5: b7bbe2332eb0b356ae41311a24815785
+  size: 6572
+  hash: md5
+  path: 2025-04-27_17-17-00_batch_extraction.csv

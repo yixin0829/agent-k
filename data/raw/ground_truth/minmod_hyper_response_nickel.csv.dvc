@@ -1,0 +1,5 @@
+outs:
+- md5: 7d03ac19ca35974d082b49d6484bc29d
+  size: 2111422
+  hash: md5
+  path: minmod_hyper_response_nickel.csv

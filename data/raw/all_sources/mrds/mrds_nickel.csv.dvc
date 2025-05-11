@@ -1,0 +1,5 @@
+outs:
+- md5: ef5fb11046aec3537360b53da2d0fd73
+  size: 2072321
+  hash: md5
+  path: mrds_nickel.csv
