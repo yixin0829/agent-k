@@ -11,7 +11,7 @@ dependencies = [
     "autogen-ext[openai]>=0.4.0",
     "chromadb>=0.6.3",
     "datasets>=3.3.0",
-    "docling>=2.26.0",
+    "docling==2.39.0",
     "duckdb>=1.1.3",
     "httpx>=0.28.1",
     "langchain-chroma>=0.2.2",
@@ -24,6 +24,7 @@ dependencies = [
     "loguru>=0.7.3",
     "markitdown>=0.0.1a2",
     "matplotlib>=3.10.0",
+    "mistralai>=1.8.2",
     "openai>=1.58.1",
     "pandas>=2.2.3",
     "pydantic>=2.10.4",
@@ -32,6 +33,8 @@ dependencies = [
     "simplejson>=3.19.3",
     "tenacity>=9.0.0",
     "tiktoken>=0.9.0",
+    "torch==2.5.1",
+    "torchvision==0.20.1",
     "tqdm>=4.67.1",
 ]
 

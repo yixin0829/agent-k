@@ -61,7 +61,7 @@ async def download_report(record_id: str, save_path: str, semaphore: asyncio.Sem
 
 
 async def download_all_reports(
-    unique_43_101_record_ids: list[str], max_concurrent_requests: int
+    unique_43_101_record_ids: list[str], max_concurrent_requests: int, save_path: str
 ):
     """
     Downloads all PDF reports referenced in the provided DataFrame concurrently.
@@ -69,6 +69,7 @@ async def download_all_reports(
     Args:
         unique_43_101_record_ids: List of unique 43-101 report record IDs
         max_concurrent_requests: Maximum number of concurrent downloads
+        save_path: Directory path where the PDF should be saved
 
     Returns:
         List of tuples containing (record ID (str), download result (bool))
@@ -82,7 +83,7 @@ async def download_all_reports(
         task = asyncio.create_task(
             download_report(
                 record_id,
-                save_path=config_general.CDR_REPORTS_DIR,
+                save_path=save_path,
                 semaphore=semaphore,
             )
         )
@@ -120,7 +121,11 @@ def download_minmod_hyper_reports(max_concurrent_requests: int = 10):
 
     # Download all reports concurrently
     results = asyncio.run(
-        download_all_reports(unique_43_101_record_ids, max_concurrent_requests)
+        download_all_reports(
+            unique_43_101_record_ids,
+            max_concurrent_requests,
+            config_general.CDR_REPORTS_DIR,
+        )
     )
 
     # Filter for successful downloads record IDs
@@ -146,19 +151,29 @@ def download_minmod_hyper_reports(max_concurrent_requests: int = 10):
     )
 
 
-def download_inferlink_reports(max_concurrent_requests: int = 10):
+def download_inferlink_reports(
+    inferlink_ground_truth_file: str,
+    pdf_save_path: str = None,
+    max_concurrent_requests: int = 10,
+):
     """
     Downloads all PDF reports referenced in the provided DataFrame concurrently.
     """
-    inferlink_df = pd.read_csv("data/processed/inferlink_ground_truth.csv")
+    inferlink_df = pd.read_csv(inferlink_ground_truth_file)
     # Get a list of unique cdr_record_id
     unique_cdr_record_ids = inferlink_df[
         InferlinkEvalColumns.CDR_RECORD_ID.value
     ].unique()
 
+    # Use default save path if not provided
+    if pdf_save_path is None:
+        pdf_save_path = config_general.CDR_REPORTS_DIR
+
     # Download all reports concurrently
     results = asyncio.run(
-        download_all_reports(unique_cdr_record_ids, max_concurrent_requests)
+        download_all_reports(
+            unique_cdr_record_ids, max_concurrent_requests, pdf_save_path
+        )
     )
 
     # Filter for successful downloads record IDs
@@ -169,12 +184,15 @@ def download_inferlink_reports(max_concurrent_requests: int = 10):
         inferlink_df[InferlinkEvalColumns.CDR_RECORD_ID.value].isin(
             successful_downloads
         ),
-        InferlinkEvalColumns.DOWNLOADED_PDF.value,
+        "downloaded_pdf",
     ] = True
 
-    inferlink_df.to_csv("data/processed/inferlink_ground_truth.csv", index=False)
+    inferlink_df.to_csv(inferlink_ground_truth_file, index=False)
 
 
 if __name__ == "__main__":
-    download_minmod_hyper_reports()
-    download_inferlink_reports()
+    # download_minmod_hyper_reports()
+    download_inferlink_reports(
+        inferlink_ground_truth_file="paper/data/processed/ground_truth/inferlink_ground_truth.csv",
+        pdf_save_path="paper/data/raw/43-101",
+    )
