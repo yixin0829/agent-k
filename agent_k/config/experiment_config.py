@@ -7,16 +7,16 @@ from enum import Enum
 # --------------------------------------------------------------------------------------
 # Batch Extraction Configs
 # --------------------------------------------------------------------------------------
-BATCH_EXTRACTION_MODEL = "o4-mini-2025-04-16"
+BATCH_EXTRACTION_MODEL = "gpt-4.1-mini"
 BATCH_EXTRACTION_TEMPERATURE = 0.1
 
 
 class BatchExtractionMethod(Enum):
-    LONG_CONTEXT = "long_context"
-    RAG_BASED = "rag_based"
+    LONG_CONTEXT = "long_context"  # Long context batch extraction
+    RAG_BASED = "rag_based"  # RAG-based batch extraction
 
 
-BATCH_METHOD: BatchExtractionMethod = BatchExtractionMethod.RAG_BASED
+BATCH_METHOD: BatchExtractionMethod = BatchExtractionMethod.LONG_CONTEXT
 MAX_NUM_RETRIEVED_DOCS = 5
 
 

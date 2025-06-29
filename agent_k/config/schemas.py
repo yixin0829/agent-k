@@ -1,6 +1,6 @@
 from enum import Enum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, create_model
 
 
 class MinModHyperCols(Enum):
@@ -193,13 +193,6 @@ class MineralSiteMetadataResponseAPI(BaseModel):
     Explicitly set default values in the description.
     """
 
-    mineral_site_name: str = Field(..., description=MINERAL_SITE_NAME_DESCRIPTION)
-    country: str = Field(
-        description=COUNTRY_DESCRIPTION + " Default value: Not Found",
-    )
-    state_or_province: str = Field(
-        description=STATE_OR_PROVINCE_DESCRIPTION + " Default value: Not Found",
-    )
     total_mineral_resource_tonnage: float = Field(
         description=TOTAL_MINERAL_RESOURCE_TONNAGE_DESCRIPTION + " Default value: 0",
     )
@@ -214,3 +207,45 @@ class MineralSiteMetadataResponseAPI(BaseModel):
         description=TOTAL_MINERAL_RESERVE_CONTAINED_METAL_DESCRIPTION
         + " Default value: 0",
     )
+
+
+def create_dynamic_mineral_model(commodity: str) -> BaseModel:
+    """
+    Create a dynamic mineral model based on the commodity.
+    """
+    model = create_model(
+        "MineralSiteComplexProperties",
+        total_mineral_resource_tonnage=(
+            float,
+            Field(
+                description=TOTAL_MINERAL_RESOURCE_TONNAGE_DESCRIPTION
+                + " Default value: 0",
+            ),
+        ),
+        total_mineral_reserve_tonnage=(
+            float,
+            Field(
+                description=TOTAL_MINERAL_RESERVE_TONNAGE_DESCRIPTION
+                + " Default value: 0",
+            ),
+        ),
+        total_mineral_resource_contained_metal=(
+            float,
+            Field(
+                description=TOTAL_MINERAL_RESOURCE_CONTAINED_METAL_DESCRIPTION.replace(
+                    "<main_commodity>", commodity
+                )
+                + " Default value: 0",
+            ),
+        ),
+        total_mineral_reserve_contained_metal=(
+            float,
+            Field(
+                description=TOTAL_MINERAL_RESERVE_CONTAINED_METAL_DESCRIPTION.replace(
+                    "<main_commodity>", commodity
+                )
+                + " Default value: 0",
+            ),
+        ),
+    )
+    return model
