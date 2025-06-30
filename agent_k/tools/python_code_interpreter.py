@@ -68,6 +68,20 @@ class PythonExecTool(ToolInterface):
 
         return output
 
+    def run_code_block(self, msg_w_code: str) -> str:
+        """
+        Parse the python code block from the AI generated message and run the code in a container.
+        """
+        output = -1
+        code = msg_w_code.split("```python")[1].split("```")[0].strip()
+        code += "\nprint(ans)"
+
+        output, errors = self._run_code_in_container(code)
+        if errors:
+            return f"[Error]\n{errors}"
+
+        return output
+
     @staticmethod
     def _run_code_in_container(
         code: str, container_name: str = "sandbox"
@@ -94,3 +108,10 @@ class PythonExecTool(ToolInterface):
         )
         out, err = process.communicate(code)
         return out, err
+
+
+if __name__ == "__main__":
+    code = "```python\n# Extracted tonnage values in tonnes\ntonnage_indicated = 90900000.0  # Indicated mineral resource tonnage\ntonnage_inferred = 133400000.0  # Inferred mineral resource tonnage\ntonnage_measured = 0.0          # Measured mineral resource tonnage (none assigned)\n\n# Calculate total mineral resource tonnage\nans = tonnage_indicated + tonnage_inferred + tonnage_measured\n```"
+
+    output = PythonExecTool().run_code_block(code)
+    print(output)

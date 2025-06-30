@@ -2,7 +2,6 @@ from typing import Any, Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
-from Levenshtein import distance
 from sklearn.metrics import r2_score
 
 from agent_k.config.logger import logger
@@ -40,7 +39,7 @@ def load_data_and_process() -> pd.DataFrame:
 
     # Note: Load PDF extraction data. Can be replaced with the following line to load a specific extraction file
     agent_extractions = [
-        "paper/data/experiments/250628_inferlink_extraction_v3/inferlink_extraction_v3.csv",
+        "paper/data/experiments/250628_rag_batch_extraction/2025-06-29_22-51-10_batch_extraction.csv"
     ]
     df_pdf_agent_extraction = pd.concat(
         [pd.read_csv(agent_extraction) for agent_extraction in agent_extractions]
@@ -80,58 +79,6 @@ def load_data_and_process() -> pd.DataFrame:
     df_merged[numeric_columns] = df_merged[numeric_columns].astype(float)
 
     return df_merged
-
-
-def calculate_string_metrics(
-    df_merged: pd.DataFrame, string_columns: List[Tuple[str, str]]
-) -> List[Dict[str, Any]]:
-    """
-    Calculate string comparison metrics between predicted and ground truth values.
-    All nan have been converted to "Not Found" in standardize_string_column()
-
-    Args:
-        df_merged: Dataframe containing both predicted and ground truth values
-        string_columns: List of tuples containing (predicted_column, ground_truth_column)
-
-    Returns:
-        List of dictionaries containing metrics for each string column
-    """
-    string_metrics_rows = []
-
-    meta_distances = []
-    for pdf_col, hyper_col in string_columns:
-        distances = []
-        for _idx, row in df_merged.iterrows():
-            if pd.notna(row[pdf_col]) and pd.notna(row[hyper_col]):
-                dist = distance(str(row[pdf_col]).lower(), str(row[hyper_col]).lower())
-                distances.append(dist)
-                meta_distances.append(dist)
-
-        if distances:
-            metrics = {
-                "column": pdf_col,
-                "metric_type": "string",
-                "support": len(distances),
-                "mean_edit_distance": np.mean(distances),
-                "median_edit_distance": np.median(distances),
-                "max_edit_distance": max(distances),
-                "exact_matches": sum(d == 0 for d in distances) / len(distances),
-            }
-            string_metrics_rows.append(metrics)
-
-    # Calculate meta metrics
-    meta_metrics = {
-        "column": "meta_string_columns",
-        "metric_type": "string",
-        "support": len(meta_distances),
-        "mean_edit_distance": np.mean(meta_distances),
-        "median_edit_distance": np.median(meta_distances),
-        "max_edit_distance": max(meta_distances),
-        "exact_matches": sum(d == 0 for d in meta_distances) / len(meta_distances),
-    }
-    string_metrics_rows.append(meta_metrics)
-
-    return string_metrics_rows
 
 
 def calculate_float_metrics(

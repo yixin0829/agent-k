@@ -16,7 +16,10 @@ import chromadb
 import litellm
 from dotenv import load_dotenv
 from IPython.display import Image, display
-from langchain.text_splitter import MarkdownHeaderTextSplitter
+from langchain.text_splitter import (
+    MarkdownHeaderTextSplitter,
+    RecursiveCharacterTextSplitter,
+)
 from langchain_chroma import Chroma
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
@@ -87,11 +90,24 @@ def create_markdown_retriever(
         logger.error(f"Error reading markdown file: {e}")
         raise
 
-    # Split document
+    # MD splitter split document
     markdown_splitter = MarkdownHeaderTextSplitter(
         headers_to_split_on=headers_to_split_on
     )
     doc_splits = markdown_splitter.split_text(markdown_document)
+
+    # Char-level splits to further control the number of tokens per split
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=max_tokens_per_batch // 4,
+        chunk_overlap=100,
+    )
+    for i, doc in enumerate(doc_splits):
+        doc_tokens = count_tokens(str(doc))
+        if doc_tokens > max_tokens_per_batch:
+            logger.warning(f"Split is larger than max_tokens_per_batch: {doc_tokens}")
+            splits = text_splitter.split_documents([doc])
+            doc_splits.pop(i)
+            doc_splits.extend(splits)
 
     # Log splitting information
     try:
@@ -132,16 +148,25 @@ def create_markdown_retriever(
             persist_directory=None,  # Keep in-memory to avoid persistence
         )
 
-        batch, batch_token_count = [], 0
-        for doc in doc_splits:
-            batch_token_count += count_tokens(str(doc))
+        pointer, batch, batch_token_count = 0, [], 0
+
+        while pointer < len(doc_splits):
+            batch.append(doc_splits[pointer])
+            batch_tokens = count_tokens(str(doc_splits[pointer]))
+            batch_token_count += batch_tokens
             if batch_token_count > max_tokens_per_batch:
+                # Remove the last appended doc that caused overflow
+                batch.pop()
                 logger.info(
-                    f"Batch token count: {batch_token_count}. Adding batch to vectorstore and resetting batch."
+                    f"Batch token count: {batch_token_count - batch_tokens}. Add batch to vectorstore and reset batch."
                 )
                 vectorstore.add_documents(documents=batch)
                 batch, batch_token_count = [], 0
-            batch.append(doc)
+                # Add the current doc to start the new batch
+                batch.append(doc_splits[pointer])
+                batch_tokens = count_tokens(str(doc_splits[pointer]))
+                batch_token_count = batch_tokens
+            pointer += 1
         vectorstore.add_documents(documents=batch)
 
         retriever = vectorstore.as_retriever(search_kwargs={"k": k})

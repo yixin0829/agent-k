@@ -211,7 +211,9 @@ class MineralSiteMetadataResponseAPI(BaseModel):
 
 def create_dynamic_mineral_model(commodity: str) -> BaseModel:
     """
-    Create a dynamic mineral model based on the commodity.
+    Create a dynamic mineral model based on the commodity. Used for Structured Output
+    with LiteLLM. Default values are not natively supported. Explicitly set default
+    values in the description.
     """
     model = create_model(
         "MineralSiteComplexProperties",

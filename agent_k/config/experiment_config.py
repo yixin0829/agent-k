@@ -16,7 +16,7 @@ class BatchExtractionMethod(Enum):
     RAG_BASED = "rag_based"  # RAG-based batch extraction
 
 
-BATCH_METHOD: BatchExtractionMethod = BatchExtractionMethod.LONG_CONTEXT
+BATCH_METHOD: BatchExtractionMethod = BatchExtractionMethod.RAG_BASED
 MAX_NUM_RETRIEVED_DOCS = 5
 
 
