@@ -7,7 +7,7 @@ from enum import Enum
 # --------------------------------------------------------------------------------------
 # Batch Extraction Configs
 # --------------------------------------------------------------------------------------
-BATCH_EXTRACTION_MODEL = "gpt-4.1-mini"
+BATCH_EXTRACTION_MODEL = "gpt-4o-mini"
 BATCH_EXTRACTION_TEMPERATURE = 0.1
 
 

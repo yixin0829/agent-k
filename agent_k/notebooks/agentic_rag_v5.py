@@ -15,7 +15,6 @@ from typing import Annotated, Any, List, Optional
 import chromadb
 import litellm
 from dotenv import load_dotenv
-from IPython.display import Image, display
 from langchain.text_splitter import (
     MarkdownHeaderTextSplitter,
     RecursiveCharacterTextSplitter,
@@ -23,7 +22,6 @@ from langchain.text_splitter import (
 from langchain_chroma import Chroma
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.runnables.graph import MermaidDrawMethod
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langgraph.graph import END, START, StateGraph
 from openai import OpenAI
@@ -631,15 +629,15 @@ agentic_rag_graph_builder.add_conditional_edges(
 # --------------------------------------------------------------------------------------
 # agentic_rag_graph_builder.add_edge("generate", END)
 
-display(
-    Image(
-        agentic_rag_graph_builder.compile()
-        .get_graph()
-        .draw_mermaid_png(
-            draw_method=MermaidDrawMethod.API,
-        )
-    )
-)
+# display(
+#     Image(
+#         agentic_rag_graph_builder.compile()
+#         .get_graph()
+#         .draw_mermaid_png(
+#             draw_method=MermaidDrawMethod.API,
+#         )
+#     )
+# )
 
 
 if __name__ == "__main__":
