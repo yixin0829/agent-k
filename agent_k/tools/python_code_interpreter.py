@@ -74,9 +74,13 @@ class PythonExecTool(ToolInterface):
         """
         output = -1
         code = msg_w_code.split("```python")[1].split("```")[0].strip()
-        code += "\nprint(ans)"
+
+        # If the last line is not a print statement, wrap it in a print statement
+        if not code.splitlines()[-1].startswith("print("):
+            code += "\nprint(ans)"
 
         output, errors = self._run_code_in_container(code)
+        output = output.strip()
         if errors:
             return f"[Error]\n{errors}"
 

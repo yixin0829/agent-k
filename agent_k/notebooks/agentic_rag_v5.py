@@ -22,6 +22,7 @@ from langchain.text_splitter import (
 from langchain_chroma import Chroma
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.vectorstores.base import VectorStoreRetriever
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langgraph.graph import END, START, StateGraph
 from openai import OpenAI
@@ -59,7 +60,7 @@ def create_markdown_retriever(
     embedding_model: str = "text-embedding-3-small",
     k: int = config_experiment.NUM_RETRIEVED_DOCS,
     max_tokens_per_batch: int = 250000,
-) -> Chroma:
+) -> VectorStoreRetriever:
     """
     Creates a Chroma retriever from a markdown document.
 
