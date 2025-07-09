@@ -32,7 +32,7 @@ class ExtractionMethod(Enum):
     FS_SELF_RAG = "F&S SELF RAG"
 
 
-PDF_EXTRACTION_METHOD = ExtractionMethod.FS_AGENTIC_RAG
+PDF_EXTRACTION_METHOD = ExtractionMethod.FS_SELF_RAG
 PDF_EXTRACTION_EVAL_TYPE = "FULL"
 
 
