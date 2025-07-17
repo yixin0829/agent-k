@@ -160,15 +160,15 @@ class MineralSiteMetadata(BaseModel):
     e.g. total mineral resource tonnage
     """
 
-    mineral_site_name: str = Field(..., description=MINERAL_SITE_NAME_DESCRIPTION)
-    country: str = Field(
-        default="Not Found",
-        description=COUNTRY_DESCRIPTION,
-    )
-    state_or_province: str = Field(
-        default="Not Found",
-        description=STATE_OR_PROVINCE_DESCRIPTION,
-    )
+    # mineral_site_name: str = Field(..., description=MINERAL_SITE_NAME_DESCRIPTION)
+    # country: str = Field(
+    #     default="Not Found",
+    #     description=COUNTRY_DESCRIPTION,
+    # )
+    # state_or_province: str = Field(
+    #     default="Not Found",
+    #     description=STATE_OR_PROVINCE_DESCRIPTION,
+    # )
     total_mineral_resource_tonnage: float = Field(
         default=0,
         description=TOTAL_MINERAL_RESOURCE_TONNAGE_DESCRIPTION,

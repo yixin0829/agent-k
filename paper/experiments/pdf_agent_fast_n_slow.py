@@ -60,8 +60,6 @@ class State(TypedDict):
     retriever: Any  # Retriever for self-RAG
 
     # Populated by LLMs
-    simple_entities: list[str]
-    complex_entities: list[str]
     fast_schema: dict
     slow_schema: dict
     fast_extraction_agent_result: dict[str, Any]
@@ -100,8 +98,6 @@ def schema_decompose(state: State):
     )
 
     return {
-        "simple_entities": simple_entities,
-        "complex_entities": complex_entities,
         "fast_schema": fast_schema,
         "slow_schema": slow_schema,
     }
@@ -256,7 +252,7 @@ def slow_extraction_optimizer(state: State):
                 extraction_results=state["slow_extraction_agent_result"],
                 feedback=state["feedback"],
                 messages=state["messages"],
-                json_schema=json.dumps(state["json_schema"]),
+                json_schema=json.dumps(state["slow_schema"]),
             ),
         },
     ]
@@ -324,7 +320,7 @@ def validate_extraction_result_route(state: State):
     logger.info("Validating extraction result route")
 
     if state["slow_extraction_validation"].lower().strip() == "yes":
-        return "slow_extraction_end"
+        return "extraction_synthesis"
     else:
         return "slow_extraction_optimizer"
 
@@ -339,8 +335,6 @@ def extraction_synthesis(state: State):
 
     final_extraction_result = {**state["slow_extraction_agent_result"]}
 
-    # Removed pydantic model validation ("Not Found" is parsed as 0 during evaluation)
-    # The point is to focus on functionality correctness instead of correctness of the output format
     return {"final_extraction_result": final_extraction_result}
 
 
@@ -404,7 +398,7 @@ def build_dpe_w_map_reduce_agentic_rag_graph():
     graph_builder.add_node(
         "reduce_slow_extraction_results", reduce_slow_extraction_results
     )
-    graph_builder.add_node("slow_extraction_end", slow_extraction_end)
+    # graph_builder.add_node("slow_extraction_end", slow_extraction_end)
     graph_builder.add_node("extraction_synthesis", extraction_synthesis)
     graph_builder.add_edge(START, "schema_decompose")
     graph_builder.add_conditional_edges(
@@ -424,10 +418,10 @@ def build_dpe_w_map_reduce_agentic_rag_graph():
     graph_builder.add_conditional_edges(
         "validate_extraction_result",
         validate_extraction_result_route,
-        ["slow_extraction_optimizer", "slow_extraction_end"],
+        ["slow_extraction_optimizer", "extraction_synthesis"],
     )
     graph_builder.add_edge("slow_extraction_optimizer", "validate_extraction_result")
-    graph_builder.add_edge("slow_extraction_end", "extraction_synthesis")
+    # graph_builder.add_edge("slow_extraction_end", "extraction_synthesis")
     # ----------------------------------------------------------------------------------
     # W/O global slow validator
     # ----------------------------------------------------------------------------------

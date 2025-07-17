@@ -99,25 +99,30 @@ def deep_extract_w_feedback(question, context, previous_messages) -> str:
 # %%
 ### Hallucination Grader
 
-GRADE_HALLUCINATION_SYSTEM_PROMPT = """You are a hallucination agent validating a LLM's generated code against the retrieved documents. Focus on the calculation logic and unit conversions.
+GRADE_HALLUCINATION_SYSTEM_PROMPT = """You are a hallucination grader validating whether there is hallucination in a LLM's generated code. Focus on the calculation logic and unit conversions.
 
 Guidelines:
 1. Total mineral resource tonnage should be the sum of one or more of inferred, indicated, and measured mineral resources. If not, a default value of 0 should be returned.
 2. Total mineral reserve tonnage should be the sum of one or more of proven and probable mineral reserves. If not, a default value of 0 should be returned.
 3. The tonnage or grade unit used in the LLM generation should be consistent with the unit used in the retrieved documents. For example, "Tonnes 000", "Tonnes (000)", or "(000) Tonnes" mean thousand tonnes (Kt) or 1000 tonnes (t).
-4. The unit of grade should be correctly converted to decimal before used in the calculation.
-5. The final answer in the code should be converted correctly to tonnes (t).
+4. The unit of grade should be correctly converted to decimal before used in the calculation. For example, "10% Cu" should be converted to 0.10.
+5. The final answer variable `ans` in the code should have its unit converted correctly to tonnes (t).
 
 Show your feedback and give a binary score 'yes' or 'no' and reasoning. 'yes' means that the LLM generated code is consistent with the retrieved documents and no hallucination."""
 
-GRADE_HALLUCINATION_USER_PROMPT = """## Retrieved Documents
-{documents}
+GRADE_HALLUCINATION_USER_PROMPT = """## Question
+{question}
+
+## Retrieved Facts
+{facts}
 
 ## LLM Generated Code
+```python
 {code}
+```
 
 ---
-Now take a deep breath and grade the LLM generated code"""
+Now take a deep breath and grade the LLM generated code."""
 
 
 # Data model
@@ -164,6 +169,7 @@ class GraphState(TypedDict):
     documents: List[str]
 
     retriever: Any
+    facts: str
     hallucination_grade: str
     messages: Annotated[list[str], add]  # store prev generation + feedback
     previous_answers: Annotated[list[str], add]  # store prev ans for self consistency
@@ -284,10 +290,11 @@ def extract(state: GraphState):
 
     content = response["choices"][0]["message"]["content"]
     return {
+        "facts": content,
         "messages": [
             {"role": "user", "content": user_prompt},
             {"role": "assistant", "content": content},
-        ]
+        ],
     }
 
 
@@ -297,7 +304,7 @@ Please follow the following guidelines:
 1. The generated python program should be executable with correct syntax.
 2. The final answer should be assigned to the variable `ans`.
 3. The `ans` variable should be a float number.
-4. Enclose the python code in ```python and ``` code block.
+4. Enclose the python code in a code block using "```python" and "```".
 5. If there is feedback on the previous generation, please incorporate it into the python program."""
 
 
@@ -339,23 +346,30 @@ def execute(state: GraphState):
     logger.info("--EXECUTION OUTPUT--")
     logger.info(output)
 
+    return {
+        "messages": [
+            {
+                "role": "assistant",
+                "content": f"Code interpreter execution result: {output}",
+            },
+        ],
+    }
+
+
+def format_output(state: GraphState):
+    logger.info("--FORMAT OUTPUT--")
+
     response = litellm.completion(
         model=config_experiment.PYTHON_AGENT_MODEL,
         temperature=config_experiment.PYTHON_AGENT_TEMPERATURE,
         messages=[
             *state["messages"],
-            {
-                "role": "assistant",
-                "content": f"Code interpreter execution output: {output}",
-            },
             {"role": "user", "content": EXECUTE_USER_PROMPT},
         ],
     )
 
     content = response["choices"][0]["message"]["content"]
-
     return {
-        "messages": [{"role": "assistant", "content": content}],
         "generation": content,
     }
 
@@ -363,14 +377,15 @@ def execute(state: GraphState):
 def check_hallucination(state: GraphState):
     logger.info("---CHECK HALLUCINATIONS---")
 
-    # Parse the code from the last message (program reasoner)
+    # Parse the code block from the last message (program reasoner)
     msg_w_code = state["messages"][-1]["content"]
     code = msg_w_code.split("```python")[1].split("```")[0].strip()
     logger.debug(f"Code:\n{code}\n")
 
     score: GradeHallucinations = hallucination_grader.invoke(
         {
-            "documents": state["documents"],
+            "facts": state["facts"],
+            "question": state["question"],
             "code": code,
         }
     )
@@ -416,6 +431,7 @@ graph_builder_v6.add_node("retrieve", retrieve)
 graph_builder_v6.add_node("extract", extract)
 graph_builder_v6.add_node("program_reasoner", program_reasoner)
 graph_builder_v6.add_node("execute", execute)
+graph_builder_v6.add_node("format_output", format_output)
 graph_builder_v6.add_node("check_hallucination", check_hallucination)
 
 graph_builder_v6.add_edge(START, "retrieve")
@@ -431,7 +447,8 @@ graph_builder_v6.add_conditional_edges(
         "program_reasoner": "program_reasoner",
     },
 )
-graph_builder_v6.add_edge("execute", END)
+graph_builder_v6.add_edge("execute", "format_output")
+graph_builder_v6.add_edge("format_output", END)
 
 # --------------------------------------------------------------------------------------
 # No hallucination check
@@ -478,7 +495,7 @@ if __name__ == "__main__":
 
     # Compile graph and invoke
     graph = graph_builder_v6.compile()
-    value = graph.invoke(input=graph_inputs, config={"recursion_limit": 12})
+    value = graph.invoke(input=graph_inputs)
 
     # Final generation
     logger.info("---FINAL GENERATION---")

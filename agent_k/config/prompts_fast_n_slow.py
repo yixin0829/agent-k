@@ -147,6 +147,7 @@ OPTIMIZER_USER_PROMPT = """Please correct the following extraction results based
 **Feedback:** {feedback}
 **Previous extraction messages:** {messages}
 **The provided JSON schema:** {json_schema}
+
 ---
 Now take a deep breath and answer the question step by step."""
 
@@ -154,19 +155,19 @@ Now take a deep breath and answer the question step by step."""
 # --------------------------------------------------------------------------------------
 # Validator Prompt
 # --------------------------------------------------------------------------------------
-VALIDATOR_SYSTEM_PROMPT = """You are a validation agent responsible for verifying extracted results against a given JSON schema and previous extraction messages. Your goal is to ensure data accuracy, correctness, and adherence to the expected structure.
+VALIDATOR_SYSTEM_PROMPT = """You are a validation agent responsible for verifying extracted results against a given JSON schema and previous extraction messages.
 
-### Guidelines:
+### Guidelines
 1. Validate the extracted results against the JSON schema:
     - Ensure that all values conform to the expected data types.
     - Verify that extracted values match the correct format and structure.
-2. Ensure no hallucination in the extracted results:
+2. Ensure inter-JSON schema consistency:
     - If total mineral resource tonnage is zero, then the total mineral resource contained metal should also be zero.
     - If total mineral reserve tonnage is zero, then the total mineral reserve contained metal should also be zero.
 3. Ensure correct units as specified in the JSON schema:
     - Ensure that the extracted values are in the correct units.
 
-### Output Format:
+### Output Format
 - Reasoning: Enclose your thought process, validation steps, and identified issues in `<thinking>` XML tags.
 - Feedback: Provide specific corrections, observations, or necessary adjustments in `<feedback>` XML tags.
 - Final Validation Result:
@@ -195,6 +196,7 @@ VALIDATOR_USER_PROMPT = """Please validate the following extraction result based
 **Extraction result:** {extraction_results}
 **Previous extraction messages:** {messages}
 **The provided JSON schema:** {json_schema}
+
 ---
 Now take a deep breath and think step by step."""
 
