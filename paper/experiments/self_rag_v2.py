@@ -584,8 +584,9 @@ self_rag_graph_builder.add_conditional_edges(
 # Compile
 self_rag_graph = self_rag_graph_builder.compile()
 
-# Visualize the graph
-viz_graph(self_rag_graph)
+if __name__ == "__main__":
+    # Visualize the graph
+    viz_graph(self_rag_graph)
 
 # %%
 # Run

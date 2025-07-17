@@ -36,10 +36,7 @@ from agent_k.config.schemas import (
     InferlinkEvalColumns,
     MineralSiteMetadata,
 )
-from agent_k.notebooks.agentic_rag_v5 import (
-    agentic_rag_graph_builder,
-    create_markdown_retriever,
-)
+from agent_k.notebooks.agentic_rag_v5 import create_markdown_retriever
 from agent_k.setup.load_43_101 import list_43_101_reports
 from agent_k.utils.general import (
     extract_xml,
@@ -47,6 +44,7 @@ from agent_k.utils.general import (
     parse_json_code_block,
     split_json_schema,
 )
+from paper.experiments.agentic_rag_v6 import graph_builder_v6
 from paper.experiments.self_rag_v2 import self_rag_graph_builder
 
 # Global variables
@@ -207,7 +205,7 @@ def map_slow_extraction_agent(state: ComplexEntityState):
                     "answer_grader_reasoning": "N/A",
                 }
             case "F&S AGENTIC RAG":
-                rag_graph = agentic_rag_graph_builder.compile()
+                rag_graph = graph_builder_v6.compile()
                 graph_inputs = {
                     "question": question,
                     "generation": "N/A",
@@ -396,6 +394,7 @@ def build_dpe_w_map_reduce_agentic_rag_graph():
     DPE with map reduce agentic rag graph.
     """
     graph_builder = StateGraph(State)
+    graph_builder.add_node("schema_decompose", schema_decompose)
     graph_builder.add_node(
         "map_slow_extraction_agent",
         map_slow_extraction_agent,
@@ -407,7 +406,12 @@ def build_dpe_w_map_reduce_agentic_rag_graph():
     )
     graph_builder.add_node("slow_extraction_end", slow_extraction_end)
     graph_builder.add_node("extraction_synthesis", extraction_synthesis)
-    graph_builder.add_edge(START, "map_slow_extraction_agent")
+    graph_builder.add_edge(START, "schema_decompose")
+    graph_builder.add_conditional_edges(
+        "schema_decompose",
+        fast_and_slow_route,
+        ["map_slow_extraction_agent"],
+    )
     graph_builder.add_edge(
         "map_slow_extraction_agent", "reduce_slow_extraction_results"
     )
