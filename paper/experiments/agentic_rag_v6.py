@@ -160,7 +160,7 @@ class GraphState(TypedDict):
 
     Attributes:
         question: question
-        generation: LLM generation
+        generation: formatted LLM final answer
         documents: list of documents
     """
 
@@ -169,10 +169,10 @@ class GraphState(TypedDict):
     documents: List[str]
 
     retriever: Any
-    facts: str
-    hallucination_grade: str
-    messages: Annotated[list[str], add]  # store prev generation + feedback
-    previous_answers: Annotated[list[str], add]  # store prev ans for self consistency
+    extracted_facts: str  # Used for hallucination check
+    hallucination_grade: str  # Used for hallucination check
+    messages: Annotated[list[str], add]  # Short-term memory
+    previous_code: Annotated[list[str], add]  # Store prev code for self consistency
 
 
 ### Nodes
@@ -290,7 +290,7 @@ def extract(state: GraphState):
 
     content = response["choices"][0]["message"]["content"]
     return {
-        "facts": content,
+        "extracted_facts": content,
         "messages": [
             {"role": "user", "content": user_prompt},
             {"role": "assistant", "content": content},
@@ -309,6 +309,10 @@ Please follow the following guidelines:
 
 
 def program_reasoner(state: GraphState):
+    """
+    Generate the code to answer the question
+    """
+
     logger.info("---PROGRAM REASONER---")
     response = litellm.completion(
         model=config_experiment.PYTHON_AGENT_MODEL,
@@ -324,7 +328,70 @@ def program_reasoner(state: GraphState):
         "messages": [
             {"role": "user", "content": PROGRAM_REASONER_USER_PROMPT},
             {"role": "assistant", "content": content},
-        ]
+        ],
+        "previous_code": [content],
+    }
+
+
+def check_hallucination(state: GraphState):
+    logger.info("---CHECK HALLUCINATIONS---")
+
+    # Parse the code block from the last message (program reasoner)
+    msg_w_code = state["messages"][-1]["content"]
+    code = msg_w_code.split("```python")[1].split("```")[0].strip()
+    logger.debug(f"Code:\n{code}\n")
+
+    score: GradeHallucinations = hallucination_grader.invoke(
+        {
+            "facts": state["extracted_facts"],
+            "question": state["question"],
+            "code": code,
+        }
+    )
+    grade = score.binary_score
+    hallucination_grader_feedback = score.feedback
+    return {
+        "hallucination_grade": grade,
+        "messages": [
+            {
+                "role": "assistant",
+                "content": f"Passed code hallucination check: {grade}\nFeedback: {hallucination_grader_feedback}",
+            }
+        ],
+    }
+
+
+SELF_CONSISTENCY_SYSTEM_PROMPT = """You are a self-consistency code picker that picks the most popular code based on the previous code generations. Identify common patterns and choose the one with the highest confidence."""
+
+SELF_CONSISTENCY_USER_PROMPT = """## Previous Code Generations
+{previous_code}
+
+---
+Now take a deep breath and pick the most popular code based on the previous code generations. Enclose the code in a code block using "```python" and "```"."""
+
+
+def self_consistency(state: GraphState):
+    logger.info("---SELF CONSISTENCY CODE PICKER---")
+
+    response = litellm.completion(
+        model=config_experiment.PYTHON_AGENT_MODEL,
+        temperature=config_experiment.PYTHON_AGENT_TEMPERATURE,
+        messages=[
+            {"role": "system", "content": SELF_CONSISTENCY_SYSTEM_PROMPT},
+            {
+                "role": "user",
+                "content": SELF_CONSISTENCY_USER_PROMPT.format(
+                    previous_code="\n".join(state["previous_code"])
+                ),
+            },
+        ],
+    )
+
+    content = response["choices"][0]["message"]["content"]
+
+    return {
+        "messages": [{"role": "assistant", "content": f"{content}"}],
+        "previous_code": [content],
     }
 
 
@@ -340,8 +407,9 @@ EXECUTE_USER_PROMPT = """Structure the Response Correctly: Format your final out
 def execute(state: GraphState):
     logger.info("--EXECUTING THE PYTHON PROGRAM--")
 
-    msg_w_code = state["messages"][-2]["content"]
-    output = PythonExecTool().run_code_block(msg_w_code)
+    # Can be either the last code block if hallucination check passed or the self-consistency code block
+    code_block_msg = state["previous_code"][-1]
+    output = PythonExecTool().run_code_block(code_block_msg)
 
     logger.info("--EXECUTION OUTPUT--")
     logger.info(output)
@@ -374,34 +442,6 @@ def format_output(state: GraphState):
     }
 
 
-def check_hallucination(state: GraphState):
-    logger.info("---CHECK HALLUCINATIONS---")
-
-    # Parse the code block from the last message (program reasoner)
-    msg_w_code = state["messages"][-1]["content"]
-    code = msg_w_code.split("```python")[1].split("```")[0].strip()
-    logger.debug(f"Code:\n{code}\n")
-
-    score: GradeHallucinations = hallucination_grader.invoke(
-        {
-            "facts": state["facts"],
-            "question": state["question"],
-            "code": code,
-        }
-    )
-    grade = score.binary_score
-    hallucination_grader_feedback = score.feedback
-    return {
-        "hallucination_grade": grade,
-        "messages": [
-            {
-                "role": "assistant",
-                "content": f"Passed code hallucination check: {grade}\nFeedback: {hallucination_grader_feedback}",
-            }
-        ],
-    }
-
-
 # --------------------------------------------------------------------------------------
 # Edges
 # --------------------------------------------------------------------------------------
@@ -416,6 +456,11 @@ def hallucination_router(state: GraphState):
             "---DECISION: GENERATION IS GROUNDED IN DOCUMENTS (NO HALLUCINATION)---"
         )
         return "execute"
+    elif len(state["previous_code"]) >= 5:
+        logger.info(
+            "---DECISION: LOOPING DETECT. USE SELF CONSISTENCY TO PICK CODE. END---"
+        )
+        return "self_consistency"
     else:
         logger.info(
             "---DECISION: GENERATION IS NOT GROUNDED IN DOCUMENTS, RE-TRY (HALLUCINATION)---"
@@ -433,7 +478,7 @@ graph_builder_v6.add_node("program_reasoner", program_reasoner)
 graph_builder_v6.add_node("execute", execute)
 graph_builder_v6.add_node("format_output", format_output)
 graph_builder_v6.add_node("check_hallucination", check_hallucination)
-
+graph_builder_v6.add_node("self_consistency", self_consistency)
 graph_builder_v6.add_edge(START, "retrieve")
 
 graph_builder_v6.add_edge("retrieve", "extract")
@@ -445,8 +490,10 @@ graph_builder_v6.add_conditional_edges(
     {
         "execute": "execute",
         "program_reasoner": "program_reasoner",
+        "self_consistency": "self_consistency",
     },
 )
+graph_builder_v6.add_edge("self_consistency", "execute")
 graph_builder_v6.add_edge("execute", "format_output")
 graph_builder_v6.add_edge("format_output", END)
 
