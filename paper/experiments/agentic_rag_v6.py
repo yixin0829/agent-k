@@ -1,11 +1,3 @@
-# %% [markdown]
-# Changes compared to v4 implementation:
-# - Optimizer implemented with litellm completion API in pdf_agent_fast_n_slow.py
-# - Python code interpreter tool enhancements:
-#   - Enhanced the python code interpreter tool error handling (wrap the last line in a print statement if not already + remove incorrect indentation if whitespace number is not a multiple of 2)
-#   - Enhanced the python code interpreter tool to handle the case where the last line is a variable (e.g. "mineral_resource_tonnage" -> "print(mineral_resource_tonnage)")
-#   - Return when state["remaining_steps"] < 2 to avoid recurrsion error
-
 # %%
 import re
 from operator import add
