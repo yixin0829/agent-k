@@ -1,5 +1,4 @@
 # %%
-import re
 from operator import add
 from typing import Annotated, Any, List
 
@@ -13,11 +12,8 @@ from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
 
 import agent_k.config.experiment_config as config_experiment
-from agent_k.agents.code_agent_react import react_agent
 from agent_k.config.logger import logger
 from agent_k.config.prompts_fast_n_slow import (
-    GENERATION_USER_PROMPT_W_FEEDBACK,
-    GENERATION_USER_PROMPT_WO_FEEDBACK,
     QUESTION_TEMPLATE,
 )
 from agent_k.config.schemas import (
@@ -29,63 +25,6 @@ from agent_k.tools.python_code_interpreter import PythonExecTool
 load_dotenv()
 
 CLIENT = OpenAI()
-
-
-# %%
-### Generate
-
-
-def deep_extract_w_feedback_wo_ci(question, context, previous_messages) -> str:
-    # Convert previous messages to a list of strings from a list of dicts
-    previous_messages_str = [str(msg) for msg in previous_messages]
-    response = litellm.completion(
-        model=config_experiment.PYTHON_AGENT_MODEL,
-        temperature=config_experiment.PYTHON_AGENT_TEMPERATURE,
-        messages=[
-            {"role": "system", "content": DEEP_EXTRACT_SYSTEM_PROMPT},
-            {
-                "role": "user",
-                "content": GENERATION_USER_PROMPT_W_FEEDBACK.format(
-                    question=question,
-                    context=context,
-                    previous_messages="\n".join(previous_messages_str),
-                ),
-            },
-        ],
-    )
-    content = response["choices"][0]["message"]["content"]
-    return content
-
-
-def deep_extract_wo_feedback(question, context) -> str:
-    result = react_agent(
-        DEEP_EXTRACT_SYSTEM_PROMPT,
-        GENERATION_USER_PROMPT_WO_FEEDBACK.format(
-            question=question,
-            context=context,
-        ),
-        recursion_limit=config_experiment.REACT_CODE_AGENT_RECURSION_LIMIT,
-    )
-    content = result["messages"][-1].content
-
-    return content
-
-
-def deep_extract_w_feedback(question, context, previous_messages) -> str:
-    # Convert previous messages to a list of strings from a list of dicts
-    previous_messages_str = [str(msg) for msg in previous_messages]
-    result = react_agent(
-        DEEP_EXTRACT_SYSTEM_PROMPT,
-        GENERATION_USER_PROMPT_W_FEEDBACK.format(
-            question=question,
-            context=context,
-            previous_messages="\n".join(previous_messages_str),
-        ),
-        recursion_limit=config_experiment.REACT_CODE_AGENT_RECURSION_LIMIT,
-    )
-    content = result["messages"][-1].content
-
-    return content
 
 
 # %%
@@ -157,14 +96,16 @@ class GraphState(TypedDict):
     """
 
     question: str
-    generation: str
     documents: List[str]
-
+    previous_answers: Annotated[list[str], add]  # Used for global hallucination check
     retriever: Any
+
     extracted_facts: str  # Used for hallucination check
     hallucination_grade: str  # Used for hallucination check
+    global_hallucination_grade: str  # Used for global hallucination check
     messages: Annotated[list[str], add]  # Short-term memory
     previous_code: Annotated[list[str], add]  # Store prev code for self consistency
+    generation: str
 
 
 ### Nodes
@@ -204,45 +145,6 @@ def get_mode_or_last(lst):
         return mode(lst)
     except (ImportError, StatisticsError):
         return lst[-1]
-
-
-def generate(state: GraphState):
-    """
-    Generate an answer to the question using retrieved documents and previous messages.
-    Uses self-consistency if looping is detected; otherwise, generates a new answer.
-    Parses and returns the answer, previous answers, and messages.
-    """
-    logger.info("---GENERATE---")
-    question = state["question"]
-    documents = state["documents"]
-
-    if len(state["previous_answers"]) >= 3:
-        # Apply self consistency to avoid looping
-        mode_answer = get_mode_or_last(state["previous_answers"])
-        generation = f"<reasoning>Detect looping. Use self consistency to choose the most popular answer from previous generations.</reasoning><answer>{mode_answer}</answer>"
-    else:
-        previous_messages = state["messages"]
-
-        generation = deep_extract_w_feedback(question, documents, previous_messages)
-        # generation = deep_extract_w_feedback_wo_ci(
-        #     question, documents, previous_messages
-        # )
-        # generation = deep_extract_wo_feedback(question, documents)
-
-    try:
-        parsed_output = generation.split("<answer>")[1].split("</answer>")[0].strip()
-        parsed_output = re.sub(r"[^0-9.]", "", parsed_output)
-    except IndexError as e:
-        logger.error(f"Error parsing <answer> XML tags for content: {generation}")
-        raise e
-
-    return {
-        "generation": generation,
-        "previous_answers": [parsed_output],
-        "messages": [
-            {"role": "Assistant", "content": generation},
-        ],
-    }
 
 
 DEEP_EXTRACT_SYSTEM_PROMPT = """You are an advanced AI assistant that answers questions based on the attached NI 43-101 mineral report. Your responses should be grounded in the report's content using the code interpreter tool for numerical calculations.
@@ -329,8 +231,8 @@ def check_hallucination(state: GraphState):
     logger.info("---CHECK HALLUCINATIONS---")
 
     # Parse the code block from the last message (program reasoner)
-    msg_w_code = state["messages"][-1]["content"]
-    code = msg_w_code.split("```python")[1].split("```")[0].strip()
+    code_block_msg = state["previous_code"][-1]
+    code = code_block_msg.split("```python")[1].split("```")[0].strip()
     logger.debug(f"Code:\n{code}\n")
 
     score: GradeHallucinations = hallucination_grader.invoke(
@@ -353,6 +255,88 @@ def check_hallucination(state: GraphState):
     }
 
 
+# %%
+### Hallucination Grader
+
+GLOBAL_GRADE_HALLUCINATION_SYSTEM_PROMPT = """You are a hallucination grader validating whether a LLM's generated code is consistent with previously extracted facts and generated code solutions.
+
+Show your feedback and give a binary score 'yes' or 'no' and reasoning. 'yes' means that the LLM generated code is consistent with the previously extracted facts and generated code solutions."""
+
+GLOBAL_GRADE_HALLUCINATION_USER_PROMPT = """## Previous QA Pairs
+{previous_answers}
+
+## Current Question
+{question}
+
+## LLM Generated Code
+```python
+{code}
+```
+
+---
+Now take a deep breath and grade the LLM generated code."""
+
+
+class GlobalGradeHallucinations(BaseModel):
+    feedback: str = Field(
+        description="Reasoning whether the LLM generated code is consistent with the previously extracted facts and generated code solutions + feedback on how to improve"
+    )
+    binary_score: str = Field(
+        description="LLM generated code is consistent with the previously extracted facts and generated code solutions, 'yes' or 'no'"
+    )
+
+
+llm = ChatOpenAI(
+    model=config_experiment.GRADE_HALLUCINATION_MODEL,
+    temperature=config_experiment.GRADE_HALLUCINATION_TEMPERATURE,
+)
+
+global_structured_llm_grader = llm.with_structured_output(GlobalGradeHallucinations)
+global_hallucination_prompt = ChatPromptTemplate.from_messages(
+    [
+        ("system", GLOBAL_GRADE_HALLUCINATION_SYSTEM_PROMPT),
+        ("human", GLOBAL_GRADE_HALLUCINATION_USER_PROMPT),
+    ]
+)
+
+global_hallucination_grader = global_hallucination_prompt | global_structured_llm_grader
+
+
+def global_validator(state: GraphState):
+    logger.info("---GLOBAL CHECK HALLUCINATION---")
+
+    code_block_msg = state["previous_code"][-1]
+    code = code_block_msg.split("```python")[1].split("```")[0].strip()
+
+    if not state["previous_answers"]:
+        previous_answers_str = "No previous QA pairs yet."
+    else:
+        previous_answers_str = ""
+        for i, ans in enumerate(state["previous_answers"]):
+            previous_answers_str += f"### QA Pair {i + 1}\n"
+            previous_answers_str += f"{ans['question']}\n\nAnswer: {ans['answer']}\n\n"
+
+    score: GlobalGradeHallucinations = global_hallucination_grader.invoke(
+        {
+            "previous_answers": previous_answers_str,
+            "question": state["question"],
+            "code": code,
+        }
+    )
+    grade = score.binary_score
+    feedback = score.feedback
+    return {
+        "global_hallucination_grade": grade,
+        "messages": [
+            {
+                "role": "assistant",
+                "content": f"Passed global hallucination check: {grade}\nFeedback: {feedback}",
+            }
+        ],
+    }
+
+
+# %%
 SELF_CONSISTENCY_SYSTEM_PROMPT = """You are a self-consistency code picker that picks the most popular code based on the previous code generations. Identify common patterns and choose the one with the highest confidence."""
 
 SELF_CONSISTENCY_USER_PROMPT = """## Previous Code Generations
@@ -439,14 +423,12 @@ def format_output(state: GraphState):
 # --------------------------------------------------------------------------------------
 
 
-def hallucination_router(state: GraphState):
+def global_hallucination_router(state: GraphState):
     """
-    Route based on hallucination check result
+    Route based on global hallucination check result
     """
-    if state["hallucination_grade"].lower() == "yes":
-        logger.info(
-            "---DECISION: GENERATION IS GROUNDED IN DOCUMENTS (NO HALLUCINATION)---"
-        )
+    if state["global_hallucination_grade"].lower() == "yes":
+        logger.info("---DECISION: GLOBAL HALLUCINATION CHECK PASSED---")
         return "execute"
     elif len(state["previous_code"]) >= 5:
         logger.info(
@@ -454,40 +436,40 @@ def hallucination_router(state: GraphState):
         )
         return "self_consistency"
     else:
-        logger.info(
-            "---DECISION: GENERATION IS NOT GROUNDED IN DOCUMENTS, RE-TRY (HALLUCINATION)---"
-        )
+        logger.info("---DECISION: GLOBAL HALLUCINATION CHECK FAILED---")
         return "program_reasoner"
 
 
 # ## Build Graph
-graph_builder_v6 = StateGraph(GraphState)
+graph_builder_v7 = StateGraph(GraphState)
 
 # Define the nodes and edges
-graph_builder_v6.add_node("retrieve", retrieve)
-graph_builder_v6.add_node("extract", extract)
-graph_builder_v6.add_node("program_reasoner", program_reasoner)
-graph_builder_v6.add_node("execute", execute)
-graph_builder_v6.add_node("format_output", format_output)
-graph_builder_v6.add_node("check_hallucination", check_hallucination)
-graph_builder_v6.add_node("self_consistency", self_consistency)
-graph_builder_v6.add_edge(START, "retrieve")
+graph_builder_v7.add_node("retrieve", retrieve)
+graph_builder_v7.add_node("extract", extract)
+graph_builder_v7.add_node("program_reasoner", program_reasoner)
+graph_builder_v7.add_node("execute", execute)
+graph_builder_v7.add_node("format_output", format_output)
+graph_builder_v7.add_node("check_hallucination", check_hallucination)
+graph_builder_v7.add_node("global_validator", global_validator)
+graph_builder_v7.add_node("self_consistency", self_consistency)
+graph_builder_v7.add_edge(START, "retrieve")
 
-graph_builder_v6.add_edge("retrieve", "extract")
-graph_builder_v6.add_edge("extract", "program_reasoner")
-graph_builder_v6.add_edge("program_reasoner", "check_hallucination")
-graph_builder_v6.add_conditional_edges(
-    "check_hallucination",
-    hallucination_router,
+graph_builder_v7.add_edge("retrieve", "extract")
+graph_builder_v7.add_edge("extract", "program_reasoner")
+graph_builder_v7.add_edge("program_reasoner", "check_hallucination")
+graph_builder_v7.add_edge("check_hallucination", "global_validator")
+graph_builder_v7.add_conditional_edges(
+    "global_validator",
+    global_hallucination_router,
     {
         "execute": "execute",
         "program_reasoner": "program_reasoner",
         "self_consistency": "self_consistency",
     },
 )
-graph_builder_v6.add_edge("self_consistency", "execute")
-graph_builder_v6.add_edge("execute", "format_output")
-graph_builder_v6.add_edge("format_output", END)
+graph_builder_v7.add_edge("self_consistency", "execute")
+graph_builder_v7.add_edge("execute", "format_output")
+graph_builder_v7.add_edge("format_output", END)
 
 # --------------------------------------------------------------------------------------
 # No hallucination check
@@ -502,7 +484,7 @@ if __name__ == "__main__":
 
     display(
         Image(
-            graph_builder_v6.compile()
+            graph_builder_v7.compile()
             .get_graph()
             .draw_mermaid_png(
                 draw_method=MermaidDrawMethod.API,
@@ -527,13 +509,12 @@ if __name__ == "__main__":
 
     graph_inputs = {
         "question": question,
-        "generation": "N/A",
         "retriever": retriever,
-        "hallucination_grade": "N/A",
+        "previous_answers": [],
     }
 
     # Compile graph and invoke
-    graph = graph_builder_v6.compile()
+    graph = graph_builder_v7.compile()
     value = graph.invoke(input=graph_inputs)
 
     # Final generation
