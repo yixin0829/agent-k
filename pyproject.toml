@@ -11,6 +11,7 @@ dependencies = [
     "autogen-ext[openai]>=0.4.0",
     "chromadb>=0.6.3",
     "docling==2.39.0",
+    "hf-xet>=1.1.5",
     "httpx>=0.28.1",
     "langchain-chroma>=0.2.2",
     "langchain-community==0.3.18",
@@ -32,6 +33,7 @@ dependencies = [
     "tenacity>=9.0.0",
     "tiktoken>=0.9.0",
     "tqdm>=4.67.1",
+    "transformers>=4.42.4",
 ]
 
 [dependency-groups]
