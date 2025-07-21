@@ -7,6 +7,7 @@ from operator import add
 from time import time
 from typing import Annotated, Any, Literal
 
+import litellm
 import pandas as pd
 import yaml
 from IPython.display import Image, display
@@ -14,7 +15,6 @@ from langchain_core.runnables.graph import MermaidDrawMethod
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
 from langgraph.types import Send
-from litellm import completion
 from openai import OpenAI
 from tenacity import (
     retry,
@@ -52,6 +52,7 @@ from paper.experiments.self_rag_v2 import self_rag_graph_builder
 
 # Global variables
 CLIENT = OpenAI()
+litellm.drop_params = True  # Ignore temperature parameter if model doesn't support it
 filename_to_id_map = list_43_101_reports()
 retry_count = 0
 
@@ -258,7 +259,7 @@ def slow_extraction_optimizer(state: State):
         },
     ]
 
-    response = completion(
+    response = litellm.completion(
         model=config_experiment.SLOW_EXTRACT_OPTIMIZER_MODEL,
         temperature=config_experiment.SLOW_EXTRACT_OPTIMIZER_TEMPERATURE,
         messages=messages,
@@ -302,7 +303,7 @@ def validate_extraction_result(state: State):
         },
     ]
 
-    response = completion(
+    response = litellm.completion(
         model=config_experiment.SLOW_EXTRACT_VALIDATION_MODEL,
         temperature=config_experiment.SLOW_EXTRACT_VALIDATION_TEMPERATURE,
         messages=messages,

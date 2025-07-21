@@ -25,6 +25,7 @@ from agent_k.tools.python_code_interpreter import PythonExecTool
 load_dotenv()
 
 CLIENT = OpenAI()
+litellm.drop_params = True  # Ignore temperature parameter if model doesn't support it
 
 
 # %%

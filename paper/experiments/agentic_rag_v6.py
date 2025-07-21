@@ -29,6 +29,7 @@ from agent_k.tools.python_code_interpreter import PythonExecTool
 load_dotenv()
 
 CLIENT = OpenAI()
+litellm.drop_params = True  # Ignore temperature parameter if model doesn't support it
 
 
 # %%
@@ -129,10 +130,15 @@ class GradeHallucinations(BaseModel):
     )
 
 
-llm = ChatOpenAI(
-    model=config_experiment.GRADE_HALLUCINATION_MODEL,
-    temperature=config_experiment.GRADE_HALLUCINATION_TEMPERATURE,
-)
+if config_experiment.GRADE_HALLUCINATION_MODEL in ["o4-mini-2025-04-16"]:
+    llm = ChatOpenAI(
+        model=config_experiment.GRADE_HALLUCINATION_MODEL,
+    )
+else:
+    llm = ChatOpenAI(
+        model=config_experiment.GRADE_HALLUCINATION_MODEL,
+        temperature=config_experiment.GRADE_HALLUCINATION_TEMPERATURE,
+    )
 
 structured_llm_grader = llm.with_structured_output(GradeHallucinations)
 hallucination_prompt = ChatPromptTemplate.from_messages(
