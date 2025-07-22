@@ -27,8 +27,8 @@ PDF_EXTRACTION_SAMPLE_SIZE = None
 
 
 class ExtractionMethod(Enum):
-    FS_AGENTIC_RAG = "F&S AGENTIC RAG"  # v6
     FS_SELF_RAG = "F&S SELF RAG"
+    FS_AGENTIC_RAG = "F&S AGENTIC RAG"
     FS_AGENTIC_RAG_V7 = "F&S AGENTIC RAG V7"
 
 
@@ -55,9 +55,19 @@ SELF_RAG_QUESTION_REWRITER_TEMPERATURE = 0.5
 # Our method configs
 # --------------------------------------------------------------------------------------
 # OUR_METHOD_MODEL = "gpt-4.1-2025-04-14"
-# OUR_METHOD_MODEL = "gpt-4o-mini-2024-07-18"
+OUR_METHOD_MODEL = "gpt-4o-mini-2024-07-18"
 # OUR_METHOD_MODEL = "gpt-3.5-turbo-0125"
-OUR_METHOD_MODEL = "o4-mini-2025-04-16"
+# OUR_METHOD_MODEL = "o4-mini-2025-04-16"
+
+
+class RetrievalMethod(Enum):
+    RAG = "rag"
+    LONG_CONTEXT = "long_context"
+
+
+RETRIEVAL_METHOD = RetrievalMethod.RAG
+RETRIEVAL_MODEL = "gpt-4.1-mini-2025-04-14"
+RETRIEVAL_TEMPERATURE = 0.1
 
 # Slow Extraction global workflow configs
 SLOW_EXTRACT_VALIDATION_MODEL = OUR_METHOD_MODEL

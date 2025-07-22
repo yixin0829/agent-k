@@ -1,5 +1,4 @@
 # %%
-import re
 from operator import add
 from typing import Annotated, Any, List
 
@@ -13,11 +12,8 @@ from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
 
 import agent_k.config.experiment_config as config_experiment
-from agent_k.agents.code_agent_react import react_agent
 from agent_k.config.logger import logger
 from agent_k.config.prompts_fast_n_slow import (
-    GENERATION_USER_PROMPT_W_FEEDBACK,
-    GENERATION_USER_PROMPT_WO_FEEDBACK,
     QUESTION_TEMPLATE,
 )
 from agent_k.config.schemas import (
@@ -25,68 +21,12 @@ from agent_k.config.schemas import (
 )
 from agent_k.notebooks.agentic_rag_v5 import create_markdown_retriever
 from agent_k.tools.python_code_interpreter import PythonExecTool
+from agent_k.utils.general import count_tokens
 
 load_dotenv()
 
 CLIENT = OpenAI()
 litellm.drop_params = True  # Ignore temperature parameter if model doesn't support it
-
-
-# %%
-### Generate
-
-
-def deep_extract_w_feedback_wo_ci(question, context, previous_messages) -> str:
-    # Convert previous messages to a list of strings from a list of dicts
-    previous_messages_str = [str(msg) for msg in previous_messages]
-    response = litellm.completion(
-        model=config_experiment.PYTHON_AGENT_MODEL,
-        temperature=config_experiment.PYTHON_AGENT_TEMPERATURE,
-        messages=[
-            {"role": "system", "content": DEEP_EXTRACT_SYSTEM_PROMPT},
-            {
-                "role": "user",
-                "content": GENERATION_USER_PROMPT_W_FEEDBACK.format(
-                    question=question,
-                    context=context,
-                    previous_messages="\n".join(previous_messages_str),
-                ),
-            },
-        ],
-    )
-    content = response["choices"][0]["message"]["content"]
-    return content
-
-
-def deep_extract_wo_feedback(question, context) -> str:
-    result = react_agent(
-        DEEP_EXTRACT_SYSTEM_PROMPT,
-        GENERATION_USER_PROMPT_WO_FEEDBACK.format(
-            question=question,
-            context=context,
-        ),
-        recursion_limit=config_experiment.REACT_CODE_AGENT_RECURSION_LIMIT,
-    )
-    content = result["messages"][-1].content
-
-    return content
-
-
-def deep_extract_w_feedback(question, context, previous_messages) -> str:
-    # Convert previous messages to a list of strings from a list of dicts
-    previous_messages_str = [str(msg) for msg in previous_messages]
-    result = react_agent(
-        DEEP_EXTRACT_SYSTEM_PROMPT,
-        GENERATION_USER_PROMPT_W_FEEDBACK.format(
-            question=question,
-            context=context,
-            previous_messages="\n".join(previous_messages_str),
-        ),
-        recursion_limit=config_experiment.REACT_CODE_AGENT_RECURSION_LIMIT,
-    )
-    content = result["messages"][-1].content
-
-    return content
 
 
 # %%
@@ -162,6 +102,7 @@ class GraphState(TypedDict):
         documents: list of documents
     """
 
+    markdown_path: str
     question: str
     generation: str
     documents: List[str]
@@ -176,6 +117,18 @@ class GraphState(TypedDict):
 ### Nodes
 
 
+RETRIEVAL_SYSTEM_PROMPT = """You are an advanced AI assistant that retrieves relevant snippets and tables from the attached NI 43-101 mineral report for answering the question. Return all the retrieved snippets and tables in a list of Markdown strings as they are in the document."""
+
+RETRIEVAL_USER_PROMPT = """## NI 43-101 Mineral Report
+{md_content}
+
+## Question
+{question}
+
+---
+Now retrieve the most relevant snippets from the document for answering the question."""
+
+
 def retrieve(state: GraphState):
     """
     Retrieve documents
@@ -186,69 +139,42 @@ def retrieve(state: GraphState):
     Returns:
         state (dict): New key added to state, documents, that contains retrieved documents
     """
-    logger.info("---RETRIEVE---")
+    logger.info(
+        f"---RETRIEVE VIA {config_experiment.RETRIEVAL_METHOD.value.upper()}---"
+    )
     question = state["question"]
 
-    # Retrieval
-    documents = state["retriever"].invoke(question)
+    if config_experiment.RETRIEVAL_METHOD == config_experiment.RetrievalMethod.RAG:
+        documents = state["retriever"].invoke(question)
+    elif (
+        config_experiment.RETRIEVAL_METHOD
+        == config_experiment.RetrievalMethod.LONG_CONTEXT
+    ):
+        with open(state["markdown_path"], "r") as f:
+            md_content = f.read()
+            md_content_token_count = count_tokens(md_content)
+            logger.info(f"MD content token count: {md_content_token_count}")
+
+        # call gpt-4.1-mini-2025-04-14 to retrieve relevant snippets from the document
+        response = litellm.completion(
+            model=config_experiment.RETRIEVAL_MODEL,
+            temperature=config_experiment.RETRIEVAL_TEMPERATURE,
+            messages=[
+                {"role": "system", "content": RETRIEVAL_SYSTEM_PROMPT},
+                {
+                    "role": "user",
+                    "content": RETRIEVAL_USER_PROMPT.format(
+                        md_content=md_content, question=question
+                    ),
+                },
+            ],
+            max_tokens=10000,
+        )
+
+        content = response["choices"][0]["message"]["content"]
+        documents = [content]
 
     return {"documents": documents}
-
-
-def get_mode_or_last(lst):
-    """
-    Return the unique mode if it exists, otherwise the last item.
-    Optimized for short lists.
-    """
-    if not lst:
-        logger.exception("Empty list provided to get_mode_or_last")
-
-    try:
-        # Use statistics.mode for unique mode, fallback to last if error
-        from statistics import StatisticsError, mode
-
-        return mode(lst)
-    except (ImportError, StatisticsError):
-        return lst[-1]
-
-
-def generate(state: GraphState):
-    """
-    Generate an answer to the question using retrieved documents and previous messages.
-    Uses self-consistency if looping is detected; otherwise, generates a new answer.
-    Parses and returns the answer, previous answers, and messages.
-    """
-    logger.info("---GENERATE---")
-    question = state["question"]
-    documents = state["documents"]
-
-    if len(state["previous_answers"]) >= 3:
-        # Apply self consistency to avoid looping
-        mode_answer = get_mode_or_last(state["previous_answers"])
-        generation = f"<reasoning>Detect looping. Use self consistency to choose the most popular answer from previous generations.</reasoning><answer>{mode_answer}</answer>"
-    else:
-        previous_messages = state["messages"]
-
-        generation = deep_extract_w_feedback(question, documents, previous_messages)
-        # generation = deep_extract_w_feedback_wo_ci(
-        #     question, documents, previous_messages
-        # )
-        # generation = deep_extract_wo_feedback(question, documents)
-
-    try:
-        parsed_output = generation.split("<answer>")[1].split("</answer>")[0].strip()
-        parsed_output = re.sub(r"[^0-9.]", "", parsed_output)
-    except IndexError as e:
-        logger.error(f"Error parsing <answer> XML tags for content: {generation}")
-        raise e
-
-    return {
-        "generation": generation,
-        "previous_answers": [parsed_output],
-        "messages": [
-            {"role": "Assistant", "content": generation},
-        ],
-    }
 
 
 DEEP_EXTRACT_SYSTEM_PROMPT = """You are an advanced AI assistant that answers questions based on the attached NI 43-101 mineral report. Your responses should be grounded in the report's content using the code interpreter tool for numerical calculations.
@@ -526,16 +452,22 @@ if __name__ == "__main__":
         description=TOTAL_MINERAL_RESOURCE_TONNAGE_DESCRIPTION,
     )
 
-    retriever = create_markdown_retriever(
-        "paper/data/processed/43-101-refined/0200a1c6d2cfafeb485d815d95966961d4c119e8662b8babec74e05b59ba4759d2.md",
-        collection_name="rag-chroma",
-    )
+    markdown_path = "paper/data/processed/43-101-refined/0200a1c6d2cfafeb485d815d95966961d4c119e8662b8babec74e05b59ba4759d2.md"
+    if config_experiment.RETRIEVAL_METHOD == config_experiment.RetrievalMethod.RAG:
+        retriever = create_markdown_retriever(
+            markdown_path,
+            collection_name="rag-chroma",
+        )
+    elif (
+        config_experiment.RETRIEVAL_METHOD
+        == config_experiment.RetrievalMethod.LONG_CONTEXT
+    ):
+        retriever = None
 
     graph_inputs = {
+        "markdown_path": markdown_path,
         "question": question,
-        "generation": "N/A",
         "retriever": retriever,
-        "hallucination_grade": "N/A",
     }
 
     # Compile graph and invoke

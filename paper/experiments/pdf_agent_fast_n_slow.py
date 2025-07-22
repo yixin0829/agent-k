@@ -58,7 +58,7 @@ retry_count = 0
 
 
 class State(TypedDict):
-    pdf_path: str  # 43-101 report record ID
+    markdown_path: str  # 43-101 report record ID
     json_schema: dict  # Predefined JSON schema (Assumed it's available)
     method: Literal["F&S SELF RAG", "F&S AGENTIC RAG"]
     retriever: Any  # Retriever for self-RAG
@@ -77,7 +77,7 @@ class State(TypedDict):
 
 class ComplexEntityState(TypedDict):
     method: Literal["F&S SELF RAG", "F&S AGENTIC RAG"]
-    pdf_path: str
+    markdown_path: str
     entity_name: str
     description: str
     default_value: Any
@@ -129,7 +129,7 @@ def fast_and_slow_route(state: State):
                     map_reduce_node,
                     {
                         "method": state["method"],
-                        "pdf_path": state["pdf_path"],
+                        "markdown_path": state["markdown_path"],
                         "entity_name": entity_name,
                         "default_value": entity_schema.get("default"),
                         "description": entity_schema.get("description", None),
@@ -207,6 +207,7 @@ def map_slow_extraction_agent(state: ComplexEntityState):
             case "F&S AGENTIC RAG":
                 rag_graph = graph_builder_v6.compile()
                 graph_inputs = {
+                    "markdown_path": state["markdown_path"],
                     "question": question,
                     "retriever": retriever,
                 }
@@ -454,7 +455,7 @@ display(
 
 # %%
 class StateSequential(TypedDict):
-    pdf_path: str  # 43-101 report record ID
+    markdown_path: str  # 43-101 report record ID
     json_schema: dict  # Predefined JSON schema (Assumed it's available)
     method: Literal["F&S SELF RAG", "F&S AGENTIC RAG"]
     retriever: Any  # Retriever for self-RAG
@@ -684,9 +685,7 @@ display(
 def extract_from_pdf(
     pdf_path: str,
     json_schema: dict,
-    method: Literal[
-        "F&S", "DPE MAP_REDUCE", "F&S SELF RAG", "F&S AGENTIC RAG", "F&S AGENTIC RAG V7"
-    ],
+    method: Literal["F&S SELF RAG", "F&S AGENTIC RAG", "F&S AGENTIC RAG V7"],
 ) -> dict:
     """
     Extract information from a PDF file using different extraction methods.
@@ -707,14 +706,22 @@ def extract_from_pdf(
     markdown_path = os.path.join(
         "paper/data/processed/43-101-refined", markdown_filename
     )
-    retriever = create_markdown_retriever(markdown_path, collection_name=markdown_path)
+    if config_experiment.RETRIEVAL_METHOD == config_experiment.RetrievalMethod.RAG:
+        retriever = create_markdown_retriever(
+            markdown_path, collection_name=markdown_path
+        )
+    elif (
+        config_experiment.RETRIEVAL_METHOD
+        == config_experiment.RetrievalMethod.LONG_CONTEXT
+    ):
+        retriever = None  # Will use gpt-4.1-mini as a retriever in the sub-graph
 
     match method:
         case "F&S SELF RAG":
             graph = build_dpe_w_map_reduce_self_rag_graph()
             result = graph.invoke(
                 {
-                    "pdf_path": pdf_path,
+                    "markdown_path": markdown_path,
                     "json_schema": json_schema,
                     "method": method,
                     "retriever": retriever,
@@ -725,7 +732,7 @@ def extract_from_pdf(
             graph = build_dpe_w_map_reduce_agentic_rag_graph()
             result = graph.invoke(
                 {
-                    "pdf_path": pdf_path,
+                    "markdown_path": markdown_path,
                     "json_schema": json_schema,
                     "method": method,
                     "retriever": retriever,
@@ -736,7 +743,7 @@ def extract_from_pdf(
             graph = build_agentic_rag_v7_graph()
             result = graph.invoke(
                 {
-                    "pdf_path": pdf_path,
+                    "markdown_path": markdown_path,
                     "json_schema": json_schema,
                     "method": method,
                     "retriever": retriever,
