@@ -5,8 +5,7 @@ import re
 
 import numpy as np
 
-with open("paper/data/processed/FinQA/test_pred_gpt-3.5-turbo-0125.json", "r") as f:
-    # with open("paper/data/processed/FinQA/test_pred_gpt-4o-mini.json", "r") as f:
+with open("paper/data/processed/FinQA/test_pred_gpt-4-0613.json", "r") as f:
     pred_data = json.load(f)
 
 # Initialize counters

@@ -55,9 +55,10 @@ SELF_RAG_QUESTION_REWRITER_TEMPERATURE = 0.5
 # Our method configs
 # --------------------------------------------------------------------------------------
 # OUR_METHOD_MODEL = "gpt-4.1-2025-04-14"
-OUR_METHOD_MODEL = "gpt-4o-mini-2024-07-18"
+# OUR_METHOD_MODEL = "gpt-4o-mini-2024-07-18"
 # OUR_METHOD_MODEL = "gpt-3.5-turbo-0125"
 # OUR_METHOD_MODEL = "o4-mini-2025-04-16"
+OUR_METHOD_MODEL = "gpt-4-0613"
 
 
 class RetrievalMethod(Enum):

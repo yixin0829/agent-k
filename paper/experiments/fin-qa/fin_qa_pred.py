@@ -185,8 +185,21 @@ def check_hallucination(state: GraphState):
 
     # Parse the code block from the last message (program reasoner)
     msg_w_code = state["messages"][-1]["content"]
-    code = msg_w_code.split("```python")[1].split("```")[0].strip()
-    logger.debug(f"Code:\n{code}\n")
+
+    try:
+        code = msg_w_code.split("```python")[1].split("```")[0].strip()
+        logger.debug(f"Code:\n{code}\n")
+    except IndexError:
+        logger.error(f"Error parsing code from message: {msg_w_code}")
+        return {
+            "hallucination_grade": "no",
+            "messages": [
+                {
+                    "role": "assistant",
+                    "content": f"Error parsing python code from message: {msg_w_code}. Feedback: Please generate the python code block again using the ````python` and ```` tags. If there were no relevant facts found in the context, please return `ans = 0`.",
+                }
+            ],
+        }
 
     score: GradeHallucinations = hallucination_grader.invoke(
         {
@@ -422,8 +435,8 @@ if __name__ == "__main__":
 
         logger.info(f"Processing ID ({i + 1}/{total_examples}): {d['id']}")
 
-        # Note: for debugging, set i > 3 to break
-        # if i > 3:
+        # Note: for debugging.
+        # if i + 1 > 3:
         #     break
 
         question = d["qa"]["question"]
@@ -434,7 +447,7 @@ if __name__ == "__main__":
 
         # Convert list of strings to a single string
         pre_text_str = " ".join(pre_text)
-        table_str = "\n".join([" ".join(row) for row in table])
+        table_str = "\n".join([", ".join(row) for row in table])
         post_text_str = " ".join(post_text)
 
         # Construct context
@@ -455,7 +468,11 @@ if __name__ == "__main__":
             logger.error(
                 f"Error parsing output for ID: {d['id']}. Generation: {generation}"
             )
-            pred_ans = -1
+            # If boolean answer, convert to integer
+            if generation.lower() in ["yes", "no", "true", "false"]:
+                pred_ans = 1 if generation.lower() in ["yes", "true"] else 0
+            else:
+                pred_ans = -1
 
         pred_dict = {
             "id": d["id"],
@@ -467,8 +484,8 @@ if __name__ == "__main__":
 
         pred_list.append(pred_dict)
 
-        # Checkpoint write every 50 examples (non-blocking)
-        if i % 50 == 0:
+        # Checkpoint write every 5 examples (non-blocking)
+        if i % 5 == 0:
             write_json_async(
                 f"paper/data/processed/FinQA/{DATASET}_pred_{config_experiment.OUR_METHOD_MODEL}.json",
                 list(pred_list),
