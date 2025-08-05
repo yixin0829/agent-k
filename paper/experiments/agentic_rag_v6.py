@@ -19,9 +19,8 @@ from agent_k.config.prompts_fast_n_slow import (
 from agent_k.config.schemas import (
     TOTAL_MINERAL_RESOURCE_TONNAGE_DESCRIPTION,
 )
-from agent_k.notebooks.agentic_rag_v5 import create_markdown_retriever
 from agent_k.tools.python_code_interpreter import PythonExecTool
-from agent_k.utils.general import count_tokens
+from paper.experiments.utils import count_tokens, create_markdown_retriever
 
 load_dotenv()
 
