@@ -4,11 +4,8 @@ from typing import Annotated, Any, List
 
 import litellm
 from dotenv import load_dotenv
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_openai import ChatOpenAI
 from langgraph.graph import END, START, StateGraph
 from openai import OpenAI
-from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
 
 import agent_k.config.experiment_config as config_experiment
@@ -20,74 +17,13 @@ from agent_k.config.schemas import (
     TOTAL_MINERAL_RESOURCE_TONNAGE_DESCRIPTION,
 )
 from agent_k.tools.python_code_interpreter import PythonExecTool
+from agent_k.utils.general import extract_xml
 from paper.experiments.utils import count_tokens, create_markdown_retriever
 
 load_dotenv()
 
 CLIENT = OpenAI()
 litellm.drop_params = True  # Ignore temperature parameter if model doesn't support it
-
-
-# %%
-### Hallucination Grader
-
-GRADE_HALLUCINATION_SYSTEM_PROMPT = """You are a hallucination grader validating whether there is hallucination in a LLM's generated code. Focus on the calculation logic and unit conversions.
-
-Guidelines:
-1. Total mineral resource tonnage should be the sum of one or more of inferred, indicated, and measured mineral resources. If not, a default value of 0 should be returned.
-2. Total mineral reserve tonnage should be the sum of one or more of proven and probable mineral reserves. If not, a default value of 0 should be returned.
-3. The tonnage or grade unit used in the LLM generation should be consistent with the unit used in the retrieved documents. For example, "Tonnes 000", "Tonnes (000)", or "(000) Tonnes" mean thousand tonnes (Kt) or 1000 tonnes (t).
-4. The unit of grade should be correctly converted to decimal before used in the calculation. For example, "10% Cu" should be converted to 0.10.
-5. The final answer variable `ans` in the code should have its unit converted correctly to tonnes (t).
-
-Show your feedback and give a binary score 'yes' or 'no' and reasoning. 'yes' means that the LLM generated code is consistent with the retrieved documents and no hallucination."""
-
-GRADE_HALLUCINATION_USER_PROMPT = """## Question
-{question}
-
-## Retrieved Facts
-{facts}
-
-## LLM Generated Code
-```python
-{code}
-```
-
----
-Now take a deep breath and grade the LLM generated code."""
-
-
-# Data model
-class GradeHallucinations(BaseModel):
-    """Binary score for hallucination present in generation answer."""
-
-    feedback: str = Field(
-        description="Reasoning whether the raw facts in the code are aligned with the retrieved documents + feedback on how to improve"
-    )
-    binary_score: str = Field(
-        description="Raw facts in the code are aligned with the retrieved documents, 'yes' or 'no'"
-    )
-
-
-if config_experiment.GRADE_HALLUCINATION_MODEL in ["o4-mini-2025-04-16"]:
-    llm = ChatOpenAI(
-        model=config_experiment.GRADE_HALLUCINATION_MODEL,
-    )
-else:
-    llm = ChatOpenAI(
-        model=config_experiment.GRADE_HALLUCINATION_MODEL,
-        temperature=config_experiment.GRADE_HALLUCINATION_TEMPERATURE,
-    )
-
-structured_llm_grader = llm.with_structured_output(GradeHallucinations)
-hallucination_prompt = ChatPromptTemplate.from_messages(
-    [
-        ("system", GRADE_HALLUCINATION_SYSTEM_PROMPT),
-        ("human", GRADE_HALLUCINATION_USER_PROMPT),
-    ]
-)
-
-hallucination_grader = hallucination_prompt | structured_llm_grader
 
 
 # %%
@@ -256,29 +192,78 @@ def program_reasoner(state: GraphState):
     }
 
 
+# %%
+
+GRADE_HALLUCINATION_SYSTEM_PROMPT = """You are a hallucination grader validating whether there is hallucination in a LLM's generated code. Focus on the calculation logic and unit conversions.
+
+Guidelines:
+1. Total mineral resource tonnage should be the sum of one or more of inferred, indicated, and measured mineral resources. If not, a default value of 0 should be returned.
+2. Total mineral reserve tonnage should be the sum of one or more of proven and probable mineral reserves. If not, a default value of 0 should be returned.
+3. The tonnage or grade unit used in the LLM generation should be consistent with the unit used in the retrieved documents. For example, "Tonnes 000", "Tonnes (000)", or "(000) Tonnes" mean thousand tonnes (Kt) or 1000 tonnes (t).
+4. The unit of grade should be correctly converted to decimal before used in the calculation. For example, "10% Cu" should be converted to 0.10.
+5. The final answer variable `ans` in the code should have its unit converted correctly to tonnes (t).
+
+Output Format:
+- Return ONLY the following XML tags, with no extra text before or after:
+  <hallucination_grade>yes or no</hallucination_grade>
+  <feedback>Your concise feedback explaining the grade and needed fixes</feedback>
+"""
+
+GRADE_HALLUCINATION_USER_PROMPT = """## Question
+{question}
+
+## Retrieved Facts
+{facts}
+
+## LLM Generated Code
+```python
+{code}
+```
+
+---
+Now take a deep breath and grade the LLM generated code. Output ONLY the XML specified in the system prompt."""
+
+
 def check_hallucination(state: GraphState):
     logger.info("---CHECK HALLUCINATIONS---")
 
     # Parse the code block from the last message (program reasoner)
     msg_w_code = state["messages"][-1]["content"]
-    code = msg_w_code.split("```python")[1].split("```")[0].strip()
-    logger.debug(f"Code:\n{code}\n")
 
-    score: GradeHallucinations = hallucination_grader.invoke(
-        {
-            "facts": state["extracted_facts"],
-            "question": state["question"],
-            "code": code,
-        }
-    )
-    grade = score.binary_score
-    hallucination_grader_feedback = score.feedback
+    try:
+        code = msg_w_code.split("```python")[1].split("```")[0].strip()
+        logger.debug(f"Code:\n{code}\n")
+
+        # Call the hallucination grader via LiteLLM (model-agnostic)
+        response = litellm.completion(
+            model=config_experiment.GRADE_HALLUCINATION_MODEL,
+            temperature=config_experiment.GRADE_HALLUCINATION_TEMPERATURE,
+            messages=[
+                {"role": "system", "content": GRADE_HALLUCINATION_SYSTEM_PROMPT},
+                {
+                    "role": "user",
+                    "content": GRADE_HALLUCINATION_USER_PROMPT.format(
+                        facts=state["extracted_facts"],
+                        question=state["question"],
+                        code=code,
+                    ),
+                },
+            ],
+        )
+        content = response["choices"][0]["message"]["content"]
+        grade = extract_xml(content, "hallucination_grade").strip()
+        hallucination_grader_feedback = extract_xml(content, "feedback").strip()
+    except IndexError:
+        logger.error(f"No code block found in the last message: {msg_w_code}")
+        grade = "no"
+        hallucination_grader_feedback = "No ```python code block found"
+
     return {
         "hallucination_grade": grade,
         "messages": [
             {
                 "role": "assistant",
-                "content": f"Passed code hallucination check: {grade}\nFeedback: {hallucination_grader_feedback}",
+                "content": f"Detected code hallucination: {grade}\nFeedback: {hallucination_grader_feedback}",
             }
         ],
     }
@@ -374,12 +359,12 @@ def hallucination_router(state: GraphState):
     """
     Route based on hallucination check result
     """
-    if state["hallucination_grade"].lower() == "yes":
+    if state["hallucination_grade"].lower() == "no":
         logger.info(
             "---DECISION: GENERATION IS GROUNDED IN DOCUMENTS (NO HALLUCINATION)---"
         )
         return "execute"
-    elif len(state["previous_code"]) >= 5:
+    elif len(state["previous_code"]) >= config_experiment.MAX_REFLECTION_ITERATIONS:
         logger.info(
             "---DECISION: LOOPING DETECT. USE SELF CONSISTENCY TO PICK CODE. END---"
         )

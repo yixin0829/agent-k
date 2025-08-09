@@ -3,7 +3,6 @@ import json
 import operator
 import os
 import re
-from operator import add
 from time import time
 from typing import Annotated, Any, Literal
 
@@ -47,7 +46,6 @@ from agent_k.utils.general import (
     split_json_schema,
 )
 from paper.experiments.agentic_rag_v6 import graph_builder_v6
-from paper.experiments.agentic_rag_v7 import graph_builder_v7
 from paper.experiments.self_rag_v2 import self_rag_graph_builder
 
 # Global variables
@@ -454,238 +452,10 @@ display(
 
 
 # %%
-class StateSequential(TypedDict):
-    markdown_path: str  # 43-101 report record ID
-    json_schema: dict  # Predefined JSON schema (Assumed it's available)
-    method: Literal["F&S SELF RAG", "F&S AGENTIC RAG"]
-    retriever: Any  # Retriever for self-RAG
-
-    # Populated by LLMs
-    previous_answers: Annotated[list[dict], add]  # Used for global hallucination check
-    slow_extraction_agent_result: dict[str, Any]
-    slow_extraction_validation: Literal["YES", "NO"]
-    feedback: Annotated[list, add_messages]
-    messages: Annotated[list, add_messages]
-    final_extraction_result: MineralSiteMetadata
-
-
-def extract_mineral_resource_tonnage(state: StateSequential):
-    question = QUESTION_TEMPLATE.format(
-        field=InferlinkEvalColumns.TOTAL_MINERAL_RESOURCE_TONNAGE.value,
-        dtype="float",
-        default=0,
-        description=state["json_schema"]["properties"][
-            InferlinkEvalColumns.TOTAL_MINERAL_RESOURCE_TONNAGE.value
-        ]["description"],
-    )
-
-    graph = graph_builder_v7.compile()
-    value = graph.invoke(
-        {
-            "question": question,
-            "retriever": state["retriever"],
-            "previous_answers": state["previous_answers"],
-        },
-    )
-
-    parsed_output = slow_extraction_output_parser(
-        value["generation"],
-        InferlinkEvalColumns.TOTAL_MINERAL_RESOURCE_TONNAGE.value,
-        "number",
-    )
-
-    return {
-        "messages": [{"role": "assistant", "content": value["generation"]}],
-        "previous_answers": [
-            {"role": "assistant", "question": question, "answer": value["generation"]}
-        ],
-        "slow_extraction_agent_result_map": [
-            {InferlinkEvalColumns.TOTAL_MINERAL_RESOURCE_TONNAGE.value: parsed_output}
-        ],
-    }
-
-
-def extract_mineral_reserve_tonnage(state: StateSequential):
-    question = QUESTION_TEMPLATE.format(
-        field=InferlinkEvalColumns.TOTAL_MINERAL_RESERVE_TONNAGE.value,
-        dtype="float",
-        default=0,
-        description=state["json_schema"]["properties"][
-            InferlinkEvalColumns.TOTAL_MINERAL_RESERVE_TONNAGE.value
-        ]["description"],
-    )
-
-    graph = graph_builder_v7.compile()
-    value = graph.invoke(
-        {
-            "question": question,
-            "retriever": state["retriever"],
-            "previous_answers": state["previous_answers"],
-        },
-    )
-
-    parsed_output = slow_extraction_output_parser(
-        value["generation"],
-        InferlinkEvalColumns.TOTAL_MINERAL_RESERVE_TONNAGE.value,
-        "number",
-    )
-
-    return {
-        "messages": [{"role": "assistant", "content": value["generation"]}],
-        "previous_answers": [
-            {"role": "assistant", "question": question, "answer": value["generation"]}
-        ],
-        "slow_extraction_agent_result_map": [
-            {InferlinkEvalColumns.TOTAL_MINERAL_RESERVE_TONNAGE.value: parsed_output}
-        ],
-    }
-
-
-def extract_mineral_resource_contained_metal(state: StateSequential):
-    question = QUESTION_TEMPLATE.format(
-        field=InferlinkEvalColumns.TOTAL_MINERAL_RESOURCE_CONTAINED_METAL.value,
-        dtype="float",
-        default=0,
-        description=state["json_schema"]["properties"][
-            InferlinkEvalColumns.TOTAL_MINERAL_RESOURCE_CONTAINED_METAL.value
-        ]["description"],
-    )
-
-    graph = graph_builder_v7.compile()
-    value = graph.invoke(
-        {
-            "question": question,
-            "retriever": state["retriever"],
-            "previous_answers": state["previous_answers"],
-        },
-    )
-
-    parsed_output = slow_extraction_output_parser(
-        value["generation"],
-        InferlinkEvalColumns.TOTAL_MINERAL_RESOURCE_CONTAINED_METAL.value,
-        "number",
-    )
-
-    return {
-        "messages": [{"role": "assistant", "content": value["generation"]}],
-        "previous_answers": [
-            {"role": "assistant", "question": question, "answer": value["generation"]}
-        ],
-        "slow_extraction_agent_result_map": [
-            {
-                InferlinkEvalColumns.TOTAL_MINERAL_RESOURCE_CONTAINED_METAL.value: parsed_output
-            }
-        ],
-    }
-
-
-def extract_mineral_reserve_contained_metal(state: StateSequential):
-    question = QUESTION_TEMPLATE.format(
-        field=InferlinkEvalColumns.TOTAL_MINERAL_RESERVE_CONTAINED_METAL.value,
-        dtype="float",
-        default=0,
-        description=state["json_schema"]["properties"][
-            InferlinkEvalColumns.TOTAL_MINERAL_RESERVE_CONTAINED_METAL.value
-        ]["description"],
-    )
-
-    graph = graph_builder_v7.compile()
-    value = graph.invoke(
-        {
-            "question": question,
-            "retriever": state["retriever"],
-            "previous_answers": state["previous_answers"],
-        },
-    )
-
-    parsed_output = slow_extraction_output_parser(
-        value["generation"],
-        InferlinkEvalColumns.TOTAL_MINERAL_RESERVE_CONTAINED_METAL.value,
-        "number",
-    )
-
-    return {
-        "messages": [{"role": "assistant", "content": value["generation"]}],
-        "previous_answers": [
-            {"role": "assistant", "question": question, "answer": value["generation"]}
-        ],
-        "slow_extraction_agent_result_map": [
-            {
-                InferlinkEvalColumns.TOTAL_MINERAL_RESERVE_CONTAINED_METAL.value: parsed_output
-            }
-        ],
-    }
-
-
-def build_agentic_rag_v7_graph():
-    graph_builder = StateGraph(StateSequential)
-    graph_builder.add_node(
-        "extract_mineral_resource_tonnage", extract_mineral_resource_tonnage
-    )
-    graph_builder.add_node(
-        "extract_mineral_reserve_tonnage", extract_mineral_reserve_tonnage
-    )
-    graph_builder.add_node(
-        "extract_mineral_resource_contained_metal",
-        extract_mineral_resource_contained_metal,
-    )
-    graph_builder.add_node(
-        "extract_mineral_reserve_contained_metal",
-        extract_mineral_reserve_contained_metal,
-    )
-    graph_builder.add_node(
-        "reduce_slow_extraction_results", reduce_slow_extraction_results
-    )
-    graph_builder.add_node("validate_extraction_result", validate_extraction_result)
-    graph_builder.add_node("slow_extraction_optimizer", slow_extraction_optimizer)
-    graph_builder.add_node("extraction_synthesis", extraction_synthesis)
-
-    graph_builder.add_edge(START, "extract_mineral_resource_tonnage")
-    graph_builder.add_edge(
-        "extract_mineral_resource_tonnage", "extract_mineral_reserve_tonnage"
-    )
-    graph_builder.add_edge(
-        "extract_mineral_reserve_tonnage", "extract_mineral_resource_contained_metal"
-    )
-    graph_builder.add_edge(
-        "extract_mineral_resource_contained_metal",
-        "extract_mineral_reserve_contained_metal",
-    )
-    graph_builder.add_edge(
-        "extract_mineral_reserve_contained_metal", "reduce_slow_extraction_results"
-    )
-    graph_builder.add_edge(
-        "reduce_slow_extraction_results", "validate_extraction_result"
-    )
-    graph_builder.add_conditional_edges(
-        "validate_extraction_result",
-        validate_extraction_result_route,
-        ["slow_extraction_optimizer", "extraction_synthesis"],
-    )
-    graph_builder.add_edge("slow_extraction_optimizer", "validate_extraction_result")
-    graph_builder.add_edge("extraction_synthesis", END)
-
-    graph = graph_builder.compile()
-
-    return graph
-
-
-display(
-    Image(
-        build_agentic_rag_v7_graph()
-        .get_graph()
-        .draw_mermaid_png(
-            draw_method=MermaidDrawMethod.API,
-        )
-    )
-)
-
-
-# %%
 def extract_from_pdf(
     pdf_path: str,
     json_schema: dict,
-    method: Literal["F&S SELF RAG", "F&S AGENTIC RAG", "F&S AGENTIC RAG V7"],
+    method: Literal["F&S SELF RAG", "F&S AGENTIC RAG"],
 ) -> dict:
     """
     Extract information from a PDF file using different extraction methods.
@@ -730,17 +500,6 @@ def extract_from_pdf(
             )
         case "F&S AGENTIC RAG":
             graph = build_dpe_w_map_reduce_agentic_rag_graph()
-            result = graph.invoke(
-                {
-                    "markdown_path": markdown_path,
-                    "json_schema": json_schema,
-                    "method": method,
-                    "retriever": retriever,
-                },
-                {"recursion_limit": config_experiment.RECURSION_LIMIT},
-            )
-        case "F&S AGENTIC RAG V7":
-            graph = build_agentic_rag_v7_graph()
             result = graph.invoke(
                 {
                     "markdown_path": markdown_path,

@@ -1,27 +1,58 @@
 # %%
 
 import json
+import os
 import re
 import threading
 from operator import add
 from typing import Annotated
 
 import litellm
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_openai import ChatOpenAI
+from dotenv import load_dotenv
+from huggingface_hub import InferenceClient
 from langgraph.graph import END, START, StateGraph
-from pydantic import BaseModel, Field
 from tenacity import (
     retry,
     retry_if_exception_type,
     stop_after_attempt,
     wait_exponential,
 )
+from transformers import AutoTokenizer
 from typing_extensions import TypedDict
 
 import agent_k.config.experiment_config as config_experiment
 from agent_k.config.logger import logger
 from agent_k.tools.python_code_interpreter import PythonExecTool
+from agent_k.utils.general import extract_xml
+
+load_dotenv()
+
+
+# %%
+
+
+def count_token(tokenizer, input_text, bos=False):
+    extra = 1 if bos else 0
+    return len(tokenizer.encode(input_text, add_special_tokens=False)) + extra
+
+
+tokenizer = AutoTokenizer.from_pretrained(
+    config_experiment.OUR_METHOD_MODEL, use_fast=True
+)
+
+
+sorrounding = tokenizer.apply_chat_template(
+    [
+        {
+            "role": "system",
+            "content": "You are a financial assistant. Always provide accurate and reliable information to the best of your abilities",
+        },
+        {"role": "user", "content": ""},
+    ],
+    tokenize=False,
+)
+print(sorrounding)
+
 
 # %%
 ### Hallucination Grader
@@ -33,7 +64,11 @@ Guidelines:
 2. The calculation logic should be correct and grounded in the retrieved facts.
 3. A decrease in the final answer should be a negative number and vice versa.
 
-Show your feedback and give a binary score 'yes' or 'no' and reasoning. 'yes' means that the LLM generated code is consistent with the retrieved documents and no hallucination."""
+Output Format:
+- Return ONLY the following XML tags, with no extra text before or after:
+  <hallucination_grade>yes or no</hallucination_grade>
+  <feedback>Your concise feedback explaining the grade and needed fixes</feedback>
+"""
 
 GRADE_HALLUCINATION_USER_PROMPT = """## Question
 {question}
@@ -47,35 +82,42 @@ GRADE_HALLUCINATION_USER_PROMPT = """## Question
 ```
 
 ---
-Now take a deep breath and grade the LLM generated code."""
+Now take a deep breath and grade the LLM generated code. Output ONLY the XML specified in the system prompt."""
 
+# %%
 
-# Data model
-class GradeHallucinations(BaseModel):
-    """Binary score for hallucination present in generation answer."""
-
-    feedback: str = Field(
-        description="Reasoning whether the raw facts in the code are aligned with the retrieved documents + feedback on how to improve"
-    )
-    binary_score: str = Field(
-        description="Raw facts in the code are aligned with the retrieved documents, 'yes' or 'no'"
-    )
-
-
-llm = ChatOpenAI(
-    model=config_experiment.GRADE_HALLUCINATION_MODEL,
-    temperature=config_experiment.GRADE_HALLUCINATION_TEMPERATURE,
+# Grader for huggingface models
+client = InferenceClient(
+    provider="together",
+    api_key=os.environ["HF_TOKEN"],
 )
 
-structured_llm_grader = llm.with_structured_output(GradeHallucinations)
-hallucination_prompt = ChatPromptTemplate.from_messages(
-    [
-        ("system", GRADE_HALLUCINATION_SYSTEM_PROMPT),
-        ("human", GRADE_HALLUCINATION_USER_PROMPT),
-    ]
-)
+HALLUCINATION_GRADER_HF_PROMPT = """You are a hallucination grader validating whether there is hallucination in a LLM's generated code. The generated code is for answering a financial question based on hybrid tabular and text context. Focus on the calculation logic and unit conversions.
 
-hallucination_grader = hallucination_prompt | structured_llm_grader
+Guidelines:
+1. The final answer should be assigned to a variable called `ans` in the code.
+2. The calculation logic should be correct and grounded in the retrieved facts.
+3. A decrease in the final answer should be a negative number and vice versa.
+
+Show your feedback and give a binary score 'yes' or 'no' and reasoning. 'yes' means that the LLM generated code is consistent with the retrieved documents and no hallucination.
+
+## Question
+{question}
+
+## Retrieved Facts
+{facts}
+
+## LLM Generated Code
+```python
+{code}
+```
+
+---
+Now take a deep breath and grade the LLM generated code. Output your response in XML format like the following:
+
+<hallucination_grade>{yes/no}</hallucination_grade>
+<feedback>{your feedback here}</feedback>
+"""
 
 
 # %%
@@ -126,16 +168,26 @@ def extract(state: GraphState):
         context=state["context"],
         question=state["question"],
     )
-    response = litellm.completion(
-        model=config_experiment.PYTHON_AGENT_MODEL,
-        temperature=config_experiment.PYTHON_AGENT_TEMPERATURE,
-        messages=[
-            {"role": "system", "content": DEEP_EXTRACT_SYSTEM_PROMPT},
-            {"role": "user", "content": user_prompt},
-        ],
-    )
 
-    content = response["choices"][0]["message"]["content"]
+    if config_experiment.OUR_METHOD_MODEL.startswith("meta-llama"):
+        prompt = DEEP_EXTRACT_SYSTEM_PROMPT + "\n\n" + user_prompt
+
+        content = client.text_generation(
+            prompt=prompt,
+            model=config_experiment.OUR_METHOD_MODEL,
+            temperature=0.1,
+        )
+    else:
+        response = litellm.completion(
+            model=config_experiment.PYTHON_AGENT_MODEL,
+            temperature=config_experiment.PYTHON_AGENT_TEMPERATURE,
+            messages=[
+                {"role": "system", "content": DEEP_EXTRACT_SYSTEM_PROMPT},
+                {"role": "user", "content": user_prompt},
+            ],
+        )
+
+        content = response["choices"][0]["message"]["content"]
     return {
         "extracted_facts": content,
         "messages": [
@@ -161,16 +213,27 @@ def program_reasoner(state: GraphState):
     """
 
     logger.info("---PROGRAM REASONER---")
-    response = litellm.completion(
-        model=config_experiment.PYTHON_AGENT_MODEL,
-        temperature=config_experiment.PYTHON_AGENT_TEMPERATURE,
-        messages=[
-            {"role": "system", "content": DEEP_EXTRACT_SYSTEM_PROMPT},
-            *state["messages"],
-            {"role": "user", "content": PROGRAM_REASONER_USER_PROMPT},
-        ],
-    )
-    content = response["choices"][0]["message"]["content"]
+    if config_experiment.OUR_METHOD_MODEL.startswith("meta-llama"):
+        content = client.text_generation(
+            prompt=DEEP_EXTRACT_SYSTEM_PROMPT
+            + "\n\n"
+            + state["messages"][-1]["content"]
+            + "\n\n"
+            + PROGRAM_REASONER_USER_PROMPT,
+            model=config_experiment.OUR_METHOD_MODEL,
+            temperature=0.1,
+        )
+    else:
+        response = litellm.completion(
+            model=config_experiment.PYTHON_AGENT_MODEL,
+            temperature=config_experiment.PYTHON_AGENT_TEMPERATURE,
+            messages=[
+                {"role": "system", "content": DEEP_EXTRACT_SYSTEM_PROMPT},
+                *state["messages"],
+                {"role": "user", "content": PROGRAM_REASONER_USER_PROMPT},
+            ],
+        )
+        content = response["choices"][0]["message"]["content"]
     return {
         "messages": [
             {"role": "user", "content": PROGRAM_REASONER_USER_PROMPT},
@@ -201,15 +264,25 @@ def check_hallucination(state: GraphState):
             ],
         }
 
-    score: GradeHallucinations = hallucination_grader.invoke(
-        {
-            "facts": state["extracted_facts"],
-            "question": state["question"],
-            "code": code,
-        }
+    # Use a single LiteLLM path for all models
+    response = litellm.completion(
+        model=config_experiment.GRADE_HALLUCINATION_MODEL,
+        temperature=config_experiment.GRADE_HALLUCINATION_TEMPERATURE,
+        messages=[
+            {"role": "system", "content": GRADE_HALLUCINATION_SYSTEM_PROMPT},
+            {
+                "role": "user",
+                "content": GRADE_HALLUCINATION_USER_PROMPT.format(
+                    question=state["question"],
+                    facts=state["extracted_facts"],
+                    code=code,
+                ),
+            },
+        ],
     )
-    grade = score.binary_score
-    hallucination_grader_feedback = score.feedback
+    content = response["choices"][0]["message"]["content"]
+    grade = extract_xml(content, "hallucination_grade").strip()
+    hallucination_grader_feedback = extract_xml(content, "feedback").strip()
     return {
         "hallucination_grade": grade,
         "messages": [
@@ -233,19 +306,30 @@ Now take a deep breath and pick the most popular code based on the previous code
 def self_consistency(state: GraphState):
     logger.info("---SELF CONSISTENCY CODE PICKER---")
 
-    response = litellm.completion(
-        model=config_experiment.PYTHON_AGENT_MODEL,
-        temperature=config_experiment.PYTHON_AGENT_TEMPERATURE,
-        messages=[
-            {"role": "system", "content": SELF_CONSISTENCY_SYSTEM_PROMPT},
-            {
-                "role": "user",
-                "content": SELF_CONSISTENCY_USER_PROMPT.format(
-                    previous_code="\n".join(state["previous_code"])
-                ),
-            },
-        ],
-    )
+    if config_experiment.OUR_METHOD_MODEL.startswith("meta-llama"):
+        content = client.text_generation(
+            prompt=SELF_CONSISTENCY_SYSTEM_PROMPT
+            + "\n\n"
+            + SELF_CONSISTENCY_USER_PROMPT.format(
+                previous_code="\n".join(state["previous_code"])
+            ),
+            model=config_experiment.OUR_METHOD_MODEL,
+            temperature=0.1,
+        )
+    else:
+        response = litellm.completion(
+            model=config_experiment.PYTHON_AGENT_MODEL,
+            temperature=config_experiment.PYTHON_AGENT_TEMPERATURE,
+            messages=[
+                {"role": "system", "content": SELF_CONSISTENCY_SYSTEM_PROMPT},
+                {
+                    "role": "user",
+                    "content": SELF_CONSISTENCY_USER_PROMPT.format(
+                        previous_code="\n".join(state["previous_code"])
+                    ),
+                },
+            ],
+        )
 
     content = response["choices"][0]["message"]["content"]
 
@@ -436,8 +520,8 @@ if __name__ == "__main__":
         logger.info(f"Processing ID ({i + 1}/{total_examples}): {d['id']}")
 
         # Note: for debugging.
-        # if i + 1 > 3:
-        #     break
+        if i + 1 > 3:
+            break
 
         question = d["qa"]["question"]
 
@@ -487,13 +571,13 @@ if __name__ == "__main__":
         # Checkpoint write every 5 examples (non-blocking)
         if i % 5 == 0:
             write_json_async(
-                f"paper/data/processed/FinQA/{DATASET}_pred_{config_experiment.OUR_METHOD_MODEL}.json",
+                f"paper/data/processed/FinQA/{DATASET}_pred_{config_experiment.OUR_METHOD_MODEL.replace('/', '_')}.json",
                 list(pred_list),
             )
             logger.info(f"Checkpoint written at {i + 1}/{total_examples} examples")
 
     # Save the predictions to a JSON file (non-blocking)
     write_json_async(
-        f"paper/data/processed/FinQA/{DATASET}_pred_{config_experiment.OUR_METHOD_MODEL}.json",
+        f"paper/data/processed/FinQA/{DATASET}_pred_{config_experiment.OUR_METHOD_MODEL.replace('/', '_')}.json",
         pred_list,
     )
