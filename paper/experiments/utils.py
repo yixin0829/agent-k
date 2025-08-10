@@ -1,7 +1,10 @@
-from typing import Optional
+import os
+from typing import Dict, List, Optional, Tuple, Type
 
 import chromadb
+import litellm
 import tiktoken
+from google import genai
 from langchain_chroma import Chroma
 from langchain_core.vectorstores.base import VectorStoreRetriever
 from langchain_openai import OpenAIEmbeddings
@@ -9,6 +12,8 @@ from langchain_text_splitters import (
     MarkdownHeaderTextSplitter,
     RecursiveCharacterTextSplitter,
 )
+from openai import OpenAI
+from pydantic import BaseModel
 
 import agent_k.config.experiment_config as config_experiment
 from agent_k.config.logger import logger
@@ -140,3 +145,181 @@ def create_markdown_retriever(
     except Exception as e:
         logger.error(f"Error creating retriever: {e}")
         raise
+
+
+# --------------------------------------------------------------------------------------
+# Provider-agnostic model invocation helpers (shared across experiments)
+# --------------------------------------------------------------------------------------
+
+
+class ModelProviderError(Exception):
+    """Raised when a model provider call fails in a non-recoverable way."""
+
+
+class ContextLengthExceededError(Exception):
+    """Raised when the input context exceeds a model's maximum context length."""
+
+
+# Initialize provider clients
+hf_router_client = OpenAI(
+    base_url="https://router.huggingface.co/v1",
+    api_key=os.environ.get("HF_TOKEN"),
+)
+
+google_genai_client = genai.Client()
+
+# Avoid passing unsupported params to some providers
+litellm.drop_params = True
+
+
+def detect_provider_and_remote_model(model_name: str) -> Tuple[str, str]:
+    """Detect provider and map to the remote model identifier if needed.
+
+    Returns a tuple of (provider, remote_model_name).
+    Provider can be one of: "openai", "hf_router", "gemini".
+    """
+
+    name = model_name.strip()
+    name = name.lower()
+
+    # Gemini
+    if name.startswith("gemini-"):
+        return "gemini", model_name
+
+    # HF router via OpenAI-compatible API
+    if "gpt-oss-20b" in name:
+        return "hf_router", "openai/gpt-oss-20b"
+    if "llama-3.3-70b" in name:
+        return "hf_router", "meta-llama/Llama-3.3-70B-Instruct"
+
+    # Default to OpenAI (or OpenAI-compatible) through litellm
+    return "openai", model_name
+
+
+def invoke_model_messages(
+    model_name: str, messages: List[Dict[str, str]], temperature: float
+) -> str:
+    """Invoke a chat model across multiple providers and return assistant text.
+
+    Args:
+        model_name: Friendly model name.
+        messages: Array of chat messages with roles {system,user,assistant}.
+        temperature: Decoding temperature.
+
+    Returns:
+        Assistant message content as a string.
+    """
+
+    provider, remote = detect_provider_and_remote_model(model_name)
+
+    if provider == "openai":
+        response = litellm.completion(
+            model=remote, messages=messages, temperature=temperature
+        )
+        return response.choices[0].message.content
+
+    if provider == "hf_router":
+        try:
+            result = hf_router_client.chat.completions.create(
+                model=remote,
+                messages=messages,
+                temperature=temperature,
+            )
+            return result.choices[0].message.content or ""
+        except Exception as e:
+            msg = str(e).lower()
+            if (
+                "maximum context" in msg
+                or "context length" in msg
+                or "too many tokens" in msg
+            ):
+                raise ContextLengthExceededError(str(e))
+            raise ModelProviderError(f"HF Router call failed: {e}")
+
+    if provider == "gemini":
+        try:
+            system_parts = [m["content"] for m in messages if m.get("role") == "system"]
+            user_parts = [m["content"] for m in messages if m.get("role") == "user"]
+            prompt = "\n\n".join(system_parts + user_parts)
+            response = google_genai_client.models.generate_content(
+                model=remote,
+                contents=prompt,
+                config=genai.types.GenerateContentConfig(temperature=temperature),
+            )
+            return getattr(response, "text", "")
+        except Exception as e:
+            msg = str(e).lower()
+            if (
+                "maximum context" in msg
+                or "context length" in msg
+                or "too many tokens" in msg
+            ):
+                raise ContextLengthExceededError(str(e))
+            raise ModelProviderError(f"Gemini call failed: {e}")
+
+    raise ModelProviderError(f"Unknown provider for model: {model_name}")
+
+
+def invoke_json(
+    model_name: str,
+    messages: List[Dict[str, str]],
+    temperature: float,
+    schema: Type[BaseModel],
+    *,
+    strict: bool = True,
+) -> BaseModel:
+    """Invoke a chat model and parse the response into a Pydantic model.
+
+    This helper calls invoke_model_messages and then attempts to parse the first
+    top-level JSON object or array from the response into the provided schema.
+
+    Args:
+        model_name: Friendly model name to route to a provider.
+        messages: Chat messages in {role, content} format.
+        temperature: Decoding temperature.
+        schema: Pydantic model class to validate against.
+        strict: If True, raise an exception on parse/validation failure. If False,
+            return a best-effort fallback by directly attempting to json.loads the
+            entire string and validate; if that fails, raise.
+
+    Returns:
+        Parsed Pydantic model instance.
+    """
+
+    import json as _json
+
+    raw = invoke_model_messages(
+        model_name=model_name, messages=messages, temperature=temperature
+    )
+
+    def _extract_first_json_segment(text: str) -> str:
+        cleaned = text.strip()
+        # Remove common code fences if present
+        cleaned = cleaned.replace("```json", "").replace("```", "").strip()
+        start_brace = cleaned.find("{")
+        start_bracket = cleaned.find("[")
+        candidates = [i for i in [start_brace, start_bracket] if i != -1]
+        start = min(candidates) if candidates else 0
+        segment = cleaned[start:]
+        # Try a naive end at the last closing brace/bracket
+        end_brace = segment.rfind("}")
+        end_bracket = segment.rfind("]")
+        end_candidates = [i for i in [end_brace, end_bracket] if i != -1]
+        end = max(end_candidates) if end_candidates else len(segment) - 1
+        return segment[: end + 1]
+
+    try:
+        payload = _extract_first_json_segment(raw)
+        data = _json.loads(payload)
+        return schema.model_validate(data)
+    except Exception:
+        if not strict:
+            try:
+                data = _json.loads(raw)
+                return schema.model_validate(data)
+            except Exception:
+                pass
+        # Re-raise a clear error for callers to handle
+        raise ValueError(
+            f"Failed to parse model response into the expected schema.\nSchema: {schema}\nData: {data}"
+        )

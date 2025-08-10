@@ -1,15 +1,22 @@
 # %%
+import logging
 import os
 import re
 from collections import defaultdict
 from operator import add
-from typing import Annotated
+from typing import Annotated, Any, Dict
 
-import litellm
 import pandas as pd
 from IPython.display import Image, display
 from langchain_core.runnables.graph import MermaidDrawMethod
 from langgraph.graph import END, START, StateGraph
+from tenacity import (
+    RetryError,
+    before_sleep_log,
+    retry,
+    stop_after_attempt,
+    wait_exponential_jitter,
+)
 from typing_extensions import TypedDict
 
 import agent_k.config.general as config_general
@@ -25,13 +32,17 @@ from agent_k.config.schemas import (
 )
 from agent_k.notebooks.agentic_rag_v5 import create_markdown_retriever
 from agent_k.tools.python_code_interpreter import PythonExecTool
+from paper.experiments.utils import invoke_model_messages
 
 # %% [markdown]
 # # Configs
 
 # %%
 # MODEL = "gpt-4o-mini-2024-07-18"
-MODEL = "o4-mini"
+# MODEL = "o4-mini"
+# MODEL = "gpt-oss-20b"
+# MODEL = "Llama-3.3-70B-Instruct"
+MODEL = "gemini-2.5-flash"
 TEMPERATURE = 0.1
 
 STEP_BACK_PROMPT = """Given a question that requires numerical reasoning, step back and think about the domain knowledge, math formula and relevant numerical value names required to solve the question. Generate a few examples that covers differnt corner cases without calculating the answer to help yourself understand the question better.
@@ -75,17 +86,16 @@ class GraphState(TypedDict):
 def step_back(state: GraphState):
     logger.info("--STEP BACK PROMPTING--")
 
-    response = litellm.completion(
-        model=MODEL,
-        temperature=TEMPERATURE,
+    content = invoke_model_messages(
+        model_name=MODEL,
         messages=[
             {
                 "role": "user",
                 "content": STEP_BACK_PROMPT.format(question=state["question"]),
             }
         ],
+        temperature=TEMPERATURE,
     )
-    content = response["choices"][0]["message"]["content"]
     return {
         "messages": [
             {
@@ -100,9 +110,8 @@ def step_back(state: GraphState):
 def extract(state: GraphState):
     logger.info("--EXTRACTING RELEVANT VALUES FROM THE CONTEXT--")
 
-    response = litellm.completion(
-        model=MODEL,
-        temperature=TEMPERATURE,
+    content = invoke_model_messages(
+        model_name=MODEL,
         messages=[
             *state["messages"],
             {
@@ -112,8 +121,8 @@ def extract(state: GraphState):
                 ),
             },
         ],
+        temperature=TEMPERATURE,
     )
-    content = response["choices"][0]["message"]["content"]
     return {
         "messages": [
             {
@@ -131,9 +140,8 @@ def program_reasoner(state: GraphState):
     logger.info("--GENERATING PYTHON PROGRAM TO ANSWER THE QUESTION--")
 
     user_prompt = PROGRAM_REASONER_USER_PROMPT.format(question=state["question"])
-    response = litellm.completion(
-        model=MODEL,
-        temperature=TEMPERATURE,
+    content = invoke_model_messages(
+        model_name=MODEL,
         messages=[
             *state["messages"],
             {
@@ -141,8 +149,8 @@ def program_reasoner(state: GraphState):
                 "content": user_prompt,
             },
         ],
+        temperature=TEMPERATURE,
     )
-    content = response["choices"][0]["message"]["content"]
     return {
         "messages": [
             {"role": "user", "content": user_prompt},
@@ -193,36 +201,38 @@ def build_graph(viz: bool = False):
 
 
 # %%
-if __name__ == "__main__":
-    question = QUESTION_TEMPLATE.format(
-        field="total_mineral_resource_tonnage",
-        dtype="float",
-        default=0,
-        description=TOTAL_MINERAL_RESOURCE_TONNAGE_DESCRIPTION,
+def invoke_graph_with_retries(
+    graph_inputs: Dict[str, Any], max_retries: int = 5
+) -> Dict[str, Any]:
+    """Invoke the compiled graph with retry logic using tenacity.
+
+    Args:
+        graph_inputs: Input dictionary passed to the graph.
+        max_retries: Maximum number of attempts before giving up.
+
+    Returns:
+        The graph result dictionary on success.
+
+    Raises:
+        Exception: If invocation fails for all retry attempts.
+    """
+
+    @retry(
+        reraise=True,
+        stop=stop_after_attempt(max_retries),
+        wait=wait_exponential_jitter(initial=0.5, max=4.0),
+        before_sleep=before_sleep_log(logger, logging.WARNING),
     )
+    def _invoke_graph(graph_inputs: Dict[str, Any]) -> Dict[str, Any]:
+        """Invoke the graph a single time; retries handled by decorator."""
+        graph = build_graph()
+        return graph.invoke(graph_inputs, config={"recursion_limit": 12})
 
-    retriever = create_markdown_retriever(
-        "paper/data/processed/43-101-refined/0200a1c6d2cfafeb485d815d95966961d4c119e8662b8babec74e05b59ba4759d2.md",
-        collection_name="rag-chroma",
-    )
+    try:
+        return _invoke_graph(graph_inputs)
+    except RetryError as err:  # Exhausted retries
+        raise Exception("Graph invocation failed after retries") from err
 
-    documents = retriever.invoke(question)
-
-    graph_inputs = {
-        "question": question,
-        "context": documents,
-    }
-
-    # Compile graph and invoke
-    graph = build_graph()
-    result = graph.invoke(graph_inputs, config={"recursion_limit": 12})
-
-    for message in result["messages"]:
-        logger.debug(message)
-
-    # Final generation
-    logger.info("---FINAL GENERATION---")
-    logger.info(result["answer"])
 
 # %% [markdown]
 # # Run Experiments
@@ -256,7 +266,18 @@ complex_properties = [
 ]
 
 
-def run_experiment(gt_path: str, output_dir: str):
+def run_experiment(gt_path: str, output_dir: str) -> None:
+    """Run the extraction experiment over a ground-truth CSV.
+
+    For each row and each complex property, retrieve context and invoke the
+    reasoning graph. The graph invocation is retried up to 5 times per property
+    if exceptions occur; on persistent failure, a sentinel value of -1 is
+    recorded and processing continues with the next property.
+
+    Args:
+        gt_path: Path to the ground-truth CSV file.
+        output_dir: Directory where incremental CSV outputs are written.
+    """
     os.makedirs(output_dir, exist_ok=True)
     df_gt = pd.read_csv(gt_path)
 
@@ -304,12 +325,18 @@ def run_experiment(gt_path: str, output_dir: str):
                 "question": question,
                 "context": documents,
             }
-            # Compile graph and invoke
-            graph = build_graph()
-            result = graph.invoke(graph_inputs, config={"recursion_limit": 12})
+            # Compile graph and invoke with retries
+            try:
+                result = invoke_graph_with_retries(graph_inputs, max_retries=5)
+            except Exception as err:
+                logger.exception(
+                    f"Failed to invoke graph for property '{property_name}' after retries: {err}"
+                )
+                row_template[property_name] = -1
+                continue
 
-            # Parse the integer or float number from the answer using regex
-            match = re.search(r"(\d+\.\d+)", result["answer"])
+            # Parse the integer or float number from the answer using regex. Make decimal point optional.
+            match = re.search(r"(\d+(\.\d*)?)", result["answer"])
             if match is None:
                 logger.error(f"No float number found in the answer: {result['answer']}")
                 row_template[property_name] = -1

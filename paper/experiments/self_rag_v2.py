@@ -13,24 +13,23 @@
 # %%
 from typing import Any, List
 
+from dotenv import load_dotenv
 from IPython.display import Image, display
-from langchain_core.output_parsers import StrOutputParser
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_openai import ChatOpenAI
 from langgraph.graph import END, START, StateGraph
-from openai import OpenAI
 from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
 
 import agent_k.config.experiment_config as config_experiment
 from agent_k.config.logger import logger
 from agent_k.config.schemas import TOTAL_MINERAL_RESOURCE_TONNAGE_DESCRIPTION
-from agent_k.notebooks.agentic_rag_v5 import create_markdown_retriever
-from agent_k.utils.general import (
-    prompt_openai_assistant,
+from paper.experiments.utils import (
+    create_markdown_retriever,
+    invoke_json,
+    invoke_model_messages,
 )
 
-CLIENT = OpenAI()
+load_dotenv()
+
 
 # %%
 ### Retrieval Grader
@@ -47,108 +46,30 @@ class GradeDocuments(BaseModel):
     )
 
 
-# LLM with function call
-llm = ChatOpenAI(
-    model=config_experiment.SELF_RAG_GRADE_RETRIEVAL_MODEL,
-    temperature=config_experiment.SELF_RAG_GRADE_RETRIEVAL_TEMPERATURE,
-)
-structured_llm_grader = llm.with_structured_output(GradeDocuments)
-
-# Prompt
-system = """You are a grader assessing relevance of a retrieved document to a user question. \n
-    It does not need to be a stringent test. The goal is to filter out erroneous retrievals. \n
-    If the document contains keyword(s) or semantic meaning related to the user question, grade it as relevant. \n
-    Give a binary score 'yes' or 'no' score to indicate whether the document is relevant to the question."""
-
 QUESTION_TEMPLATE = """**Question:** What's the {field} of the mineral site in the attached 43-101 report?
 **Data type of {field}:** {dtype}
 **Default value of {field} if not found:** {default}
 **Description of {field}:** {description}"""
 
-grade_prompt = ChatPromptTemplate.from_messages(
-    [
-        ("system", system),
-        ("human", "Retrieved document: \n\n {document} \n\n User question: {question}"),
-    ]
-)
 
-retrieval_grader = grade_prompt | structured_llm_grader
+# Retrieval grader prompts (plain strings)
+RETRIEVAL_GRADER_SYSTEM_PROMPT = """
+You are a grader assessing relevance of a retrieved document to a user question. No need to be super strict.
+If the document contains keywords or semantic meaning related to the question, consider it relevant.
 
-# %%
-### Generate
-
-# Deep Extraction Assistant
-DEEP_EXTRACT_SYSTEM_PROMPT = """You are an advanced AI assistant that answers questions based on the attached NI 43-101 mineral report. Your responses should be grounded in the report's content using the code interpreter tool for numerical calculations if needed.
-
-## Response Workflow:
-1. Perform Aggregations (If Needed): Use the code interpreter tool for operations like summation, averaging, or other calculations.
-2. Structure the Response Correctly: Format your final output with XML tags as follows:
-    - Reasoning: Explain your retrieval or computation process within `<thinking>` tags.
-    - Final Answer: Provide the final response within `<answer>` tags. Do not include other extra XML tags (e.g., `<answer>`) or filler words.
-
-## Key Constraints:
-- No Hallucination: If the required information is unavailable, return the default value specified in the JSON schema in the `<answer>` tag.
+## Output format
+- Respond with a single JSON object that conforms to the JSON schema (Pydantic v2): {schema}
 """
 
-GENERATION_USER_PROMPT_WO_FEEDBACK = """You are an assistant for question-answering tasks. Use the following pieces of retrieved context to answer the question. If you don't know the answer, just return the default value of the field in the question.
+RETRIEVAL_GRADER_USER_PROMPT = """Retrieved document:\n\n{document}
 
-{question}
-**Context:** {context}
+User question:\n\n{question}
+
 ---
-Now take a deep breath and answer the question step by step."""
-
-prompt_wo_feedback = ChatPromptTemplate.from_messages(
-    [
-        ("system", DEEP_EXTRACT_SYSTEM_PROMPT),
-        ("human", GENERATION_USER_PROMPT_WO_FEEDBACK),
-    ]
-)
-
-# LLM
-if config_experiment.SELF_RAG_GENERATION_MODEL in ["o3-mini", "o4-mini"]:
-    llm = ChatOpenAI(
-        model=config_experiment.SELF_RAG_GENERATION_MODEL,
-    )
-else:
-    llm = ChatOpenAI(
-        model=config_experiment.SELF_RAG_GENERATION_MODEL,
-        temperature=config_experiment.SELF_RAG_GENERATION_TEMPERATURE,
-    )
-
-
-# Post-processing
-def format_docs(docs):
-    return "\n\n".join(doc.page_content for doc in docs)
-
-
-# Chain
-rag_chain_wo_feedback = prompt_wo_feedback | llm | StrOutputParser()
-
-### Alternative RAG chain using OpenAI Assistant
-
-
-# OpenAI Assistant with code interpreter tool
-def deep_extract_wo_feedback(question, context):
-    # Use the same assistant for all deep extraction
-    assistant = CLIENT.beta.assistants.retrieve("asst_ScLkkCGSfMVgR8xEWkRDbZMq")
-
-    messages = [
-        {
-            "role": "user",
-            "content": GENERATION_USER_PROMPT_WO_FEEDBACK.format(
-                question=question,
-                context=context,
-            ),
-        },
-    ]
-
-    content = prompt_openai_assistant(assistant, messages)
-
-    return content
-
+Grade the document relevance and return only JSON per the JSON schema."""
 
 # %%
-### Hallucination Grader
+### Hallucination Grader (provider-agnostic JSON)
 
 
 # Data model
@@ -163,42 +84,24 @@ class GradeHallucinations(BaseModel):
     )
 
 
-# LLM with function call
-if config_experiment.SELF_RAG_GRADE_HALLUCINATION_MODEL in ["o3-mini", "o4-mini"]:
-    llm = ChatOpenAI(
-        model=config_experiment.SELF_RAG_GRADE_HALLUCINATION_MODEL,
-    )
-else:
-    llm = ChatOpenAI(
-        model=config_experiment.SELF_RAG_GRADE_HALLUCINATION_MODEL,
-        temperature=config_experiment.SELF_RAG_GRADE_HALLUCINATION_TEMPERATURE,
-    )
-structured_llm_grader = llm.with_structured_output(GradeHallucinations)
-
-# Prompt
-system = """You are a grader validating whether an LLM generation is hallucinated based on a set of retrieved documents from a NI 43-101 mineral report.
-
-Guidelines:
-1. Mineral resources are composed of inferred, indicated, and measured resources. If none of the retrieved documents mention inferred, indicated, or measured resources, check if the LLM generation contains a default value of 0 for total mineral resource tonnage.
-2. Mineral reserves are composed of proven and probable reserves. If none of the retrieved documents mention proven or probable reserves, check if the LLM generation contains a default value of 0 for total mineral reserve tonnage.
-3. Check if the units of the mineral resources or reserves in the retrieved documents are consistent with the units of the mineral resources or reserves in the LLM generation. Especially pay attention if the retrieved documents mention "Tonnes 000" or something similar, which means that the tonnage is in thousands of tonnes.
-4. Check if the final numerical answer is enclosed in `<answer>` XML tags without any other XML tags, filler words, or explicit unit.
-
-Give a binary score 'yes' or 'no' and show your reasoning. 'Yes' means that the answer is hallucinated based on the set of retrieved documents."""
-hallucination_prompt = ChatPromptTemplate.from_messages(
-    [
-        ("system", system),
-        (
-            "human",
-            "Set of retrieved documents: \n\n {documents} \n\n LLM generation: {generation}",
-        ),
-    ]
+HALLUCINATION_GRADER_SYSTEM_PROMPT = (
+    "You are a grader validating whether an LLM generation is hallucinated based on a set of retrieved documents from a NI 43-101 mineral report.\n\n"
+    "Guidelines:\n"
+    "1. Mineral resources are composed of inferred, indicated, and measured resources. If none of the retrieved documents mention inferred, indicated, or measured resources, check if the LLM generation contains a default value of 0 for total mineral resource tonnage.\n"
+    "2. Mineral reserves are composed of proven and probable reserves. If none of the retrieved documents mention proven or probable reserves, check if the LLM generation contains a default value of 0 for total mineral reserve tonnage.\n"
+    '3. Check if the units of the mineral resources or reserves in the retrieved documents are consistent with the units of the mineral resources or reserves in the LLM generation. Especially pay attention if the retrieved documents mention "Tonnes 000" or something similar, which means that the tonnage is in thousands of tonnes.\n'
+    "4. Check if the final numerical answer is enclosed in `<answer>` XML tags without any other XML tags, filler words, or explicit unit.\n\n"
+    "Respond with a single JSON object and nothing else. Schema: "
+    '{"reasoning": string, "binary_score": "yes" | "no"}'
 )
 
-hallucination_grader = hallucination_prompt | structured_llm_grader
+HALLUCINATION_GRADER_USER_PROMPT = (
+    "Set of retrieved documents:\n\n{documents}\n\nLLM generation:\n\n{generation}\n\n"
+    "Return only JSON per the schema."
+)
 
 # %%
-### Answer Grader
+### Answer Grader (provider-agnostic JSON)
 
 
 # Data model
@@ -213,55 +116,27 @@ class GradeAnswer(BaseModel):
     )
 
 
-# LLM with function call
-if config_experiment.SELF_RAG_GRADE_ANSWER_MODEL in ["o3-mini", "o4-mini"]:
-    llm = ChatOpenAI(
-        model=config_experiment.SELF_RAG_GRADE_ANSWER_MODEL,
-    )
-else:
-    llm = ChatOpenAI(
-        model=config_experiment.SELF_RAG_GRADE_ANSWER_MODEL,
-        temperature=config_experiment.SELF_RAG_GRADE_ANSWER_TEMPERATURE,
-    )
-structured_llm_grader = llm.with_structured_output(GradeAnswer)
-
-# Prompt
-system = """You are a grader assessing whether an answer addresses / resolves a question.
+ANSWER_GRADER_SYSTEM_PROMPT = """
+You are a grader assessing whether an answer addresses / resolves a question.
 
 Sometimes a default value is returned because the retrieved documents do not contain relevant information. In this case, the answer should be 'yes' because the default value is still a valid answer to the question.
 
-Give a binary score 'yes' or 'no'. Yes' means that the answer resolves the question."""
-answer_prompt = ChatPromptTemplate.from_messages(
-    [
-        ("system", system),
-        ("human", "{question} \n\n LLM generation: {generation}"),
-    ]
-)
+## Output format
+- Respond with a single JSON object and nothing else. JSON schema (Pydantic v2): {schema}
+"""
 
-answer_grader = answer_prompt | structured_llm_grader
+ANSWER_GRADER_USER_PROMPT = """Question:\n\n{question}\n\nLLM generation:\n\n{generation}\n\nReturn only JSON per the schema."""
 
 # %%
 ### Question Re-writer
 
-# LLM
-llm = ChatOpenAI(
-    model=config_experiment.SELF_RAG_QUESTION_REWRITER_MODEL,
-    temperature=config_experiment.SELF_RAG_QUESTION_REWRITER_TEMPERATURE,
+# Provider-agnostic question rewriter
+QUESTION_REWRITE_SYSTEM_PROMPT = (
+    "You are a question re-writer that converts an input question to a better version "
+    "optimized for vectorstore retrieval. Consider semantic intent."
 )
 
-# Prompt
-system = """You a question re-writer that converts an input question to a better version that is optimized for vectorstore retrieval. Look at the input and try to reason about the underlying semantic intent / meaning."""
-re_write_prompt = ChatPromptTemplate.from_messages(
-    [
-        ("system", system),
-        (
-            "human",
-            "Here is the initial question: \n\n ---\n{question}\n--- \n\n Formulate an improved question.",
-        ),
-    ]
-)
-
-question_rewriter = re_write_prompt | llm | StrOutputParser()
+QUESTION_REWRITE_USER_PROMPT = "Here is the initial question:\n\n---\n{question}\n---\n\nFormulate an improved question."
 
 # %% [markdown]
 # # Graph
@@ -312,6 +187,38 @@ def retrieve(state):
     return {"documents": documents}
 
 
+# %%
+### Generate (provider-agnostic)
+
+# Deep Extraction prompts
+DEEP_EXTRACT_SYSTEM_PROMPT = """You are an advanced AI assistant that answers questions based on the attached NI 43-101 mineral report snippets. Your responses should be grounded in the report's content using the code interpreter tool for numerical calculations if needed.
+
+## Output Format
+- Reasoning: Explain your retrieval or computation process within `<thinking>` XML tags.
+- Final Answer: Provide the final response within `<answer>` XML tags.
+
+## Key Constraints
+- No Hallucination: If the required information is unavailable, return the default value specified in the JSON schema in the `<answer>` tag.
+"""
+
+GENERATION_USER_PROMPT_W_FEEDBACK = """You are an assistant for question-answering tasks. Use the following pieces of retrieved context to answer the question. If you don't know the answer, just return the default value of the field in the question.
+
+{question}
+
+**Context:**
+{context}
+
+**Feedback:**
+{feedback}
+---
+Now take a deep breath and return only the final answer wrapped in XML tags."""
+
+
+# Post-processing
+def format_docs(docs):
+    return "\n\n".join(doc.page_content for doc in docs)
+
+
 def generate(state):
     """
     Generate answer
@@ -327,31 +234,22 @@ def generate(state):
     documents = state["documents"]
     hallucination_grade = state["hallucination_grade"]
     hallucination_grader_reasoning = state["hallucination_grader_reasoning"]
+    feedback = f"Hallucination grade: {hallucination_grade}\nHallucination grader reasoning: {hallucination_grader_reasoning}"
 
-    if hallucination_grade == "no" and hallucination_grader_reasoning:
-        # RAG generation with hallucination grader feedback
-        previous_generation = state["generation"]
-        # Note: Set to always use without feedback to mirror the original implementation
-        generation = rag_chain_wo_feedback.invoke(
-            {
-                "context": documents,
-                "question": question,
-                # "previous_generation": previous_generation,
-                # "hallucination_grader_reasoning": hallucination_grader_reasoning,
-            }
-        )
-        # generation = deep_extract_w_feedback(
-        #     question, documents, previous_generation, hallucination_grader_reasoning
-        # )
-    else:
-        # Initial RAG generation without hallucination grader feedback
-        generation = rag_chain_wo_feedback.invoke(
-            {
-                "context": documents,
-                "question": question,
-            }
-        )
-        # generation = deep_extract_wo_feedback(question, documents)
+    # Provider-agnostic generation (no feedback path for now, to match original behavior)
+    system_prompt = DEEP_EXTRACT_SYSTEM_PROMPT
+    user_prompt = GENERATION_USER_PROMPT_W_FEEDBACK.format(
+        question=question, context=format_docs(documents), feedback=feedback
+    )
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_prompt},
+    ]
+    generation = invoke_model_messages(
+        model_name=config_experiment.SELF_RAG_GENERATION_MODEL,
+        messages=messages,
+        temperature=config_experiment.SELF_RAG_GENERATION_TEMPERATURE,
+    )
 
     return {"generation": generation}
 
@@ -371,13 +269,27 @@ def grade_documents(state):
     question = state["question"]
     documents = state["documents"]
 
-    # Score each doc
+    # Score each doc via provider-agnostic JSON grader
     filtered_docs = []
     for d in documents:
-        score = retrieval_grader.invoke(
-            {"question": question, "document": d.page_content}
+        user_prompt = RETRIEVAL_GRADER_USER_PROMPT.format(
+            document=d.page_content, question=question
         )
-        grade = score.binary_score
+        system_prompt = RETRIEVAL_GRADER_SYSTEM_PROMPT.format(
+            schema=GradeDocuments.model_json_schema()
+        )
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ]
+
+        score = invoke_json(
+            model_name=config_experiment.SELF_RAG_GRADE_RETRIEVAL_MODEL,
+            messages=messages,
+            temperature=config_experiment.SELF_RAG_GRADE_RETRIEVAL_TEMPERATURE,
+            schema=GradeDocuments,
+        )
+        grade = (score.binary_score or "").strip().lower()
         if grade == "yes":
             logger.info("---GRADE: DOCUMENT RELEVANT---")
             filtered_docs.append(d)
@@ -403,8 +315,17 @@ def transform_query(state):
     question = state["question"]
     documents = state["documents"]
 
-    # Re-write question
-    better_question = question_rewriter.invoke({"question": question})
+    # Re-write question via provider-agnostic call
+    user = QUESTION_REWRITE_USER_PROMPT.format(question=question)
+    messages = [
+        {"role": "system", "content": QUESTION_REWRITE_SYSTEM_PROMPT},
+        {"role": "user", "content": user},
+    ]
+    better_question = invoke_model_messages(
+        model_name=config_experiment.SELF_RAG_QUESTION_REWRITER_MODEL,
+        messages=messages,
+        temperature=config_experiment.SELF_RAG_QUESTION_REWRITER_TEMPERATURE,
+    )
     return {"documents": documents, "question": better_question}
 
 
@@ -421,11 +342,21 @@ def check_hallucination(state):
     documents = state["documents"]
     generation = state["generation"]
 
-    score = hallucination_grader.invoke(
-        {"documents": documents, "generation": generation}
+    user = HALLUCINATION_GRADER_USER_PROMPT.format(
+        documents=format_docs(documents), generation=generation
     )
-    grade = score.binary_score
-    hallucination_grader_reasoning = score.reasoning
+    messages = [
+        {"role": "system", "content": HALLUCINATION_GRADER_SYSTEM_PROMPT},
+        {"role": "user", "content": user},
+    ]
+    score = invoke_json(
+        model_name=config_experiment.SELF_RAG_GRADE_HALLUCINATION_MODEL,
+        messages=messages,
+        temperature=config_experiment.SELF_RAG_GRADE_HALLUCINATION_TEMPERATURE,
+        schema=GradeHallucinations,
+    )
+    grade = (score.binary_score or "").strip().lower()
+    hallucination_grader_reasoning = getattr(score, "reasoning", "")
 
     return {
         "hallucination_grade": grade,
@@ -446,9 +377,24 @@ def check_answers_question(state):
     question = state["question"]
     generation = state["generation"]
 
-    score = answer_grader.invoke({"question": question, "generation": generation})
-    grade = score.binary_score
-    answer_grader_reasoning = score.reasoning
+    system_prompt = ANSWER_GRADER_SYSTEM_PROMPT.format(
+        schema=GradeAnswer.model_json_schema()
+    )
+    user_prompt = ANSWER_GRADER_USER_PROMPT.format(
+        question=question, generation=generation
+    )
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_prompt},
+    ]
+    score = invoke_json(
+        model_name=config_experiment.SELF_RAG_GRADE_ANSWER_MODEL,
+        messages=messages,
+        temperature=config_experiment.SELF_RAG_GRADE_ANSWER_TEMPERATURE,
+        schema=GradeAnswer,
+    )
+    grade = (score.binary_score or "").strip().lower()
+    answer_grader_reasoning = getattr(score, "reasoning", "")
 
     return {
         "answer_grade": grade,
@@ -524,12 +470,10 @@ def answer_quality_router(state):
         return "not_useful"
 
 
-# %% [markdown]
-# ## Build Graph
-#
-
-
 # %%
+# Build Graph
+
+
 def viz_graph(graph):
     try:
         display(Image(graph.get_graph().draw_mermaid_png()))

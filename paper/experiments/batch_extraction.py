@@ -12,8 +12,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import litellm
 import pandas as pd
-from google import genai
-from openai import OpenAI
+import yaml
 from pydantic import BaseModel
 
 import agent_k.config.experiment_config as config_experiment
@@ -21,25 +20,17 @@ import agent_k.config.general as config_general
 import agent_k.config.prompts_fast_n_slow as prompts_fast_n_slow
 from agent_k.config.logger import logger
 from agent_k.config.schemas import create_dynamic_mineral_model
-from paper.experiments.utils import count_tokens, create_markdown_retriever
-
-hf_router_client = OpenAI(
-    base_url="https://router.huggingface.co/v1",
-    api_key=os.environ.get("HF_TOKEN"),
+from paper.experiments.utils import (
+    ContextLengthExceededError,
+    count_tokens,
+    create_markdown_retriever,
+    detect_provider_and_remote_model,
+    invoke_json,
 )
-
-google_genai_client = genai.Client()
-
-litellm.drop_params = True  # Ignore temperature parameter if model doesn't support it
-
 
 # --------------------------------------------------------------------------------------
 # Provider-agnostic model invocation and structured-output helpers
 # --------------------------------------------------------------------------------------
-
-
-class ContextLengthExceededError(Exception):
-    """Raised when the input context exceeds a model's maximum context length."""
 
 
 class ModelProviderError(Exception):
@@ -48,30 +39,6 @@ class ModelProviderError(Exception):
 
 class StructuredOutputParseError(Exception):
     """Raised when the model's output cannot be parsed into the expected schema."""
-
-
-def _detect_provider_and_remote_model(model_name: str) -> Tuple[str, str]:
-    """Detect provider and map to the remote model identifier if needed.
-
-    Returns a tuple of (provider, remote_model_name).
-    Provider can be one of: "openai", "hf_router", "gemini".
-    """
-
-    name = model_name.strip()
-    name = name.lower()
-
-    # Gemini
-    if name.startswith("gemini-"):
-        return "gemini", name
-
-    # HF router via OpenAI-compatible API
-    if "gpt-oss-20b" in name:
-        return "hf_router", "openai/gpt-oss-20b:groq"
-    if "llama-3.3-70b" in name:
-        return "hf_router", "meta-llama/Llama-3.3-70B-Instruct:groq"
-
-    # Default to OpenAI (or OpenAI-compatible) through litellm
-    return "openai", name
 
 
 def _json_schema_from_model(pydantic_model: BaseModel) -> Dict[str, Any]:
@@ -143,63 +110,10 @@ def _extract_first_json(text: str) -> str:
     return sliced.strip() if sliced else cleaned
 
 
-def _invoke_model_messages(model_name: str, messages: List[Dict[str, str]]) -> str:
-    """Invoke a chat model across multiple providers and return assistant text."""
-
-    provider, remote = _detect_provider_and_remote_model(model_name)
-
-    if provider == "openai":
-        response = litellm.completion(model=remote, messages=messages)
-        return response.choices[0].message.content
-
-    if provider == "hf_router":
-        try:
-            result = hf_router_client.chat.completions.create(
-                model=remote,
-                messages=messages,
-                temperature=config_experiment.BATCH_EXTRACTION_TEMPERATURE,
-            )
-            return result.choices[0].message.content or ""
-        except Exception as e:
-            msg = str(e).lower()
-            if (
-                "maximum context" in msg
-                or "context length" in msg
-                or "too many tokens" in msg
-            ):
-                raise ContextLengthExceededError(str(e))
-            raise ModelProviderError(f"HF Router call failed: {e}")
-
-    if provider == "gemini":
-        try:
-            system_parts = [m["content"] for m in messages if m["role"] == "system"]
-            user_parts = [m["content"] for m in messages if m["role"] == "user"]
-            prompt = "\n\n".join(system_parts + user_parts)
-            response = google_genai_client.models.generate_content(
-                model=remote,
-                contents=prompt,
-                config=genai.types.GenerateContentConfig(
-                    temperature=config_experiment.BATCH_EXTRACTION_TEMPERATURE
-                ),
-            )
-            return getattr(response, "text", "")
-        except Exception as e:
-            msg = str(e).lower()
-            if (
-                "maximum context" in msg
-                or "context length" in msg
-                or "too many tokens" in msg
-            ):
-                raise ContextLengthExceededError(str(e))
-            raise ModelProviderError(f"Gemini call failed: {e}")
-
-    raise ModelProviderError(f"Unknown provider for model: {model_name}")
-
-
 def _supports_native_structured_output(model_name: str) -> bool:
     """Return True if we should leverage native structured outputs (OpenAI via litellm)."""
 
-    provider, _ = _detect_provider_and_remote_model(model_name)
+    provider, _ = detect_provider_and_remote_model(model_name)
     return provider == "openai"
 
 
@@ -297,17 +211,21 @@ def batch_extract_long_context(
             },
             {"role": "user", "content": user_prompt},
         ]
+        # Prefer invoke_json to get validation and robust JSON extraction
         try:
-            content = _invoke_model_messages(model_name=model_name, messages=messages)
+            parsed = invoke_json(
+                model_name=model_name,
+                messages=messages,
+                temperature=config_experiment.BATCH_EXTRACTION_TEMPERATURE,
+                schema=pydantic_model,
+                strict=False,
+            )
+            content = parsed.model_dump_json()
         except ContextLengthExceededError:
             logger.warning(
                 f"[Batch Extraction] Context too long for {model_name} on {cdr_record_id} (invoke)."
             )
             raise
-
-        try:
-            content = _extract_first_json(content)
-            json.loads(content)
         except Exception as e:
             raise StructuredOutputParseError(
                 f"Failed to parse JSON from model output for {cdr_record_id}: {e}"
@@ -398,10 +316,15 @@ def batch_extract_rag_based(
             },
             {"role": "user", "content": user_prompt},
         ]
-        content = _invoke_model_messages(model_name=model_name, messages=messages)
         try:
-            content = _extract_first_json(content)
-            json.loads(content)
+            parsed = invoke_json(
+                model_name=model_name,
+                messages=messages,
+                temperature=config_experiment.BATCH_EXTRACTION_TEMPERATURE,
+                schema=pydantic_model,
+                strict=False,
+            )
+            content = parsed.model_dump_json()
         except Exception as e:
             raise StructuredOutputParseError(
                 f"Failed to parse JSON from model output for {cdr_record_id}: {e}"
@@ -490,9 +413,6 @@ def run_experiment(
     logger.info(
         f"Average output tokens per row: {tokens['output_tokens'] / len(df_gt):.2f}"
     )
-
-    # Save experiment metadata to yaml file
-    import yaml
 
     max_num_results = (
         config_experiment.MAX_NUM_RETRIEVED_DOCS
