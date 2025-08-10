@@ -7,7 +7,9 @@ from enum import Enum
 # --------------------------------------------------------------------------------------
 # Batch Extraction Configs
 # --------------------------------------------------------------------------------------
-BATCH_EXTRACTION_MODEL = "gpt-4o-mini"
+# BATCH_EXTRACTION_MODEL = "gpt-oss-20b"
+# BATCH_EXTRACTION_MODEL = "Llama-3.3-70B-Instruct"
+BATCH_EXTRACTION_MODEL = "gemini-2.5-flash"
 BATCH_EXTRACTION_TEMPERATURE = 0.1
 
 
@@ -23,7 +25,7 @@ MAX_NUM_RETRIEVED_DOCS = 5
 # --------------------------------------------------------------------------------------
 # PDF Extraction Eval Configs
 # --------------------------------------------------------------------------------------
-PDF_EXTRACTION_SAMPLE_SIZE = 1
+PDF_EXTRACTION_SAMPLE_SIZE = None
 
 
 class ExtractionMethod(Enum):
@@ -51,7 +53,7 @@ SELF_RAG_QUESTION_REWRITER_TEMPERATURE = 0.5
 
 
 # --------------------------------------------------------------------------------------
-# Our method configs
+# Our method configs (Agentic RAG)
 # --------------------------------------------------------------------------------------
 # OUR_METHOD_MODEL = "gpt-4.1-2025-04-14"
 OUR_METHOD_MODEL = "gpt-4o-mini-2024-07-18"
@@ -88,7 +90,6 @@ GRADE_RETRIEVAL_TEMPERATURE = OUR_METHOD_TEMPERATURE
 
 # Code ReACT Agent Configs
 PYTHON_AGENT_MODEL = OUR_METHOD_MODEL
-# Choose lower temperature to make generated code more deterministic (done an experiment with temp = 1 vs. 0.1)
 PYTHON_AGENT_TEMPERATURE = OUR_METHOD_TEMPERATURE
 
 GRADE_HALLUCINATION_MODEL = OUR_METHOD_MODEL

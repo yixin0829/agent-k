@@ -39,7 +39,7 @@ def load_data_and_process() -> pd.DataFrame:
 
     # Note: Load PDF extraction data. Can be replaced with the following line to load a specific extraction file
     agent_extractions = [
-        "paper/data/experiments/250629_extract_reason_exec/o4-mini/2025-08-02_17-00-00_ere_extraction.csv"
+        "paper/data/experiments/rag_batch_extraction/llama-3.3-70b/2025-08-09_20-33-26_batch_extraction.csv"
     ]
     df_pdf_agent_extraction = pd.concat(
         [pd.read_csv(agent_extraction) for agent_extraction in agent_extractions]
