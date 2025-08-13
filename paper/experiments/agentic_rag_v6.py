@@ -5,7 +5,6 @@ from typing import Annotated, Any, List
 import litellm
 from dotenv import load_dotenv
 from langgraph.graph import END, START, StateGraph
-from openai import OpenAI
 from typing_extensions import TypedDict
 
 import agent_k.config.experiment_config as config_experiment
@@ -18,11 +17,14 @@ from agent_k.config.schemas import (
 )
 from agent_k.tools.python_code_interpreter import PythonExecTool
 from agent_k.utils.general import extract_xml
-from paper.experiments.utils import count_tokens, create_markdown_retriever
+from paper.experiments.utils import (
+    count_tokens,
+    create_markdown_retriever,
+    invoke_model_messages,
+)
 
 load_dotenv()
 
-CLIENT = OpenAI()
 litellm.drop_params = True  # Ignore temperature parameter if model doesn't support it
 
 
@@ -90,23 +92,21 @@ def retrieve(state: GraphState):
             md_content_token_count = count_tokens(md_content)
             logger.info(f"MD content token count: {md_content_token_count}")
 
-        # call gpt-4.1-mini-2025-04-14 to retrieve relevant snippets from the document
-        response = litellm.completion(
-            model=config_experiment.RETRIEVAL_MODEL,
+        # call model to retrieve relevant snippets from the document
+        messages = [
+            {"role": "system", "content": RETRIEVAL_SYSTEM_PROMPT},
+            {
+                "role": "user",
+                "content": RETRIEVAL_USER_PROMPT.format(
+                    md_content=md_content, question=question
+                ),
+            },
+        ]
+        content = invoke_model_messages(
+            model_name=config_experiment.RETRIEVAL_MODEL,
+            messages=messages,
             temperature=config_experiment.RETRIEVAL_TEMPERATURE,
-            messages=[
-                {"role": "system", "content": RETRIEVAL_SYSTEM_PROMPT},
-                {
-                    "role": "user",
-                    "content": RETRIEVAL_USER_PROMPT.format(
-                        md_content=md_content, question=question
-                    ),
-                },
-            ],
-            max_tokens=10000,
         )
-
-        content = response["choices"][0]["message"]["content"]
         documents = [content]
 
     return {"documents": documents}
@@ -138,16 +138,15 @@ def extract(state: GraphState):
         context=state["documents"],
         question=state["question"],
     )
-    response = litellm.completion(
-        model=config_experiment.PYTHON_AGENT_MODEL,
+    messages = [
+        {"role": "system", "content": DEEP_EXTRACT_SYSTEM_PROMPT},
+        {"role": "user", "content": user_prompt},
+    ]
+    content = invoke_model_messages(
+        model_name=config_experiment.PYTHON_AGENT_MODEL,
+        messages=messages,
         temperature=config_experiment.PYTHON_AGENT_TEMPERATURE,
-        messages=[
-            {"role": "system", "content": DEEP_EXTRACT_SYSTEM_PROMPT},
-            {"role": "user", "content": user_prompt},
-        ],
     )
-
-    content = response["choices"][0]["message"]["content"]
     return {
         "extracted_facts": content,
         "messages": [
@@ -162,9 +161,9 @@ PROGRAM_REASONER_USER_PROMPT = """Now perform the second step by generating a py
 Please follow the following guidelines:
 1. The generated python program should be executable with correct syntax.
 2. The final answer should be assigned to the variable `ans`.
-3. The `ans` variable should be a float number.
+3. The `ans` variable should be a float number and have its unit converted correctly to tonnes (t).
 4. Enclose the python code in a code block using "```python" and "```".
-5. If there is feedback on the previous generation, please incorporate it into the python program."""
+5. If there is feedback on the previous generated python program, please incorporate it into the python program."""
 
 
 def program_reasoner(state: GraphState):
@@ -173,16 +172,16 @@ def program_reasoner(state: GraphState):
     """
 
     logger.info("---PROGRAM REASONER---")
-    response = litellm.completion(
-        model=config_experiment.PYTHON_AGENT_MODEL,
+    messages = [
+        {"role": "system", "content": DEEP_EXTRACT_SYSTEM_PROMPT},
+        *state["messages"],
+        {"role": "user", "content": PROGRAM_REASONER_USER_PROMPT},
+    ]
+    content = invoke_model_messages(
+        model_name=config_experiment.PYTHON_AGENT_MODEL,
+        messages=messages,
         temperature=config_experiment.PYTHON_AGENT_TEMPERATURE,
-        messages=[
-            {"role": "system", "content": DEEP_EXTRACT_SYSTEM_PROMPT},
-            *state["messages"],
-            {"role": "user", "content": PROGRAM_REASONER_USER_PROMPT},
-        ],
     )
-    content = response["choices"][0]["message"]["content"]
     return {
         "messages": [
             {"role": "user", "content": PROGRAM_REASONER_USER_PROMPT},
@@ -194,19 +193,20 @@ def program_reasoner(state: GraphState):
 
 # %%
 
-GRADE_HALLUCINATION_SYSTEM_PROMPT = """You are a hallucination grader validating whether there is hallucination in a LLM's generated code. Focus on the calculation logic and unit conversions.
+GRADE_HALLUCINATION_SYSTEM_PROMPT = """You are a hallucination grader validating whether there is hallucination in a LLM's generated code (Yes means hallucination, No means no hallucination). Focus on the calculation logic and unit conversions.
 
 Guidelines:
 1. Total mineral resource tonnage should be the sum of one or more of inferred, indicated, and measured mineral resources. If not, a default value of 0 should be returned.
 2. Total mineral reserve tonnage should be the sum of one or more of proven and probable mineral reserves. If not, a default value of 0 should be returned.
 3. The tonnage or grade unit used in the LLM generation should be consistent with the unit used in the retrieved documents. For example, "Tonnes 000", "Tonnes (000)", or "(000) Tonnes" mean thousand tonnes (Kt) or 1000 tonnes (t).
 4. The unit of grade should be correctly converted to decimal before used in the calculation. For example, "10% Cu" should be converted to 0.10.
-5. The final answer variable `ans` in the code should have its unit converted correctly to tonnes (t).
+5. The final answer should be assigned to the variable `ans` in the code
+6. The final answer `ans` should have its unit converted correctly to tonnes (t).
 
 Output Format:
-- Return ONLY the following XML tags, with no extra text before or after:
-  <hallucination_grade>yes or no</hallucination_grade>
-  <feedback>Your concise feedback explaining the grade and needed fixes</feedback>
+Respond strictly with the following XML tags (no introductory or extra text):
+<hallucination_grade>yes or no</hallucination_grade>
+<feedback>Brief explanation of your assessment and detected issues if any</feedback>
 """
 
 GRADE_HALLUCINATION_USER_PROMPT = """## Question
@@ -234,25 +234,25 @@ def check_hallucination(state: GraphState):
         code = msg_w_code.split("```python")[1].split("```")[0].strip()
         logger.debug(f"Code:\n{code}\n")
 
-        # Call the hallucination grader via LiteLLM (model-agnostic)
-        response = litellm.completion(
-            model=config_experiment.GRADE_HALLUCINATION_MODEL,
+        # Call the hallucination grader via provider-agnostic JSON
+        messages = [
+            {"role": "system", "content": GRADE_HALLUCINATION_SYSTEM_PROMPT},
+            {
+                "role": "user",
+                "content": GRADE_HALLUCINATION_USER_PROMPT.format(
+                    facts=state["extracted_facts"],
+                    question=state["question"],
+                    code=code,
+                ),
+            },
+        ]
+        content = invoke_model_messages(
+            model_name=config_experiment.GRADE_HALLUCINATION_MODEL,
+            messages=messages,
             temperature=config_experiment.GRADE_HALLUCINATION_TEMPERATURE,
-            messages=[
-                {"role": "system", "content": GRADE_HALLUCINATION_SYSTEM_PROMPT},
-                {
-                    "role": "user",
-                    "content": GRADE_HALLUCINATION_USER_PROMPT.format(
-                        facts=state["extracted_facts"],
-                        question=state["question"],
-                        code=code,
-                    ),
-                },
-            ],
         )
-        content = response["choices"][0]["message"]["content"]
-        grade = extract_xml(content, "hallucination_grade").strip()
-        hallucination_grader_feedback = extract_xml(content, "feedback").strip()
+        grade = extract_xml(content, "hallucination_grade")
+        hallucination_grader_feedback = extract_xml(content, "feedback")
     except IndexError:
         logger.error(f"No code block found in the last message: {msg_w_code}")
         grade = "no"
@@ -281,21 +281,20 @@ Now take a deep breath and pick the most popular code based on the previous code
 def self_consistency(state: GraphState):
     logger.info("---SELF CONSISTENCY CODE PICKER---")
 
-    response = litellm.completion(
-        model=config_experiment.PYTHON_AGENT_MODEL,
+    messages = [
+        {"role": "system", "content": SELF_CONSISTENCY_SYSTEM_PROMPT},
+        {
+            "role": "user",
+            "content": SELF_CONSISTENCY_USER_PROMPT.format(
+                previous_code="\n".join(state["previous_code"])
+            ),
+        },
+    ]
+    content = invoke_model_messages(
+        model_name=config_experiment.PYTHON_AGENT_MODEL,
+        messages=messages,
         temperature=config_experiment.PYTHON_AGENT_TEMPERATURE,
-        messages=[
-            {"role": "system", "content": SELF_CONSISTENCY_SYSTEM_PROMPT},
-            {
-                "role": "user",
-                "content": SELF_CONSISTENCY_USER_PROMPT.format(
-                    previous_code="\n".join(state["previous_code"])
-                ),
-            },
-        ],
     )
-
-    content = response["choices"][0]["message"]["content"]
 
     return {
         "messages": [{"role": "assistant", "content": f"{content}"}],
@@ -335,16 +334,15 @@ def execute(state: GraphState):
 def format_output(state: GraphState):
     logger.info("--FORMAT OUTPUT--")
 
-    response = litellm.completion(
-        model=config_experiment.PYTHON_AGENT_MODEL,
+    messages = [
+        *state["messages"],
+        {"role": "user", "content": EXECUTE_USER_PROMPT},
+    ]
+    content = invoke_model_messages(
+        model_name=config_experiment.PYTHON_AGENT_MODEL,
+        messages=messages,
         temperature=config_experiment.PYTHON_AGENT_TEMPERATURE,
-        messages=[
-            *state["messages"],
-            {"role": "user", "content": EXECUTE_USER_PROMPT},
-        ],
     )
-
-    content = response["choices"][0]["message"]["content"]
     return {
         "generation": content,
     }

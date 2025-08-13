@@ -293,10 +293,6 @@ elif config_experiment.GRADE_HALLUCINATION_MODEL in [
         model=config_experiment.GRADE_HALLUCINATION_MODEL,
         temperature=config_experiment.GRADE_HALLUCINATION_TEMPERATURE,
     )
-else:
-    raise ValueError(
-        f"Invalid hallucination model: {config_experiment.GRADE_HALLUCINATION_MODEL}"
-    )
 
 structured_llm_grader = llm.with_structured_output(GradeHallucinations)
 

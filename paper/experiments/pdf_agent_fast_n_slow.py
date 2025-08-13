@@ -47,6 +47,7 @@ from agent_k.utils.general import (
 )
 from paper.experiments.agentic_rag_v6 import graph_builder_v6
 from paper.experiments.self_rag_v2 import self_rag_graph_builder
+from paper.experiments.utils import invoke_model_messages
 
 # Global variables
 CLIENT = OpenAI()
@@ -258,12 +259,11 @@ def slow_extraction_optimizer(state: State):
         },
     ]
 
-    response = litellm.completion(
-        model=config_experiment.SLOW_EXTRACT_OPTIMIZER_MODEL,
-        temperature=config_experiment.SLOW_EXTRACT_OPTIMIZER_TEMPERATURE,
+    content = invoke_model_messages(
+        model_name=config_experiment.SLOW_EXTRACT_OPTIMIZER_MODEL,
         messages=messages,
+        temperature=config_experiment.SLOW_EXTRACT_OPTIMIZER_TEMPERATURE,
     )
-    content = response.choices[0].message.content
     parsed_json = parse_json_code_block(content)
 
     return {
@@ -302,12 +302,11 @@ def validate_extraction_result(state: State):
         },
     ]
 
-    response = litellm.completion(
-        model=config_experiment.SLOW_EXTRACT_VALIDATION_MODEL,
-        temperature=config_experiment.SLOW_EXTRACT_VALIDATION_TEMPERATURE,
+    content = invoke_model_messages(
+        model_name=config_experiment.SLOW_EXTRACT_VALIDATION_MODEL,
         messages=messages,
+        temperature=config_experiment.SLOW_EXTRACT_VALIDATION_TEMPERATURE,
     )
-    content = response.choices[0].message.content
     parsed_feedback = extract_xml(content, "feedback")
     parsed_output = extract_xml(content, "answer")
 

@@ -45,8 +45,6 @@ elif config_experiment.PYTHON_AGENT_MODEL in ["o3-mini", "o4-mini-2025-04-16"]:
     model_with_tools = ChatOpenAI(
         model=config_experiment.PYTHON_AGENT_MODEL
     ).bind_tools(tools)
-else:
-    raise ValueError(f"Invalid model: {config_experiment.PYTHON_AGENT_MODEL}")
 
 
 class State(TypedDict):

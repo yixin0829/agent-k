@@ -30,7 +30,7 @@ class ExtractionMethod(Enum):
     FS_AGENTIC_RAG = "F&S AGENTIC RAG"
 
 
-PDF_EXTRACTION_METHOD = ExtractionMethod.FS_SELF_RAG
+PDF_EXTRACTION_METHOD = ExtractionMethod.FS_AGENTIC_RAG
 
 PDF_EXTRACTION_SAMPLE_SIZE = None
 PDF_EXTRACTION_EVAL_TYPE = "FULL"
@@ -40,9 +40,9 @@ PDF_EXTRACTION_EVAL_TYPE = "FULL"
 # Self RAG Configs
 # --------------------------------------------------------------------------------------
 # SELF_RAG_MODEL = "gpt-4o-mini-2024-07-18"
-SELF_RAG_MODEL = "gpt-oss-20b"
+# SELF_RAG_MODEL = "gpt-oss-20b"
 # SELF_RAG_MODEL = "Llama-3.3-70B-Instruct"
-# SELF_RAG_MODEL = "gemini-2.5-flash"
+SELF_RAG_MODEL = "gemini-2.5-flash"
 SELF_RAG_TEMPERATURE = 0.1
 SELF_RAG_GRADE_RETRIEVAL_MODEL = SELF_RAG_MODEL
 SELF_RAG_GRADE_RETRIEVAL_TEMPERATURE = SELF_RAG_TEMPERATURE
@@ -60,10 +60,13 @@ SELF_RAG_QUESTION_REWRITER_TEMPERATURE = SELF_RAG_TEMPERATURE
 # Our method configs (Agentic RAG)
 # --------------------------------------------------------------------------------------
 # OUR_METHOD_MODEL = "gpt-4.1-2025-04-14"
-OUR_METHOD_MODEL = "gpt-4o-mini-2024-07-18"
+# OUR_METHOD_MODEL = "gpt-4o-mini-2024-07-18"
 # OUR_METHOD_MODEL = "gpt-3.5-turbo-0125"
 # OUR_METHOD_MODEL = "o4-mini-2025-04-16"
 # OUR_METHOD_MODEL = "gpt-4-0613"
+# OUR_METHOD_MODEL = "gpt-oss-20b"
+# OUR_METHOD_MODEL = "Llama-3.3-70B-Instruct"
+OUR_METHOD_MODEL = "gemini-2.5-flash"
 OUR_METHOD_TEMPERATURE = 0.1
 MAX_REFLECTION_ITERATIONS = 5
 

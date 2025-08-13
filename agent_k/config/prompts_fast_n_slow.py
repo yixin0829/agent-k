@@ -149,7 +149,7 @@ OPTIMIZER_USER_PROMPT = """Please correct the following extraction results based
 **The provided JSON schema:** {json_schema}
 
 ---
-Now take a deep breath and answer the question step by step."""
+Now take a deep breath and perform the correction step by step. Output ONLY the XML specified in the system prompt."""
 
 
 # --------------------------------------------------------------------------------------
