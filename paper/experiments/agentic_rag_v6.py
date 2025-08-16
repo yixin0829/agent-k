@@ -159,11 +159,11 @@ def extract(state: GraphState):
 PROGRAM_REASONER_USER_PROMPT = """Now perform the second step by generating a python program to perform the calculation base on the previously extracted facts.
 
 Please follow the following guidelines:
-1. The generated python program should be executable with correct syntax.
-2. The final answer should be assigned to the variable `ans`.
-3. The `ans` variable should be a float number and have its unit converted correctly to tonnes (t).
-4. Enclose the python code in a code block using "```python" and "```".
-5. If there is feedback on the previous generated python program, please incorporate it into the python program."""
+- The generated python program should be executable with correct syntax.
+- The final answer should be assigned to the variable `ans`.
+- The `ans` variable should be a float number and have its unit converted correctly to tonnes (t).
+- Enclose the python code in a code block using "```python" and "```".
+- If there is feedback on the previous generated python program, please incorporate it into the python program."""
 
 
 def program_reasoner(state: GraphState):
@@ -196,12 +196,12 @@ def program_reasoner(state: GraphState):
 GRADE_HALLUCINATION_SYSTEM_PROMPT = """You are a hallucination grader validating whether there is hallucination in a LLM's generated code (Yes means hallucination, No means no hallucination). Focus on the calculation logic and unit conversions.
 
 Guidelines:
-1. Total mineral resource tonnage should be the sum of one or more of inferred, indicated, and measured mineral resources. If not, a default value of 0 should be returned.
-2. Total mineral reserve tonnage should be the sum of one or more of proven and probable mineral reserves. If not, a default value of 0 should be returned.
-3. The tonnage or grade unit used in the LLM generation should be consistent with the unit used in the retrieved documents. For example, "Tonnes 000", "Tonnes (000)", or "(000) Tonnes" mean thousand tonnes (Kt) or 1000 tonnes (t).
-4. The unit of grade should be correctly converted to decimal before used in the calculation. For example, "10% Cu" should be converted to 0.10.
-5. The final answer should be assigned to the variable `ans` in the code
-6. The final answer `ans` should have its unit converted correctly to tonnes (t).
+- Total mineral resource tonnage should be the sum of one or more of inferred, indicated, and measured mineral resources. If not, a default value of 0 should be returned.
+- Total mineral reserve tonnage should be the sum of one or more of proven and probable mineral reserves. If not, a default value of 0 should be returned.
+- The tonnage or grade unit used in the LLM generation should be consistent with the unit used in the retrieved documents. For example, "Tonnes 000", "Tonnes (000)", or "(000) Tonnes" mean thousand tonnes (Kt) or 1000 tonnes (t).
+- The unit of grade should be correctly converted to decimal before used in the calculation. For example, "10% Cu" should be converted to 0.10.
+- The final answer should be assigned to the variable `ans` in the code
+- The final answer `ans` should have its unit converted correctly to tonnes (t).
 
 Output Format:
 Respond strictly with the following XML tags (no introductory or extra text):
@@ -302,15 +302,6 @@ def self_consistency(state: GraphState):
     }
 
 
-EXECUTE_USER_PROMPT = """Structure the Response Correctly: Format your final output with XML tags as follows
-- Reasoning: Explain your retrieval or computation process within `<reasoning>` tags.
-- Code: Show the executed code within `<code>` tags
-- Final Answer: Provide the final response from the code execution within `<answer>` tags. Do not include other extra XML tags (e.g., `<output>`) or filler words.
-
-## Key Constraints
-- No Hallucination: If the required information is unavailable, return the default value specified in the question in the `<answer>` tag."""
-
-
 def execute(state: GraphState):
     logger.info("--EXECUTING THE PYTHON PROGRAM--")
 
@@ -331,12 +322,21 @@ def execute(state: GraphState):
     }
 
 
+FORMAT_OUTPUT_USER_PROMPT = """Structure the Response Correctly: Format your final output with XML tags as follows
+- Reasoning: Explain your retrieval or computation process within `<reasoning>` tags.
+- Code: Show the executed code within `<code>` tags
+- Final Answer: Provide the final response from the code execution within `<answer>` tags. Do not include other extra XML tags (e.g., `<output>`) or filler words.
+
+## Key Constraints
+- No Hallucination: If the required information is unavailable, return the default value specified in the question in the `<answer>` tag."""
+
+
 def format_output(state: GraphState):
     logger.info("--FORMAT OUTPUT--")
 
     messages = [
         *state["messages"],
-        {"role": "user", "content": EXECUTE_USER_PROMPT},
+        {"role": "user", "content": FORMAT_OUTPUT_USER_PROMPT},
     ]
     content = invoke_model_messages(
         model_name=config_experiment.PYTHON_AGENT_MODEL,

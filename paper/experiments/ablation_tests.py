@@ -10,6 +10,7 @@ Variants implemented:
 - exclude_hallucination_checker: skip the hallucination grader; execute directly
 - exclude_self_consistency: if looping, execute anyway instead of self-consistency
 - exclude_global_eval_optimizer: bypass global slow validator/optimizer loop
+- exclude_react_code_agent: exclude code interpreter, hallucination checker, and self-consistency; retrieve + extract + direct generation (no agent)
 
 Usage:
   # Run all variants with all samples
@@ -34,6 +35,7 @@ import agent_k.config.experiment_config as config_experiment
 import paper.experiments.agentic_rag_v6 as rag_mod
 import paper.experiments.pdf_agent_fast_n_slow as pdf_mod
 from agent_k.config.logger import logger
+from agent_k.tools.python_code_interpreter import PythonExecTool
 from agent_k.utils.general import get_curr_ts
 
 
@@ -98,9 +100,8 @@ def build_rag_graph_exclude_code_interpreter() -> StateGraph:
     """
 
     EXECUTE_LLM_ONLY_SYSTEM_PROMPT = (
-        "You are a careful assistant. Compute the numeric answer using the given facts "
-        "and the question without running code. Return ONLY two XML tags: "
-        "<reasoning>...</reasoning><answer>...</answer>."
+        "You are a helpful assistant. Compute the numeric answer using the given facts "
+        "and the question without running code. Return ONLY the answer XML tag: <answer>...</answer>."
     )
 
     def execute_llm_only(state: dict):
@@ -175,12 +176,42 @@ def build_rag_graph_exclude_hallucination_checker() -> StateGraph:
 
 def build_rag_graph_exclude_self_consistency() -> StateGraph:
     """Map self-consistency route to execute instead of running self-consistency."""
+
+    def execute_with_self_consistency_override(state: rag_mod.GraphState):
+        """Execute function that returns -1 when self-consistency would have been triggered."""
+        logger.info(
+            "--DETECTING SELF REFLECTION LOOP (SELF-CONSISTENCY OVERRIDE TRIGGERED)--"
+        )
+
+        # Check if this execution is happening because self-consistency was triggered
+        if len(state["previous_code"]) >= config_experiment.MAX_REFLECTION_ITERATIONS:
+            logger.info(
+                "--SELF-CONSISTENCY TRIGGERED IN ABLATION TEST, RETURNING -1 AS DEFAULT VALUE--"
+            )
+            output = "-1"
+        else:
+            # Normal execution
+            code_block_msg = state["previous_code"][-1]
+            output = PythonExecTool().run_code_block(code_block_msg)
+
+        logger.info("--EXECUTION OUTPUT--")
+        logger.info(output)
+
+        return {
+            "messages": [
+                {
+                    "role": "assistant",
+                    "content": f"Code interpreter execution result: {output}",
+                },
+            ],
+        }
+
     graph = StateGraph(rag_mod.GraphState)
     graph.add_node("retrieve", rag_mod.retrieve)
     graph.add_node("extract", rag_mod.extract)
     graph.add_node("program_reasoner", rag_mod.program_reasoner)
     graph.add_node("check_hallucination", rag_mod.check_hallucination)
-    graph.add_node("execute", rag_mod.execute)
+    graph.add_node("execute", execute_with_self_consistency_override)
     graph.add_node("format_output", rag_mod.format_output)
 
     graph.add_edge(START, "retrieve")
@@ -198,6 +229,61 @@ def build_rag_graph_exclude_self_consistency() -> StateGraph:
         },
     )
     graph.add_edge("execute", "format_output")
+    graph.add_edge("format_output", END)
+    return graph
+
+
+def build_rag_graph_exclude_react_code_agent() -> StateGraph:
+    """START -> retrieve -> extract -> generate_from_facts -> format_output -> END
+
+    This variant performs retrieval and fact extraction only, then passes the
+    extracted facts to a lightweight generation step to produce the final
+    answer without code execution. The final XML formatting is handled by
+    the existing `format_output` node.
+    """
+
+    GENERATE_FROM_FACTS_SYSTEM_PROMPT = (
+        "You are a careful assistant. Using ONLY the provided extracted facts and "
+        "the question, compute the final numeric answer. Do not write or execute "
+        "code. If the required information is unavailable in the facts, return the "
+        "default value specified in the question. Keep the reasoning concise."
+    )
+
+    def generate_from_facts(state: rag_mod.GraphState):
+        logger.info("---GENERATE FROM FACTS (NO CODE)---")
+        question = state.get("question", "")
+        facts = state.get("extracted_facts", "")
+
+        messages = [
+            {"role": "system", "content": GENERATE_FROM_FACTS_SYSTEM_PROMPT},
+            {
+                "role": "user",
+                "content": (f"## Facts\n{facts}\n\n## Question\n{question}"),
+            },
+        ]
+
+        response = litellm.completion(
+            model=config_experiment.PYTHON_AGENT_MODEL,
+            temperature=config_experiment.PYTHON_AGENT_TEMPERATURE,
+            messages=messages,
+        )
+        content = response["choices"][0]["message"]["content"]
+        return {
+            "messages": [
+                {"role": "assistant", "content": content},
+            ]
+        }
+
+    graph = StateGraph(rag_mod.GraphState)
+    graph.add_node("retrieve", rag_mod.retrieve)
+    graph.add_node("extract", rag_mod.extract)
+    graph.add_node("generate_from_facts", generate_from_facts)
+    graph.add_node("format_output", rag_mod.format_output)
+
+    graph.add_edge(START, "retrieve")
+    graph.add_edge("retrieve", "extract")
+    graph.add_edge("extract", "generate_from_facts")
+    graph.add_edge("generate_from_facts", "format_output")
     graph.add_edge("format_output", END)
     return graph
 
@@ -246,7 +332,7 @@ def run_single_ablation(variant: str, sample_size: int | None) -> None:
         # Adjust sample size per user instruction (test with 2 first)
         config_experiment.PDF_EXTRACTION_SAMPLE_SIZE = sample_size
 
-        # Patch for variants 1-4 (rag graph)
+        # Patch for variants 1-4 + exclude_react_code_agent (rag graph)
         if variant == "exclude_facts_extractor":
             rag_mod.graph_builder_v6 = build_rag_graph_exclude_facts_extractor()
         elif variant == "exclude_code_interpreter":
@@ -255,6 +341,8 @@ def run_single_ablation(variant: str, sample_size: int | None) -> None:
             rag_mod.graph_builder_v6 = build_rag_graph_exclude_hallucination_checker()
         elif variant == "exclude_self_consistency":
             rag_mod.graph_builder_v6 = build_rag_graph_exclude_self_consistency()
+        elif variant == "exclude_react_code_agent":
+            rag_mod.graph_builder_v6 = build_rag_graph_exclude_react_code_agent()
 
         # Keep pdf module's imported alias in sync if it exists
         if (
@@ -264,6 +352,7 @@ def run_single_ablation(variant: str, sample_size: int | None) -> None:
                 "exclude_code_interpreter",
                 "exclude_hallucination_checker",
                 "exclude_self_consistency",
+                "exclude_react_code_agent",
             }
             and original_pdf_ns_rag_builder is not None
         ):
@@ -310,14 +399,14 @@ def main():
             "Comma-separated list of variants to run: "
             "exclude_facts_extractor,exclude_code_interpreter,"
             "exclude_hallucination_checker,exclude_self_consistency,"
-            "exclude_global_eval_optimizer or 'all'"
+            "exclude_global_eval_optimizer,exclude_react_code_agent or 'all'"
         ),
     )
     parser.add_argument(
         "--sample-size",
         type=str,
-        default="2",
-        help="Sample size for PDF extraction (integer or 'none' for all; default: 2)",
+        default="none",
+        help="Sample size for PDF extraction (integer or 'none' for all; default: all samples)",
     )
     args = parser.parse_args()
 
@@ -327,6 +416,7 @@ def main():
         "exclude_hallucination_checker",
         "exclude_self_consistency",
         "exclude_global_eval_optimizer",
+        "exclude_react_code_agent",
     ]
 
     if args.variants.strip().lower() == "all":
