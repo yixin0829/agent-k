@@ -84,21 +84,27 @@ class GradeHallucinations(BaseModel):
     )
 
 
-HALLUCINATION_GRADER_SYSTEM_PROMPT = (
-    "You are a grader validating whether an LLM generation is hallucinated based on a set of retrieved documents from a NI 43-101 mineral report.\n\n"
-    "Guidelines:\n"
-    "1. Mineral resources are composed of inferred, indicated, and measured resources. If none of the retrieved documents mention inferred, indicated, or measured resources, check if the LLM generation contains a default value of 0 for total mineral resource tonnage.\n"
-    "2. Mineral reserves are composed of proven and probable reserves. If none of the retrieved documents mention proven or probable reserves, check if the LLM generation contains a default value of 0 for total mineral reserve tonnage.\n"
-    '3. Check if the units of the mineral resources or reserves in the retrieved documents are consistent with the units of the mineral resources or reserves in the LLM generation. Especially pay attention if the retrieved documents mention "Tonnes 000" or something similar, which means that the tonnage is in thousands of tonnes.\n'
-    "4. Check if the final numerical answer is enclosed in `<answer>` XML tags without any other XML tags, filler words, or explicit unit.\n\n"
-    "Respond with a single JSON object and nothing else. Schema: "
-    '{"reasoning": string, "binary_score": "yes" | "no"}'
-)
+HALLUCINATION_GRADER_SYSTEM_PROMPT = """You are a grader validating whether an LLM generation is grounded in a set of retrieved documents from a NI 43-101 mineral report.
 
-HALLUCINATION_GRADER_USER_PROMPT = (
-    "Set of retrieved documents:\n\n{documents}\n\nLLM generation:\n\n{generation}\n\n"
-    "Return only JSON per the schema."
-)
+Guidelines:
+1. If the question is about mineral resources, check if the retrieved documents mention inferred, indicated, and measured resources. If none of the retrieved documents mention inferred, indicated, or measured resources, check if the LLM generation contains a default value of 0 for total mineral resource tonnage.
+2. If the question is about mineral reserves, check if the retrieved documents mention proven and probable reserves. If none of the retrieved documents mention proven or probable reserves, check if the LLM generation contains a default value of 0 for total mineral reserve tonnage.
+3. Check if the units of the mineral resources or reserves in the retrieved documents are consistent with the units of the mineral resources or reserves in the LLM generation. Especially pay attention if the retrieved documents mention "Tonnes 000" or something similar, which means that the tonnage is in thousands of tonnes.
+4. Check if the final numerical answer is enclosed in `<answer>` XML tags without any other XML tags, filler words, or explicit unit.
+
+Respond with a single JSON object and nothing else. Schema: {"reasoning": string, "binary_score": "yes" | "no"}
+"""
+
+HALLUCINATION_GRADER_USER_PROMPT = """Set of retrieved documents:
+
+{documents}
+
+LLM generation:
+
+{generation}
+
+Return only JSON per the schema.
+"""
 
 # %%
 ### Answer Grader (provider-agnostic JSON)
@@ -437,7 +443,7 @@ def hallucination_router(state):
     """
     Route based on hallucination check result
     """
-    if state["hallucination_grade"].lower() == "no":
+    if state["hallucination_grade"].lower() == "yes":
         logger.info(
             "---DECISION: GENERATION IS GROUNDED IN DOCUMENTS (NO HALLUCINATION)---"
         )

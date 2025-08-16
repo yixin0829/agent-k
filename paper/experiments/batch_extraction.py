@@ -189,11 +189,7 @@ def batch_extract_long_context(
             content = response.choices[0].message.content
         except Exception as e:
             msg = str(e).lower()
-            if (
-                "maximum context" in msg
-                or "context length" in msg
-                or "too many tokens" in msg
-            ):
+            if "maximum context" in msg or "context length" in msg:
                 logger.warning(
                     f"[Batch Extraction] Context too long for {model_name} on {cdr_record_id}: {e}"
                 )
@@ -218,7 +214,6 @@ def batch_extract_long_context(
                 messages=messages,
                 temperature=config_experiment.BATCH_EXTRACTION_TEMPERATURE,
                 schema=pydantic_model,
-                strict=False,
             )
             content = parsed.model_dump_json()
         except ContextLengthExceededError:
@@ -322,7 +317,6 @@ def batch_extract_rag_based(
                 messages=messages,
                 temperature=config_experiment.BATCH_EXTRACTION_TEMPERATURE,
                 schema=pydantic_model,
-                strict=False,
             )
             content = parsed.model_dump_json()
         except Exception as e:
@@ -450,8 +444,21 @@ if __name__ == "__main__":
     # Temperature: [0.1]
     # Max retrieved results: [5] --> only applicable to rag_based
 
-    # output_dir = "paper/data/experiments/long_context_batch_extraction"
-    output_dir = "paper/data/experiments/rag_batch_extraction"
+    if (
+        config_experiment.BATCH_METHOD
+        == config_experiment.BatchExtractionMethod.LONG_CONTEXT
+    ):
+        output_dir = "paper/data/experiments/long_context_batch_extraction"
+    elif (
+        config_experiment.BATCH_METHOD
+        == config_experiment.BatchExtractionMethod.RAG_BASED
+    ):
+        output_dir = "paper/data/experiments/rag_batch_extraction"
+    else:
+        raise ValueError(
+            f"Invalid batch extraction method: {config_experiment.BATCH_METHOD}"
+        )
+
     gt_path = "paper/data/processed/ground_truth/inferlink_ground_truth.csv"
 
     run_experiment(

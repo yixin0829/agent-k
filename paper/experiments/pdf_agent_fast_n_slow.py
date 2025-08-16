@@ -409,9 +409,6 @@ def build_dpe_w_map_reduce_agentic_rag_graph():
     graph_builder.add_edge(
         "map_slow_extraction_agent", "reduce_slow_extraction_results"
     )
-    # ----------------------------------------------------------------------------------
-    # Global slow validator
-    # ----------------------------------------------------------------------------------
     graph_builder.add_edge(
         "reduce_slow_extraction_results", "validate_extraction_result"
     )
@@ -421,18 +418,6 @@ def build_dpe_w_map_reduce_agentic_rag_graph():
         ["slow_extraction_optimizer", "extraction_synthesis"],
     )
     graph_builder.add_edge("slow_extraction_optimizer", "validate_extraction_result")
-    # graph_builder.add_edge("slow_extraction_end", "extraction_synthesis")
-    # ----------------------------------------------------------------------------------
-    # W/O global slow validator
-    # ----------------------------------------------------------------------------------
-    # graph_builder.add_edge(
-    #     "reduce_slow_extraction_results", "slow_extraction_end"
-    # )
-    # graph_builder.add_edge(
-    #     ["fast_extraction_agent", "slow_extraction_end"],
-    #     "extraction_synthesis",
-    # )
-
     graph_builder.add_edge("extraction_synthesis", END)
     graph = graph_builder.compile()
 

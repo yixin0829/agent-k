@@ -10,12 +10,12 @@ load_dotenv()
 
 # %%
 # Use Hugging Face inference provider API to access models hosted on Hugging Face
-hf_router_client = OpenAI(
+hugging_face_client = OpenAI(
     base_url="https://router.huggingface.co/v1",
     api_key=os.environ["HF_TOKEN"],
 )
 
-completion = hf_router_client.chat.completions.create(
+completion = hugging_face_client.chat.completions.create(
     model="openai/gpt-oss-20b:groq",
     messages=[{"role": "user", "content": "What is the capital of France?"}],
     temperature=0.1,
@@ -26,12 +26,12 @@ print(completion.choices[0].message)
 # ChatCompletionMessage(content='The capital of France is **Paris**.', refusal=None, role='assistant', annotations=None, audio=None, function_call=None, tool_calls=None, reasoning='We need to answer: "What is the capital of France?" The answer: Paris. Should we provide additional info? The user likely wants the capital. So answer succinctly: Paris.')
 
 # %%
-hf_router_client = OpenAI(
+hugging_face_client = OpenAI(
     base_url="https://router.huggingface.co/v1",
     api_key=os.environ["HF_TOKEN"],
 )
 
-completion = hf_router_client.chat.completions.create(
+completion = hugging_face_client.chat.completions.create(
     model="meta-llama/Llama-3.3-70B-Instruct:groq",
     messages=[{"role": "user", "content": "What is the capital of France?"}],
     temperature=0.1,
