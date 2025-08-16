@@ -161,7 +161,7 @@ class ContextLengthExceededError(Exception):
 
 
 # Initialize provider clients
-hf_router_client = OpenAI(
+hugging_face_client = OpenAI(
     base_url="https://router.huggingface.co/v1",
     api_key=os.environ.get("HF_TOKEN"),
 )
@@ -176,21 +176,24 @@ def detect_provider_and_remote_model(model_name: str) -> Tuple[str, str]:
     """Detect provider and map to the remote model identifier if needed.
 
     Returns a tuple of (provider, remote_model_name).
-    Provider can be one of: "openai", "hf_router", "gemini".
+    Provider can be one of: "openai", "hugging_face", "gemini".
     """
 
-    name = model_name.strip()
-    name = name.lower()
+    model_name_lower = model_name.strip().lower()
 
     # Gemini
-    if name.startswith("gemini-"):
+    if model_name_lower.startswith("gemini-"):
         return "gemini", model_name
 
     # HF router via OpenAI-compatible API
-    if "gpt-oss-20b" in name:
-        return "hf_router", "openai/gpt-oss-20b"
-    if "llama-3.3-70b" in name:
-        return "hf_router", "meta-llama/Llama-3.3-70B-Instruct"
+    if (
+        "gpt-oss-20b" in model_name_lower
+        or "qwen3" in model_name_lower
+        or "llama" in model_name_lower
+        or "deepseek" in model_name_lower
+        or "qwen" in model_name_lower
+    ):
+        return "hugging_face", model_name
 
     # Default to OpenAI (or OpenAI-compatible) through litellm
     return "openai", model_name
@@ -218,9 +221,9 @@ def invoke_model_messages(
         )
         return response.choices[0].message.content
 
-    if provider == "hf_router":
+    if provider == "hugging_face":
         try:
-            result = hf_router_client.chat.completions.create(
+            result = hugging_face_client.chat.completions.create(
                 model=remote,
                 messages=messages,
                 temperature=temperature,
@@ -228,13 +231,9 @@ def invoke_model_messages(
             return result.choices[0].message.content or ""
         except Exception as e:
             msg = str(e).lower()
-            if (
-                "maximum context" in msg
-                or "context length" in msg
-                or "too many tokens" in msg
-            ):
+            if "maximum context" in msg or "context length" in msg:
                 raise ContextLengthExceededError(str(e))
-            raise ModelProviderError(f"HF Router call failed: {e}")
+            raise ModelProviderError(f"Hugging Face call failed: {e}")
 
     if provider == "gemini":
         try:
@@ -249,11 +248,7 @@ def invoke_model_messages(
             return getattr(response, "text", "")
         except Exception as e:
             msg = str(e).lower()
-            if (
-                "maximum context" in msg
-                or "context length" in msg
-                or "too many tokens" in msg
-            ):
+            if "maximum context" in msg or "context length" in msg:
                 raise ContextLengthExceededError(str(e))
             raise ModelProviderError(f"Gemini call failed: {e}")
 
@@ -265,8 +260,6 @@ def invoke_json(
     messages: List[Dict[str, str]],
     temperature: float,
     schema: Type[BaseModel],
-    *,
-    strict: bool = True,
 ) -> BaseModel:
     """Invoke a chat model and parse the response into a Pydantic model.
 
@@ -291,34 +284,30 @@ def invoke_json(
     raw = invoke_model_messages(
         model_name=model_name, messages=messages, temperature=temperature
     )
+    logger.debug(f"Raw response:\n{raw}")
 
     def _extract_first_json_segment(text: str) -> str:
         cleaned = text.strip()
         # Remove common code fences if present
         cleaned = cleaned.replace("```json", "").replace("```", "").strip()
-        start_brace = cleaned.find("{")
-        start_bracket = cleaned.find("[")
-        candidates = [i for i in [start_brace, start_bracket] if i != -1]
-        start = min(candidates) if candidates else 0
-        segment = cleaned[start:]
-        # Try a naive end at the last closing brace/bracket
-        end_brace = segment.rfind("}")
-        end_bracket = segment.rfind("]")
-        end_candidates = [i for i in [end_brace, end_bracket] if i != -1]
-        end = max(end_candidates) if end_candidates else len(segment) - 1
-        return segment[: end + 1]
+        last_close = cleaned.rfind("}")
+        if last_close == -1:
+            raise ValueError("No closing '}' found in text for JSON extraction.")
+        # Scan backwards for the first '{' before last_close
+        first_open = cleaned.rfind("{", 0, last_close + 1)
+        if first_open == -1:
+            raise ValueError("No opening '{' found in text for JSON extraction.")
+        json_str = cleaned[first_open : last_close + 1]
+        # Remove all indentation and newlines
+        compact_json = "".join(line.strip() for line in json_str.splitlines())
+        logger.debug(f"Compact JSON:\n{compact_json}")
+        return compact_json
 
     try:
         payload = _extract_first_json_segment(raw)
         data = _json.loads(payload)
         return schema.model_validate(data)
     except Exception:
-        if not strict:
-            try:
-                data = _json.loads(raw)
-                return schema.model_validate(data)
-            except Exception:
-                pass
         # Re-raise a clear error for callers to handle
         raise ValueError(
             f"Failed to parse model response into the expected schema.\nSchema: {schema}\nData: {data}"
