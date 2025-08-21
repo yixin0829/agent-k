@@ -503,7 +503,7 @@ def extract_from_pdf(
 def extract_from_inferlink_pdfs(
     sample_size: int | None,
     method: Literal["F&S", "DPE MAP_REDUCE", "F&S SELF RAG", "F&S AGENTIC RAG"],
-    eval_type: Literal["FULL", "VAL", "TEST"],
+    eval_type: Literal["FULL", "VAL", "TEST", "DEV"],
     output_dir: str,
     output_filename: str,
 ) -> pd.DataFrame:
@@ -518,6 +518,10 @@ def extract_from_inferlink_pdfs(
     elif eval_type == "TEST":
         inferlink_ground_truth = pd.read_csv(
             "paper/data/processed/ground_truth/inferlink_ground_truth_test.csv"
+        )
+    elif eval_type == "DEV":
+        inferlink_ground_truth = pd.read_csv(
+            "paper/data/processed/ground_truth/inferlink_ground_truth_dev.csv"
         )
     elif eval_type == "FULL":
         inferlink_ground_truth = pd.read_csv(

@@ -43,7 +43,7 @@ from paper.experiments.utils import invoke_model_messages
 # MODEL = "gpt-oss-20b"
 # MODEL = "Llama-3.3-70B-Instruct"
 # MODEL = "deepseek-ai/DeepSeek-R1"
-MODEL = "Qwen/Qwen3-30B-A3B"
+MODEL = "Qwen/Qwen3-30B-A3B:novita"
 TEMPERATURE = 0.1
 
 STEP_BACK_PROMPT = """Given a question that requires numerical reasoning, step back and think about the domain knowledge, math formula and relevant numerical value names required to solve the question. Generate a few examples that covers differnt corner cases without calculating the answer to help yourself understand the question better.

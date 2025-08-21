@@ -47,6 +47,10 @@ def evaluate_extraction_results(
         ground_truth_df = pd.read_csv(
             "paper/data/processed/ground_truth/inferlink_ground_truth_test.csv"
         )
+    elif eval_type == "DEV":
+        ground_truth_df = pd.read_csv(
+            "paper/data/processed/ground_truth/inferlink_ground_truth_dev.csv"
+        )
     else:  # FULL
         ground_truth_df = pd.read_csv(
             "paper/data/processed/ground_truth/inferlink_ground_truth.csv"
