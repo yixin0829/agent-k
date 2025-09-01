@@ -1,0 +1,7 @@
+[project]
+name = "agent-k"
+version = "0.1.0"
+description = "Agent-K is a novel agentic framework that enable extracting accurate complex numerical properties from documents at scale."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []
