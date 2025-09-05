@@ -116,7 +116,7 @@ def reset_default_configs(
     config_experiment.SLOW_EXTRACT_OPTIMIZER_MODEL = model_name
 
     # Default parameter values
-    config_experiment.OUR_METHOD_TEMPERATURE = 0.2
+    config_experiment.AGENT_K_TEMPERATURE = 0.2
     config_experiment.PYTHON_AGENT_TEMPERATURE = 0.2
     config_experiment.GRADE_HALLUCINATION_TEMPERATURE = 0.2
     config_experiment.SLOW_EXTRACT_VALIDATION_TEMPERATURE = 0.2
@@ -152,7 +152,7 @@ def run_single_experiment(
     # Set the parameter value
     if param_name == "TEMPERATURE":
         # Update all temperature parameters
-        config_experiment.OUR_METHOD_TEMPERATURE = param_value
+        config_experiment.AGENT_K_TEMPERATURE = param_value
         config_experiment.PYTHON_AGENT_TEMPERATURE = param_value
         config_experiment.GRADE_HALLUCINATION_TEMPERATURE = param_value
         config_experiment.SLOW_EXTRACT_VALIDATION_TEMPERATURE = param_value
@@ -220,7 +220,7 @@ def run_single_experiment(
             "method": config_experiment.PDF_EXTRACTION_METHOD.value,
             "sample_size": config_experiment.PDF_EXTRACTION_SAMPLE_SIZE,
             "eval_type": config_experiment.PDF_EXTRACTION_EVAL_TYPE,
-            "temperature": config_experiment.OUR_METHOD_TEMPERATURE,
+            "temperature": config_experiment.AGENT_K_TEMPERATURE,
             "max_reflection_iterations": config_experiment.MAX_REFLECTION_ITERATIONS,
             "num_retrieved_docs": config_experiment.NUM_RETRIEVED_DOCS,
             "execution_time": execution_time,

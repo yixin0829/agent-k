@@ -8,7 +8,7 @@ model:
 # Dataset configuration
 dataset:
   sample_size: null  # Number of PDFs to process per experiment (set to null for all)
-  eval_type: "DEV"  # Dataset to use: DEV, VAL, TEST, or FULL
+  eval_type: "DEV"  # Dataset to use: DEV, TEST, or FULL
 
 # Parameter search spaces
 parameters:

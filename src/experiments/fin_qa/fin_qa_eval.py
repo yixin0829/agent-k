@@ -6,10 +6,7 @@ import re
 import numpy as np
 
 from src.config.logger import logger
-
-# Configuration variables
-PRED_OUTPUT_PATH = "data/experiments/FinQA/test_pred_gpt-3.5-turbo-0125.json"
-# PRED_OUTPUT_PATH = "data/experiments/FinQA/test_pred_gpt-4-0613.json"
+from src.experiments.fin_qa.fin_qa_pred import PRED_OUTPUT_PATH
 
 # Load prediction data
 with open(PRED_OUTPUT_PATH, "r") as f:

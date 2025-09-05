@@ -4,6 +4,7 @@ Creates plots to visualize the performance of different parameter values.
 """
 
 import os
+import re
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -85,7 +86,10 @@ def extract_metrics_from_results(
             try:
                 # Try to parse as string representation of dict
                 if isinstance(row["evaluation_results"], str):
-                    eval_dict = ast.literal_eval(row["evaluation_results"])
+                    eval_str = row["evaluation_results"]
+                    # Replace np.float64(...) with just the numeric value
+                    eval_str = re.sub(r"np\.float64\(([^)]+)\)", r"\1", eval_str)
+                    eval_dict = ast.literal_eval(eval_str)
                 else:
                     eval_dict = row["evaluation_results"]
 
@@ -96,11 +100,12 @@ def extract_metrics_from_results(
 
                     # Calculate weighted composite metric
                     if data["smape"] is not None and data["pass_at_1"] is not None:
-                        # Composite metric: α × (SMAPE) + β × Pass@1
+                        # Composite metric: α × (1 - data["smape"]) + β × Pass@1
                         data["composite_metric"] = (
                             alpha * (1 - data["smape"]) + beta * data["pass_at_1"]
                         )
             except Exception as e:
+                logger.warning(f"Failed to parse evaluation_results: {e}")
                 pass
 
         metrics_data.append(data)
@@ -419,7 +424,7 @@ def main(alpha: float = DEFAULT_ALPHA, beta: float = DEFAULT_BETA):
 
     # Create visualizations with composite metric
     logger.info(
-        f"\nCreating visualizations with composite metric (α={alpha}, β={beta})..."
+        f"\nCreating visualizations with composite metric (alpha={alpha}, beta={beta})..."
     )
     plot_parameter_performance(results, alpha=alpha, beta=beta)
 
