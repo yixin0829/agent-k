@@ -1,0 +1,6 @@
+commodity_observed_name,category_observed_name,ore_unit_observed_name,ore_value,grade_unit_observed_name,grade_value,cutoff_grade_unit_observed_name,cutoff_grade_value,contained_metal,zone
+lithium,measured,million tonnes,0.6,percent,3.2,,,,Greenbushes
+lithium,indicated,million tonnes,117.9,percent,2.4,,,,Greenbushes
+lithium,inferred,million tonnes,2.1,percent,2,,,,Greenbushes
+lithium,proven,million tonnes,0.6,percent,3.2,percent,1.8,,Greenbushes
+lithium,probable,million tonnes,61,percent,2.8,percent,1.8,,Greenbushes

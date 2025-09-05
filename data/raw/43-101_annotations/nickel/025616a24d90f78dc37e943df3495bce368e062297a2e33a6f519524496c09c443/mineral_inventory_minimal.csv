@@ -1,0 +1,7 @@
+commodity_observed_name,category_observed_name,ore_unit_observed_name,ore_value,grade_unit_observed_name,grade_value,cutoff_grade_unit_observed_name,cutoff_grade_value,contained_metal,zone
+tungsten,measured,Kt,75000,%,0.41,%,0.05,,
+tungsten,indicated,Kt,2133000,%,0.28,%,0.05,,
+tungsten,measured+indicated,Kt,2208000,%,0.29,%,0.05,,
+tungsten,inferred,Kt,1878000,%,0.25,%,0.05,,
+tungsten,proven,Kt,57000,%,0.44,%,0.05,,
+tungsten,probable,Kt,1408000,%,0.33,%,0.05,,

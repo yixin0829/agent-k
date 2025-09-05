@@ -1,0 +1,3 @@
+commodity_observed_name,category_observed_name,ore_unit_observed_name,ore_value,grade_unit_observed_name,grade_value,cutoff_grade_unit_observed_name,cutoff_grade_value,contained_metal,zone
+Niobium,indicated,Mt,29.7,percent,0.53,%,0.3,James Bay Niobium Project
+Niobium,inferred,Mt,33.8,percent,0.52,%,0.3,James Bay Niobium Project

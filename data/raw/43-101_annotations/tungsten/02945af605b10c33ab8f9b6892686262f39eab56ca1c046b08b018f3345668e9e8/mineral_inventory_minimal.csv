@@ -1,0 +1,5 @@
+commodity_observed_name,category_observed_name,ore_unit_observed_name,ore_value,grade_unit_observed_name,grade_value,cutoff_grade_unit_observed_name,cutoff_grade_value,contained_metal,zone
+Tungsten,inferred,tonnes,9209081,percent,0.34,percent,0.3,,Fire Tower West
+Molybdenum,inferred,tonnes,9209081,percent,0.21,percent,0.3,,Fire Tower West
+Tungsten,inferred,tonnes,3865356,percent,0.37,percent,0.3,,Fire Tower North
+Molybdenum,inferred,tonnes,3865356,percent,0.2,percent,0.3,,Fire Tower North

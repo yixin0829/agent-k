@@ -1,0 +1,4 @@
+commodity_observed_name,category_observed_name,ore_unit_observed_name,ore_value,grade_unit_observed_name,grade_value,cutoff_grade_unit_observed_name,cutoff_grade_value,contained_metal,zone
+Tungsten,measured,tonnes,1200000,percent,0.379,percent,0.15,,
+Tungsten,indicated,tonnes,1310000,percent,0.365,percent,0.15,,
+Tungsten,inferred,tonnes,1210000,percent,0.397,percent,0.15,,

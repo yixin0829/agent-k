@@ -1,0 +1,25 @@
+commodity_observed_name,category_observed_name,ore_unit_observed_name,ore_value,grade_unit_observed_name,grade_value,cutoff_grade_unit_observed_name,cutoff_grade_value,contained_metal,zone
+Copper,Measured,tonnes,18953000,%,0.363,NSR \C$/t,12,,
+Copper,Indicated,tonnes,20964000,%,0.348,NSR \C$/t,12,,
+Copper,Inferred,tonnes,4634000,%,0.308,NSR \C$/t,12,,
+Gold,Measured,tonnes,18953000,g/t,0.098,NSR \C$/t,12,,
+Gold,Indicated,tonnes,20964000,g/t,0.105,NSR \C$/t,12,,
+Gold,Inferred,tonnes,4634000,g/t,0.123,NSR \C$/t,12,,
+Platinum,Measured,tonnes,18953000,g/t,0.273,NSR \C$/t,12,,
+Platinum,Indicated,tonnes,20964000,g/t,0.295,NSR \C$/t,12,,
+Platinum,Inferred,tonnes,4634000,g/t,0.329,NSR \C$/t,12,,
+Palladium,Measured,tonnes,18953000,g/t,1.069,NSR \C$/t,12,,
+Palladium,Indicated,tonnes,20964000,g/t,1.06,NSR \C$/t,12,,
+Palladium,Inferred,tonnes,4634000,g/t,1.063,NSR \C$/t,12,,
+Copper,Mineral Resource,tonnes,49459000,%,0.33,,,,North
+Copper,Mineral Resource,tonnes,3780000,%,0.32,,,,South
+Copper,Mineral Resource,tonnes,4764000,%,0.16,,,,South West
+Gold,Mineral Resource,tonnes,49459000,g/t,0.09,,,,North
+Gold,Mineral Resource,tonnes,3780000,g/t,0.07,,,,South
+Gold,Mineral Resource,tonnes,4764000,g/t,0.1,,,,South West
+Platinum,Mineral Resource,tonnes,49459000,g/t,0.25,,,,North
+Platinum,Mineral Resource,tonnes,3780000,g/t,0.18,,,,South
+Platinum,Mineral Resource,tonnes,4764000,g/t,0.36,,,,South West
+Palladium,Mineral Resource,tonnes,49459000,g/t,0.92,,,,North
+Palladium,Mineral Resource,tonnes,3780000,g/t,0.66,,,,South
+Palladium,Mineral Resource,tonnes,4764000,g/t,0.96,,,,South West

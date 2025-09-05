@@ -1,0 +1,355 @@
+commodity_observed_name,category_observed_name,ore_unit_observed_name,ore_value,grade_unit_observed_name,grade_value,cutoff_grade_unit_observed_name,cutoff_grade_value,contained_metal,zone
+Nickel,indicated,tonnage,209000,%,1.64,,,,Puimajuq
+Copper,indicated,tonnage,209000,%,2.73,,,,Puimajuq
+Cobalt,indicated,tonnage,209000,%,0.06,,,,Puimajuq
+Platinum,indicated,tonnage,209000,g/t,0.92,,,,Puimajuq
+Palladium,indicated,tonnage,209000,g/t,2.48,,,,Puimajuq
+Gold,indicated,tonnage,209000,g/t,0.09,,,,Puimajuq
+Nickel,indicated,tonnage,3761000,%,0.9,,,,Allammaq
+Copper,inferred,tonnage,12000,%,3.23,,,,Puimajuq
+Cobalt,inferred,tonnage,12000,%,0.09,,,,Puimajuq
+Platinum,inferred,tonnage,12000,g/t,1.18,,,,Puimajuq
+Palladium,inferred,tonnage,12000,g/t,2.63,,,,Puimajuq
+Gold,inferred,tonnage,12000,g/t,0.14,,,,Puimajuq
+Nickel,indicated,tonnage,2218000,%,1.89,,,,Mesamax
+Copper,measured,tonnage,560000,%,1.1,,,,Allammaq
+Cobalt,measured,tonnage,560000,%,0.04,,,,Allammaq
+Platinum,measured,tonnage,560000,g/t,0.6,,,,Allammaq
+Palladium,measured,tonnage,560000,g/t,2.66,,,,Allammaq
+Gold,measured,tonnage,560000,g/t,0.1,,,,Allammaq
+Nickel,indicated,tonnage,5374000,%,0.74,,,,Mequillon
+Copper,indicated,tonnage,3761000,%,1.12,,,,Allammaq
+Cobalt,indicated,tonnage,3761000,%,0.04,,,,Allammaq
+Platinum,indicated,tonnage,3761000,g/t,0.58,,,,Allammaq
+Palladium,indicated,tonnage,3761000,g/t,2.15,,,,Allammaq
+Gold,indicated,tonnage,3761000,g/t,0.12,,,,Allammaq
+Nickel,indicated,tonnage,8562000,%,0.76,,,,Expo
+Copper,inferred,tonnage,1591000,%,0.53,,,,Allammaq
+Cobalt,inferred,tonnage,1591000,%,0.03,,,,Allammaq
+Platinum,inferred,tonnage,1591000,g/t,0.38,,,,Allammaq
+Palladium,inferred,tonnage,1591000,g/t,1.56,,,,Allammaq
+Gold,inferred,tonnage,1591000,g/t,0.07,,,,Allammaq
+Nickel,indicated,tonnage,1128000,%,1.22,,,,Ivakkak
+Copper,indicated,tonnage,2218000,%,2.57,,,,Mesamax
+Cobalt,indicated,tonnage,2218000,%,0.08,,,,Mesamax
+Platinum,indicated,tonnage,2218000,g/t,0.6,,,,Mesamax
+Palladium,indicated,tonnage,2218000,g/t,2.08,,,,Mesamax
+Gold,indicated,tonnage,2218000,g/t,0.2,,,,Mesamax
+Nickel,indicated,tonnage,90000,%,1.6,,,,TK
+Copper,inferred,tonnage,31000,%,1.78,,,,Mesamax
+Cobalt,inferred,tonnage,31000,%,0.07,,,,Mesamax
+Platinum,inferred,tonnage,31000,g/t,0.51,,,,Mesamax
+Palladium,inferred,tonnage,31000,g/t,1.93,,,,Mesamax
+Gold,inferred,tonnage,31000,g/t,0.18,,,,Mesamax
+Nickel,indicated,tonnage,684852,%,3.429,,,,Massive Sulphide Domain
+Copper,indicated,tonnage,5374000,%,1.07,,,,Mequillon
+Cobalt,indicated,tonnage,5374000,%,0.03,,,,Mequillon
+Platinum,indicated,tonnage,5374000,g/t,0.5,,,,Mequillon
+Palladium,indicated,tonnage,5374000,g/t,2.57,,,,Mequillon
+Gold,indicated,tonnage,5374000,g/t,0.11,,,,Mequillon
+Nickel,indicated,tonnage,220398,%,3.319,,,,Oxidized Massive Sulphide Domain
+Copper,inferred,tonnage,3085000,%,1.12,,,,Mequillon
+Cobalt,inferred,tonnage,3085000,%,0.03,,,,Mequillon
+Platinum,inferred,tonnage,3085000,g/t,0.64,,,,Mequillon
+Palladium,inferred,tonnage,3085000,g/t,2.47,,,,Mequillon
+Gold,inferred,tonnage,3085000,g/t,0.12,,,,Mequillon
+Nickel,indicated,tonnage,1104271,%,0.857,,,,Net Textured Sulphide Domain
+Copper,indicated,tonnage,8562000,%,0.76,,,,Expo
+Cobalt,indicated,tonnage,8562000,%,0.03,,,,Expo
+Platinum,indicated,tonnage,8562000,g/t,0.32,,,,Expo
+Palladium,indicated,tonnage,8562000,g/t,1.36,,,,Expo
+Gold,indicated,tonnage,8562000,g/t,0.08,,,,Expo
+Nickel,indicated,tonnage,208284,%,0.811,,,,Oxidized Net Textured Sulphide Domain
+Copper,inferred,tonnage,478000,%,0.83,,,,Expo
+Cobalt,inferred,tonnage,478000,%,0.04,,,,Expo
+Platinum,inferred,tonnage,478000,g/t,0.32,,,,Expo
+Palladium,inferred,tonnage,478000,g/t,1.43,,,,Expo
+Gold,inferred,tonnage,478000,g/t,0.08,,,,Expo
+Copper,indicated,tonnage,1128000,%,1.55,,,,Ivakkak
+Cobalt,indicated,tonnage,1128000,%,0.05,,,,Ivakkak
+Platinum,indicated,tonnage,1128000,g/t,0.35,,,,Ivakkak
+Palladium,indicated,tonnage,1128000,g/t,1.69,,,,Ivakkak
+Gold,indicated,tonnage,1128000,g/t,0.11,,,,Ivakkak
+Nickel,indicated,tonnes,701000,%,2.71,NSR canadian dollar per tonne,40,,Massive Sulphide Domain
+Copper,inferred,tonnage,40000,%,1.3,,,,Ivakkak
+Cobalt,inferred,tonnage,40000,%,0.04,,,,Ivakkak
+Platinum,inferred,tonnage,40000,g/t,0.37,,,,Ivakkak
+Palladium,inferred,tonnage,40000,g/t,1.74,,,,Ivakkak
+Gold,inferred,tonnage,40000,g/t,0.11,,,,Ivakkak
+Nickel,indicated,tonnes,140000,%,1.46,NSR canadian dollar per tonne,40,,Vein Domain
+Copper,indicated,tonnage,90000,%,1.2,,,,TK
+Cobalt,indicated,tonnage,90000,%,0.1,,,,TK
+Platinum,indicated,tonnage,90000,g/t,0.4,,,,TK
+Palladium,indicated,tonnage,90000,g/t,1.6,,,,TK
+Gold,indicated,tonnage,90000,g/t,0.1,,,,TK
+Nickel,indicated,tonnes,7721000,%,0.57,NSR canadian dollar per tonne,40,,Net Textured Sulphide Domain
+Copper,inferred,tonnage,7000,%,1,,,,TK
+Cobalt,inferred,tonnage,7000,%,0.1,,,,TK
+Platinum,inferred,tonnage,7000,g/t,0.4,,,,TK
+Palladium,inferred,tonnage,7000,g/t,1.6,,,,TK
+Gold,inferred,tonnage,7000,g/t,0,,,,TK
+Copper,indicated,tonnage,684852,%,4.081,,,,Massive Sulphide Domain
+Cobalt,indicated,tonnage,684852,%,0.136,,,,Massive Sulphide Domain
+Gold,indicated,tonnage,684852,g/t,0.34,,,,Massive Sulphide Domain
+Platinum,indicated,tonnage,684852,g/t,1.378,,,,Massive Sulphide Domain
+Palladium,indicated,tonnage,684852,g/t,3.925,,,,Massive Sulphide Domain
+Nickel,indicated,tonnes,1447000,%,0.73,NSR canadian dollar per tonne,42.5,,Open Pit Net Textured Sulphide Resource
+Copper,inferred,tonnage,9907,%,2.891,,,,Massive Sulphide Domain
+Cobalt,inferred,tonnage,9907,%,0.144,,,,Massive Sulphide Domain
+Gold,inferred,tonnage,9907,g/t,0.252,,,,Massive Sulphide Domain
+Platinum,inferred,tonnage,9907,g/t,0.888,,,,Massive Sulphide Domain
+Palladium,inferred,tonnage,9907,g/t,5.456,,,,Massive Sulphide Domain
+Nickel,indicated,tonnes,3927000,%,0.75,NSR canadian dollar per tonne,42.5,,Underground Net Textured Sulphide Resource
+Copper,indicated,tonnage,220398,%,6.106,,,,Oxidized Massive Sulphide Domain
+Cobalt,indicated,tonnage,220398,%,0.128,,,,Oxidized Massive Sulphide Domain
+Gold,indicated,tonnage,220398,g/t,0.419,,,,Oxidized Massive Sulphide Domain
+Platinum,indicated,tonnage,220398,g/t,2.011,,,,Oxidized Massive Sulphide Domain
+Palladium,indicated,tonnage,220398,g/t,3.144,,,,Oxidized Massive Sulphide Domain
+Copper,inferred,tonnage,515,%,3.379,,,,Oxidized Massive Sulphide Domain
+Cobalt,inferred,tonnage,515,%,0.11,,,,Oxidized Massive Sulphide Domain
+Gold,inferred,tonnage,515,g/t,0.127,,,,Oxidized Massive Sulphide Domain
+Platinum,inferred,tonnage,515,g/t,1.104,,,,Oxidized Massive Sulphide Domain
+Palladium,inferred,tonnage,515,g/t,6.013,,,,Oxidized Massive Sulphide Domain
+Nickel,indicated,tonnes,303000,%,2.87,NSR canadian dollar per tonne,40,,Massive Sulphide Domain
+Copper,indicated,tonnage,1104271,%,1.214,,,,Net Textured Sulphide Domain
+Cobalt,indicated,tonnage,1104271,%,0.038,,,,Net Textured Sulphide Domain
+Gold,indicated,tonnage,1104271,g/t,0.094,,,,Net Textured Sulphide Domain
+Platinum,indicated,tonnage,1104271,g/t,0.572,,,,Net Textured Sulphide Domain
+Palladium,indicated,tonnage,1104271,g/t,3.677,,,,Net Textured Sulphide Domain
+Nickel,indicated,tonnes,825000,%,0.61,NSR canadian dollar per tonne,40,,Net Textured Sulphide Domain
+Copper,inferred,tonnage,17306,%,1.3,,,,Net Textured Sulphide Domain
+Cobalt,inferred,tonnage,17306,%,0.04,,,,Net Textured Sulphide Domain
+Gold,inferred,tonnage,17306,g/t,0.115,,,,Net Textured Sulphide Domain
+Platinum,inferred,tonnage,17306,g/t,0.449,,,,Net Textured Sulphide Domain
+Palladium,inferred,tonnage,17306,g/t,2.709,,,,Net Textured Sulphide Domain
+Copper,indicated,tonnage,208284,%,1.051,,,,Oxidized Net Textured Sulphide Domain
+Cobalt,indicated,tonnage,208284,%,0.036,,,,Oxidized Net Textured Sulphide Domain
+Gold,indicated,tonnage,208284,g/t,0.073,,,,Oxidized Net Textured Sulphide Domain
+Platinum,indicated,tonnage,208284,g/t,0.607,,,,Oxidized Net Textured Sulphide Domain
+Palladium,indicated,tonnage,208284,g/t,2.953,,,,Oxidized Net Textured Sulphide Domain
+Nickel,indicated,tonnes,102754,%,3.72,NSR canadian dollar per tonne,40,,HW Massive
+Copper,inferred,tonnage,3410,%,0.764,,,,Oxidized Net Textured Sulphide Domain
+Cobalt,inferred,tonnage,3410,%,0.034,,,,Oxidized Net Textured Sulphide Domain
+Gold,inferred,tonnage,3410,g/t,0.057,,,,Oxidized Net Textured Sulphide Domain
+Platinum,inferred,tonnage,3410,g/t,0.478,,,,Oxidized Net Textured Sulphide Domain
+Palladium,inferred,tonnage,3410,g/t,2.087,,,,Oxidized Net Textured Sulphide Domain
+Nickel,indicated,tonnes,2726347,%,0.8,NSR canadian dollar per tonne,40,,HW Net
+Copper,indicated,tonnage,2217804,%,2.57,,,,All Domains
+Cobalt,indicated,tonnage,2217804,%,0.077,,,,All Domains
+Gold,indicated,tonnage,2217804,g/t,0.2,,,,All Domains
+Platinum,indicated,tonnage,2217804,g/t,0.967,,,,All Domains
+Palladium,indicated,tonnage,2217804,g/t,3.632,,,,All Domains
+Nickel,indicated,tonnes,183706,%,1.89,NSR canadian dollar per tonne,40,,HW Vein
+Copper,inferred,tonnage,31137,%,1.782,,,,All Domains
+Cobalt,inferred,tonnage,31137,%,0.074,,,,All Domains
+Gold,inferred,tonnage,31137,g/t,0.152,,,,All Domains
+Platinum,inferred,tonnage,31137,g/t,0.603,,,,All Domains
+Palladium,inferred,tonnage,31137,g/t,3.57,,,,All Domains
+Nickel,indicated,tonnes,9769,%,0.9,NSR canadian dollar per tonne,40,,HW Cu
+Copper,inferred,tonnes,30000,%,1.51,NSR canadian dollar per tonne,40,,Massive Sulphide Domain
+Cobalt,inferred,tonnes,30000,%,0.12,NSR canadian dollar per tonne,40,,Massive Sulphide Domain
+Gold,inferred,tonnes,30000,g/t,0.06,NSR canadian dollar per tonne,40,,Massive Sulphide Domain
+Platinum,inferred,tonnes,30000,g/t,0.83,NSR canadian dollar per tonne,40,,Massive Sulphide Domain
+Palladium,inferred,tonnes,30000,g/t,2.85,NSR canadian dollar per tonne,40,,Massive Sulphide Domain
+Nickel,indicated,tonnes,28202,%,3.47,NSR canadian dollar per tonne,40,,FW Massive
+Copper,indicated,tonnes,701000,%,2.13,NSR canadian dollar per tonne,40,,Massive Sulphide Domain
+Cobalt,indicated,tonnes,701000,%,0.13,NSR canadian dollar per tonne,40,,Massive Sulphide Domain
+Gold,indicated,tonnes,701000,g/t,0.1,NSR canadian dollar per tonne,40,,Massive Sulphide Domain
+Platinum,indicated,tonnes,701000,g/t,0.87,NSR canadian dollar per tonne,40,,Massive Sulphide Domain
+Palladium,indicated,tonnes,701000,g/t,2.84,NSR canadian dollar per tonne,40,,Massive Sulphide Domain
+Nickel,indicated,tonnes,267508,%,0.74,NSR canadian dollar per tonne,40,,FW Net
+Copper,inferred,tonnes,72000,%,1.46,NSR canadian dollar per tonne,40,,Vein Domain
+Cobalt,inferred,tonnes,72000,%,0.07,NSR canadian dollar per tonne,40,,Vein Domain
+Gold,inferred,tonnes,72000,g/t,0.1,NSR canadian dollar per tonne,40,,Vein Domain
+Platinum,inferred,tonnes,72000,g/t,0.52,NSR canadian dollar per tonne,40,,Vein Domain
+Palladium,inferred,tonnes,72000,g/t,2.22,NSR canadian dollar per tonne,40,,Vein Domain
+Nickel,indicated,tonnes,11437,%,0.97,NSR canadian dollar per tonne,40,,FW Vein
+Copper,indicated,tonnes,140000,%,1.57,NSR canadian dollar per tonne,40,,Vein Domain
+Cobalt,indicated,tonnes,140000,%,0.08,NSR canadian dollar per tonne,40,,Vein Domain
+Gold,indicated,tonnes,140000,g/t,0.09,NSR canadian dollar per tonne,40,,Vein Domain
+Platinum,indicated,tonnes,140000,g/t,0.54,NSR canadian dollar per tonne,40,,Vein Domain
+Palladium,indicated,tonnes,140000,g/t,2.35,NSR canadian dollar per tonne,40,,Vein Domain
+Nickel,indicated,tonnes,430795,%,0.39,NSR canadian dollar per tonne,40,,West Ext Net
+Copper,inferred,tonnes,376000,%,0.66,NSR canadian dollar per tonne,40,,Net Textured Sulphide Domain
+Cobalt,inferred,tonnes,376000,%,0.03,NSR canadian dollar per tonne,40,,Net Textured Sulphide Domain
+Gold,inferred,tonnes,376000,g/t,0.06,NSR canadian dollar per tonne,40,,Net Textured Sulphide Domain
+Platinum,inferred,tonnes,376000,g/t,0.24,NSR canadian dollar per tonne,40,,Net Textured Sulphide Domain
+Palladium,inferred,tonnes,376000,g/t,1.04,NSR canadian dollar per tonne,40,,Net Textured Sulphide Domain
+Nickel,inferred,tonnage,12000,%,2.31,,,,Puimajuq
+Copper,indicated,tonnes,7721000,%,0.62,NSR canadian dollar per tonne,40,,Net Textured Sulphide Domain
+Cobalt,indicated,tonnes,7721000,%,0.03,NSR canadian dollar per tonne,40,,Net Textured Sulphide Domain
+Gold,indicated,tonnes,7721000,g/t,0.08,NSR canadian dollar per tonne,40,,Net Textured Sulphide Domain
+Platinum,indicated,tonnes,7721000,g/t,0.27,NSR canadian dollar per tonne,40,,Net Textured Sulphide Domain
+Palladium,indicated,tonnes,7721000,g/t,1.21,NSR canadian dollar per tonne,40,,Net Textured Sulphide Domain
+Nickel,inferred,tonnage,1591000,%,0.47,,,,Allammaq
+Copper,inferred,tonnes,478000,%,0.83,NSR canadian dollar per tonne,40,,All Domains
+Cobalt,inferred,tonnes,478000,%,0.03,NSR canadian dollar per tonne,40,,All Domains
+Gold,inferred,tonnes,478000,g/t,0.13,NSR canadian dollar per tonne,40,,All Domains
+Platinum,inferred,tonnes,478000,g/t,0.28,NSR canadian dollar per tonne,40,,All Domains
+Palladium,inferred,tonnes,478000,g/t,1.37,NSR canadian dollar per tonne,40,,All Domains
+Nickel,inferred,tonnage,31000,%,1.61,,,,Mesamax
+Copper,indicated,tonnes,8562000,%,0.76,NSR canadian dollar per tonne,40,,All Domains
+Cobalt,indicated,tonnes,8562000,%,0.03,NSR canadian dollar per tonne,40,,All Domains
+Gold,indicated,tonnes,8562000,g/t,0.12,NSR canadian dollar per tonne,40,,All Domains
+Platinum,indicated,tonnes,8562000,g/t,0.36,NSR canadian dollar per tonne,40,,All Domains
+Palladium,indicated,tonnes,8562000,g/t,1.36,NSR canadian dollar per tonne,40,,All Domains
+Nickel,inferred,tonnage,3085000,%,0.82,,,,Mequillon
+Copper,indicated,tonnes,1447000,%,1,NSR canadian dollar per tonne,42.5,,Open Pit Net Textured Sulphide Resource
+Cobalt,indicated,tonnes,1447000,%,0.04,NSR canadian dollar per tonne,42.5,,Open Pit Net Textured Sulphide Resource
+Gold,indicated,tonnes,1447000,g/t,0.21,NSR canadian dollar per tonne,42.5,,Open Pit Net Textured Sulphide Resource
+Platinum,indicated,tonnes,1447000,g/t,0.71,NSR canadian dollar per tonne,42.5,,Open Pit Net Textured Sulphide Resource
+Palladium,indicated,tonnes,1447000,g/t,2.56,NSR canadian dollar per tonne,42.5,,Open Pit Net Textured Sulphide Resource
+Nickel,inferred,tonnage,478000,%,0.81,,,,Expo
+Copper,indicated,tonnes,3927000,%,1.1,NSR canadian dollar per tonne,42.5,,Underground Net Textured Sulphide Resource
+Cobalt,indicated,tonnes,3927000,%,0.04,NSR canadian dollar per tonne,42.5,,Underground Net Textured Sulphide Resource
+Gold,indicated,tonnes,3927000,g/t,0.23,NSR canadian dollar per tonne,42.5,,Underground Net Textured Sulphide Resource
+Platinum,indicated,tonnes,3927000,g/t,0.69,NSR canadian dollar per tonne,42.5,,Underground Net Textured Sulphide Resource
+Palladium,indicated,tonnes,3927000,g/t,2.68,NSR canadian dollar per tonne,42.5,,Underground Net Textured Sulphide Resource
+Nickel,inferred,tonnage,40000,%,1.24,,,,Ivakkak
+Copper,inferred,tonnes,3085000,%,1.12,NSR canadian dollar per tonne,42.5,,Underground Net Textured Sulphide Resource
+Cobalt,inferred,tonnes,3085000,%,0.04,NSR canadian dollar per tonne,42.5,,Underground Net Textured Sulphide Resource
+Gold,inferred,tonnes,3085000,g/t,0.18,NSR canadian dollar per tonne,42.5,,Underground Net Textured Sulphide Resource
+Platinum,inferred,tonnes,3085000,g/t,0.65,NSR canadian dollar per tonne,42.5,,Underground Net Textured Sulphide Resource
+Palladium,inferred,tonnes,3085000,g/t,2.57,NSR canadian dollar per tonne,42.5,,Underground Net Textured Sulphide Resource
+Nickel,inferred,tonnage,7000,%,1.6,,,,TK
+Nickel,inferred,tonnage,9907,%,3.442,,,,Massive Sulphide Domain
+Nickel,inferred,tonnage,515,%,2.805,,,,Oxidized Massive Sulphide Domain
+Copper,indicated,tonnes,303000,%,3.24,NSR canadian dollar per tonne,40,,Massive Sulphide Domain
+Cobalt,indicated,tonnes,303000,%,0.12,NSR canadian dollar per tonne,40,,Massive Sulphide Domain
+Gold,indicated,tonnes,303000,g/t,0.29,NSR canadian dollar per tonne,40,,Massive Sulphide Domain
+Platinum,indicated,tonnes,303000,g/t,1.28,NSR canadian dollar per tonne,40,,Massive Sulphide Domain
+Palladium,indicated,tonnes,303000,g/t,6.02,NSR canadian dollar per tonne,40,,Massive Sulphide Domain
+Nickel,inferred,tonnage,17306,%,0.697,,,,Net Textured Sulphide Domain
+Copper,inferred,tonnes,11000,%,2.94,NSR canadian dollar per tonne,40,,Massive Sulphide Domain
+Cobalt,inferred,tonnes,11000,%,0.12,NSR canadian dollar per tonne,40,,Massive Sulphide Domain
+Gold,inferred,tonnes,11000,g/t,0.18,NSR canadian dollar per tonne,40,,Massive Sulphide Domain
+Platinum,inferred,tonnes,11000,g/t,1.42,NSR canadian dollar per tonne,40,,Massive Sulphide Domain
+Palladium,inferred,tonnes,11000,g/t,5.49,NSR canadian dollar per tonne,40,,Massive Sulphide Domain
+Nickel,inferred,tonnage,3410,%,0.694,,,,Oxidized Net Textured Sulphide Domain
+Copper,indicated,tonnes,825000,%,0.93,NSR canadian dollar per tonne,40,,Net Textured Sulphide Domain
+Cobalt,indicated,tonnes,825000,%,0.03,NSR canadian dollar per tonne,40,,Net Textured Sulphide Domain
+Gold,indicated,tonnes,825000,g/t,0.09,NSR canadian dollar per tonne,40,,Net Textured Sulphide Domain
+Platinum,indicated,tonnes,825000,g/t,0.41,NSR canadian dollar per tonne,40,,Net Textured Sulphide Domain
+Palladium,indicated,tonnes,825000,g/t,2.09,NSR canadian dollar per tonne,40,,Net Textured Sulphide Domain
+Copper,inferred,tonnes,30000,%,0.7,NSR canadian dollar per tonne,40,,Net Textured Sulphide Domain
+Cobalt,inferred,tonnes,30000,%,0.03,NSR canadian dollar per tonne,40,,Net Textured Sulphide Domain
+Gold,inferred,tonnes,30000,g/t,0.07,NSR canadian dollar per tonne,40,,Net Textured Sulphide Domain
+Platinum,inferred,tonnes,30000,g/t,0.42,NSR canadian dollar per tonne,40,,Net Textured Sulphide Domain
+Palladium,inferred,tonnes,30000,g/t,1.94,NSR canadian dollar per tonne,40,,Net Textured Sulphide Domain
+Nickel,inferred,tonnes,30000,%,2.43,NSR canadian dollar per tonne,40,,Massive Sulphide Domain
+Copper,indicated,tonnes,1128000,%,1.55,NSR canadian dollar per tonne,40,,All Domains
+Cobalt,indicated,tonnes,1128000,%,0.05,NSR canadian dollar per tonne,40,,All Domains
+Gold,indicated,tonnes,1128000,g/t,0.15,NSR canadian dollar per tonne,40,,All Domains
+Platinum,indicated,tonnes,1128000,g/t,0.64,NSR canadian dollar per tonne,40,,All Domains
+Palladium,indicated,tonnes,1128000,g/t,3.14,NSR canadian dollar per tonne,40,,All Domains
+Nickel,inferred,tonnes,72000,%,1.42,NSR canadian dollar per tonne,40,,Vein Domain
+Copper,inferred,tonnes,41000,%,1.3,NSR canadian dollar per tonne,40,,All Domains
+Cobalt,inferred,tonnes,41000,%,0.05,NSR canadian dollar per tonne,40,,All Domains
+Gold,inferred,tonnes,41000,g/t,0.1,NSR canadian dollar per tonne,40,,All Domains
+Platinum,inferred,tonnes,41000,g/t,0.69,NSR canadian dollar per tonne,40,,All Domains
+Palladium,inferred,tonnes,41000,g/t,2.9,NSR canadian dollar per tonne,40,,All Domains
+Nickel,inferred,tonnes,376000,%,0.56,NSR canadian dollar per tonne,40,,Net Textured Sulphide Domain
+Copper,measured,tonnes,559855,%,1.1,NSR canadian dollar per tonne,40,,HW Net
+Cobalt,measured,tonnes,559855,%,0.04,NSR canadian dollar per tonne,40,,HW Net
+Gold,measured,tonnes,559855,g/t,0.1,NSR canadian dollar per tonne,40,,HW Net
+Platinum,measured,tonnes,559855,g/t,0.6,NSR canadian dollar per tonne,40,,HW Net
+Palladium,measured,tonnes,559855,g/t,2.66,NSR canadian dollar per tonne,40,,HW Net
+Copper,indicated,tonnes,102754,%,2.01,NSR canadian dollar per tonne,40,,HW Massive
+Cobalt,indicated,tonnes,102754,%,0.15,NSR canadian dollar per tonne,40,,HW Massive
+Gold,indicated,tonnes,102754,g/t,0.11,NSR canadian dollar per tonne,40,,HW Massive
+Platinum,indicated,tonnes,102754,g/t,1.34,NSR canadian dollar per tonne,40,,HW Massive
+Palladium,indicated,tonnes,102754,g/t,3.27,NSR canadian dollar per tonne,40,,HW Massive
+Nickel,inferred,tonnes,3085000,%,0.82,NSR canadian dollar per tonne,42.5,,Underground Net Textured Sulphide Resource
+Copper,indicated,tonnes,2726347,%,1.04,NSR canadian dollar per tonne,40,,HW Net
+Cobalt,indicated,tonnes,2726347,%,0.04,NSR canadian dollar per tonne,40,,HW Net
+Gold,indicated,tonnes,2726347,g/t,0.12,NSR canadian dollar per tonne,40,,HW Net
+Platinum,indicated,tonnes,2726347,g/t,0.51,NSR canadian dollar per tonne,40,,HW Net
+Palladium,indicated,tonnes,2726347,g/t,2.28,NSR canadian dollar per tonne,40,,HW Net
+Copper,indicated,tonnes,183706,%,3.35,NSR canadian dollar per tonne,40,,HW Vein
+Cobalt,indicated,tonnes,183706,%,0.08,NSR canadian dollar per tonne,40,,HW Vein
+Gold,indicated,tonnes,183706,g/t,0.08,NSR canadian dollar per tonne,40,,HW Vein
+Platinum,indicated,tonnes,183706,g/t,0.69,NSR canadian dollar per tonne,40,,HW Vein
+Palladium,indicated,tonnes,183706,g/t,3.58,NSR canadian dollar per tonne,40,,HW Vein
+Nickel,inferred,tonnes,11000,%,3.11,NSR canadian dollar per tonne,40,,Massive Sulphide Domain
+Copper,indicated,tonnes,9769,%,6.03,NSR canadian dollar per tonne,40,,HW Cu
+Cobalt,indicated,tonnes,9769,%,0.05,NSR canadian dollar per tonne,40,,HW Cu
+Gold,indicated,tonnes,9769,g/t,0.21,NSR canadian dollar per tonne,40,,HW Cu
+Platinum,indicated,tonnes,9769,g/t,0.81,NSR canadian dollar per tonne,40,,HW Cu
+Palladium,indicated,tonnes,9769,g/t,2.25,NSR canadian dollar per tonne,40,,HW Cu
+Nickel,inferred,tonnes,30000,%,0.55,NSR canadian dollar per tonne,40,,Net Textured Sulphide Domain
+Copper,indicated,tonnes,28202,%,1.56,NSR canadian dollar per tonne,40,,FW Massive
+Cobalt,indicated,tonnes,28202,%,0.16,NSR canadian dollar per tonne,40,,FW Massive
+Gold,indicated,tonnes,28202,g/t,0.16,NSR canadian dollar per tonne,40,,FW Massive
+Platinum,indicated,tonnes,28202,g/t,0.8,NSR canadian dollar per tonne,40,,FW Massive
+Palladium,indicated,tonnes,28202,g/t,1.89,NSR canadian dollar per tonne,40,,FW Massive
+Copper,indicated,tonnes,267508,%,0.79,NSR canadian dollar per tonne,40,,FW Net
+Cobalt,indicated,tonnes,267508,%,0.03,NSR canadian dollar per tonne,40,,FW Net
+Gold,indicated,tonnes,267508,g/t,0.05,NSR canadian dollar per tonne,40,,FW Net
+Platinum,indicated,tonnes,267508,g/t,0.35,NSR canadian dollar per tonne,40,,FW Net
+Palladium,indicated,tonnes,267508,g/t,1.53,NSR canadian dollar per tonne,40,,FW Net
+Nickel,inferred,tonnes,8906,%,3.91,NSR canadian dollar per tonne,40,,HW Massive
+Copper,indicated,tonnes,11437,%,0.56,NSR canadian dollar per tonne,40,,FW Vein
+Cobalt,indicated,tonnes,11437,%,0.04,NSR canadian dollar per tonne,40,,FW Vein
+Gold,indicated,tonnes,11437,g/t,0.04,NSR canadian dollar per tonne,40,,FW Vein
+Platinum,indicated,tonnes,11437,g/t,0.33,NSR canadian dollar per tonne,40,,FW Vein
+Palladium,indicated,tonnes,11437,g/t,1.82,NSR canadian dollar per tonne,40,,FW Vein
+Nickel,inferred,tonnes,52486,%,0.56,NSR canadian dollar per tonne,40,,HW Net
+Copper,indicated,tonnes,430795,%,0.49,NSR canadian dollar per tonne,40,,West Ext Net
+Cobalt,indicated,tonnes,430795,%,0.02,NSR canadian dollar per tonne,40,,West Ext Net
+Gold,indicated,tonnes,430795,g/t,0.06,NSR canadian dollar per tonne,40,,West Ext Net
+Platinum,indicated,tonnes,430795,g/t,0.24,NSR canadian dollar per tonne,40,,West Ext Net
+Palladium,indicated,tonnes,430795,g/t,1.09,NSR canadian dollar per tonne,40,,West Ext Net
+Nickel,inferred,tonnes,6963,%,1.89,NSR canadian dollar per tonne,40,,HW Vein
+Copper,inferred,tonnes,8906,%,1.22,NSR canadian dollar per tonne,40,,HW Massive
+Cobalt,inferred,tonnes,8906,%,0.16,NSR canadian dollar per tonne,40,,HW Massive
+Gold,inferred,tonnes,8906,g/t,0.09,NSR canadian dollar per tonne,40,,HW Massive
+Platinum,inferred,tonnes,8906,g/t,1.46,NSR canadian dollar per tonne,40,,HW Massive
+Palladium,inferred,tonnes,8906,g/t,3.6,NSR canadian dollar per tonne,40,,HW Massive
+Nickel,inferred,tonnes,788,%,0.84,NSR canadian dollar per tonne,40,,HW Cu
+Copper,inferred,tonnes,52486,%,1.15,NSR canadian dollar per tonne,40,,HW Net
+Cobalt,inferred,tonnes,52486,%,0.03,NSR canadian dollar per tonne,40,,HW Net
+Gold,inferred,tonnes,52486,g/t,0.14,NSR canadian dollar per tonne,40,,HW Net
+Platinum,inferred,tonnes,52486,g/t,0.39,NSR canadian dollar per tonne,40,,HW Net
+Palladium,inferred,tonnes,52486,g/t,1.9,NSR canadian dollar per tonne,40,,HW Net
+Nickel,inferred,tonnes,17823,%,3.36,NSR canadian dollar per tonne,40,,FW Massive
+Copper,inferred,tonnes,6963,%,2.59,NSR canadian dollar per tonne,40,,HW Vein
+Cobalt,inferred,tonnes,6963,%,0.07,NSR canadian dollar per tonne,40,,HW Vein
+Gold,inferred,tonnes,6963,g/t,0.07,NSR canadian dollar per tonne,40,,HW Vein
+Platinum,inferred,tonnes,6963,g/t,0.54,NSR canadian dollar per tonne,40,,HW Vein
+Palladium,inferred,tonnes,6963,g/t,2.61,NSR canadian dollar per tonne,40,,HW Vein
+Nickel,inferred,tonnes,39489,%,0.63,NSR canadian dollar per tonne,40,,FW Net
+Copper,inferred,tonnes,788,%,5.09,NSR canadian dollar per tonne,40,,HW Cu
+Cobalt,inferred,tonnes,788,%,0.04,NSR canadian dollar per tonne,40,,HW Cu
+Gold,inferred,tonnes,788,g/t,0.28,NSR canadian dollar per tonne,40,,HW Cu
+Platinum,inferred,tonnes,788,g/t,0.94,NSR canadian dollar per tonne,40,,HW Cu
+Palladium,inferred,tonnes,788,g/t,2.52,NSR canadian dollar per tonne,40,,HW Cu
+Nickel,inferred,tonnes,37456,%,0.99,NSR canadian dollar per tonne,40,,FW Vein
+Copper,inferred,tonnes,17823,%,1.51,NSR canadian dollar per tonne,40,,FW Massive
+Cobalt,inferred,tonnes,17823,%,0.15,NSR canadian dollar per tonne,40,,FW Massive
+Gold,inferred,tonnes,17823,g/t,0.07,NSR canadian dollar per tonne,40,,FW Massive
+Platinum,inferred,tonnes,17823,g/t,0.93,NSR canadian dollar per tonne,40,,FW Massive
+Palladium,inferred,tonnes,17823,g/t,2.08,NSR canadian dollar per tonne,40,,FW Massive
+Nickel,inferred,tonnes,1417068,%,0.37,NSR canadian dollar per tonne,40,,West Ext Net
+Copper,inferred,tonnes,39489,%,0.65,NSR canadian dollar per tonne,40,,FW Net
+Cobalt,inferred,tonnes,39489,%,0.03,NSR canadian dollar per tonne,40,,FW Net
+Gold,inferred,tonnes,39489,g/t,0.05,NSR canadian dollar per tonne,40,,FW Net
+Platinum,inferred,tonnes,39489,g/t,0.3,NSR canadian dollar per tonne,40,,FW Net
+Palladium,inferred,tonnes,39489,g/t,1.27,NSR canadian dollar per tonne,40,,FW Net
+Nickel,inferred,tonnes,10214,%,1.82,NSR canadian dollar per tonne,40,,West Ext Vein
+Copper,inferred,tonnes,37456,%,0.62,NSR canadian dollar per tonne,40,,FW Vein
+Cobalt,inferred,tonnes,37456,%,0.05,NSR canadian dollar per tonne,40,,FW Vein
+Gold,inferred,tonnes,37456,g/t,0.05,NSR canadian dollar per tonne,40,,FW Vein
+Platinum,inferred,tonnes,37456,g/t,0.28,NSR canadian dollar per tonne,40,,FW Vein
+Palladium,inferred,tonnes,37456,g/t,1.42,NSR canadian dollar per tonne,40,,FW Vein
+Nickel,measured,tonnage,560000,%,0.93,,,,Allammaq
+Copper,inferred,tonnes,1417068,%,0.46,NSR canadian dollar per tonne,40,,West Ext Net
+Cobalt,inferred,tonnes,1417068,%,0.02,NSR canadian dollar per tonne,40,,West Ext Net
+Gold,inferred,tonnes,1417068,g/t,0.06,NSR canadian dollar per tonne,40,,West Ext Net
+Platinum,inferred,tonnes,1417068,g/t,0.26,NSR canadian dollar per tonne,40,,West Ext Net
+Palladium,inferred,tonnes,1417068,g/t,1.07,NSR canadian dollar per tonne,40,,West Ext Net
+Nickel,measured,tonnes,559855,%,0.93,NSR canadian dollar per tonne,40,,HW Net
+Copper,inferred,tonnes,10214,%,2.5,NSR canadian dollar per tonne,40,,West Ext Vein
+Cobalt,inferred,tonnes,10214,%,0.1,NSR canadian dollar per tonne,40,,West Ext Vein
+Gold,inferred,tonnes,10214,g/t,0.05,NSR canadian dollar per tonne,40,,West Ext Vein
+Platinum,inferred,tonnes,10214,g/t,0.35,NSR canadian dollar per tonne,40,,West Ext Vein
+Palladium,inferred,tonnes,10214,g/t,2.37,NSR canadian dollar per tonne,40,,West Ext Vein

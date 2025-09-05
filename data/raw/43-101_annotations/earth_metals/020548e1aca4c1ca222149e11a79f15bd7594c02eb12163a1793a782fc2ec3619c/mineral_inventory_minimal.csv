@@ -1,0 +1,13 @@
+commodity_observed_name,category_observed_name,ore_unit_observed_name,ore_value,grade_unit_observed_name,grade_value,cutoff_grade_unit_observed_name,cutoff_grade_value,contained_metal,zone
+Scandium,indicated,tonnes,7300000.0,grams per tonne,282.01,C$/t,110.8,,Crater Lake Project
+Dysprosium,indicated,tonnes,7300000.0,grams per tonne,65.72,C$/t,110.8,,Crater Lake Project
+Lanthanum,indicated,tonnes,7300000.0,grams per tonne,605.82,C$/t,110.8,,Crater Lake Project
+Neodymium,indicated,tonnes,7300000.0,grams per tonne,595.78,C$/t,110.8,,Crater Lake Project
+Praseodymium,indicated,tonnes,7300000.0,grams per tonne,160.41,C$/t,110.8,,Crater Lake Project
+Terbium,indicated,tonnes,7300000.0,grams per tonne,11.65,C$/t,110.8,,Crater Lake Project
+Scandium,inferred,tonnes,13200000.0,grams per tonne,264.24,C$/t,110.8,,Crater Lake Project
+Dysprosium,inferred,tonnes,13200000.0,grams per tonne,62.24,C$/t,110.8,,Crater Lake Project
+Lanthanum,inferred,tonnes,13200000.0,grams per tonne,568.63,C$/t,110.8,,Crater Lake Project
+Neodymium,inferred,tonnes,13200000.0,grams per tonne,573.04,C$/t,110.8,,Crater Lake Project
+Praseodymium,inferred,tonnes,13200000.0,grams per tonne,154.02,C$/t,110.8,,Crater Lake Project
+Terbium,inferred,tonnes,13200000.0,grams per tonne,11.13,C$/t,110.8,,Crater Lake Project

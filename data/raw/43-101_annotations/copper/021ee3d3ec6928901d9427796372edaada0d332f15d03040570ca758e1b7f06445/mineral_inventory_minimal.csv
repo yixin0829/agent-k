@@ -1,0 +1,5 @@
+commodity_observed_name,category_observed_name,ore_unit_observed_name,ore_value,grade_unit_observed_name,grade_value,cutoff_grade_unit_observed_name,cutoff_grade_value,contained_metal,zone
+copper,proven,tonnes,93475785,percent,0.423,,,,Mine Feasibility Study
+gold,proven,tonnes,93475785,grams per tonne,0.327,,,,Mine Feasibility Study
+copper,probable,tonnes,182524215,percent,0.3,,,,Mine Feasibility Study
+gold,probable,tonnes,182524215,grams per tonne,0.226,,,,Mine Feasibility Study

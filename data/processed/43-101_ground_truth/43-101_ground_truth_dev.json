@@ -1,0 +1,1370 @@
+{
+  "0200a1c6d2cfafeb485d815d95966961d4c119e8662b8babec74e05b59ba4759d2": {
+    "cdr_record_id": "0200a1c6d2cfafeb485d815d95966961d4c119e8662b8babec74e05b59ba4759d2",
+    "contained_metal_inventory": [
+      {
+        "commodity_observed_name": "nickel",
+        "reserve_contained_metal": 0.0,
+        "reserve_contained_metal_breakdown": [],
+        "resource_contained_metal": 2.6060343,
+        "resource_contained_metal_breakdown": [
+          {
+            "category_observed_name": "indicated",
+            "normalized_grade": 0.21,
+            "normalized_ore_value": 115.28999999999999,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "indicated",
+            "normalized_grade": 0.24,
+            "normalized_ore_value": 205.131,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "indicated",
+            "normalized_grade": 0.2,
+            "normalized_ore_value": 61.305,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "indicated",
+            "normalized_grade": 0.22,
+            "normalized_ore_value": 9.206999999999999,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "inferred",
+            "normalized_grade": 0.22,
+            "normalized_ore_value": 143.283,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "inferred",
+            "normalized_grade": 0.23,
+            "normalized_ore_value": 394.394,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "inferred",
+            "normalized_grade": 0.2,
+            "normalized_ore_value": 182.743,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "inferred",
+            "normalized_grade": 0.24,
+            "normalized_ore_value": 22.503,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "measured",
+            "normalized_grade": 0.21,
+            "normalized_ore_value": 11.295,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "measured",
+            "normalized_grade": 0.24,
+            "normalized_ore_value": 26.334999999999997,
+            "resource_or_reserve": "resource"
+          }
+        ]
+      }
+    ],
+    "country": "Canada",
+    "main_commodity": "nickel",
+    "mineral_site_name": "Turnagain Nickel Project",
+    "state_or_province": "British Columbia",
+    "total_mineral_reserve_tonnage": 0.0,
+    "total_mineral_reserve_tonnage_breakdown": [],
+    "total_mineral_resource_tonnage": 1171.486,
+    "total_mineral_resource_tonnage_breakdown": [
+      {
+        "category_observed_name": "indicated",
+        "normalized_ore_value": 115.28999999999999,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "indicated",
+        "normalized_ore_value": 205.131,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "indicated",
+        "normalized_ore_value": 61.305,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "indicated",
+        "normalized_ore_value": 9.206999999999999,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "inferred",
+        "normalized_ore_value": 143.283,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "inferred",
+        "normalized_ore_value": 394.394,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "inferred",
+        "normalized_ore_value": 182.743,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "inferred",
+        "normalized_ore_value": 22.503,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "measured",
+        "normalized_ore_value": 11.295,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "measured",
+        "normalized_ore_value": 26.334999999999997,
+        "resource_or_reserve": "resource"
+      }
+    ]
+  },
+  "021b001961514a258c99e04f9d696edd68a551bb191037ac176e88ee3e47860dbe": {
+    "cdr_record_id": "021b001961514a258c99e04f9d696edd68a551bb191037ac176e88ee3e47860dbe",
+    "contained_metal_inventory": [
+      {
+        "commodity_observed_name": "niobium",
+        "reserve_contained_metal": 0.0,
+        "reserve_contained_metal_breakdown": [],
+        "resource_contained_metal": 1.5294518,
+        "resource_contained_metal_breakdown": [
+          {
+            "category_observed_name": "measured",
+            "normalized_grade": 0.41,
+            "normalized_ore_value": 112.651,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "indicated",
+            "normalized_grade": 0.35,
+            "normalized_ore_value": 173.16899999999998,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "inferred",
+            "normalized_grade": 0.32,
+            "normalized_ore_value": 144.21599999999998,
+            "resource_or_reserve": "resource"
+          }
+        ]
+      }
+    ],
+    "country": "Canada",
+    "main_commodity": "earth_metals",
+    "mineral_site_name": "Omineca Mining District",
+    "state_or_province": "British Columbia",
+    "total_mineral_reserve_tonnage": 0.0,
+    "total_mineral_reserve_tonnage_breakdown": [],
+    "total_mineral_resource_tonnage": 430.036,
+    "total_mineral_resource_tonnage_breakdown": [
+      {
+        "category_observed_name": "measured",
+        "normalized_ore_value": 112.651,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "indicated",
+        "normalized_ore_value": 173.16899999999998,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "inferred",
+        "normalized_ore_value": 144.21599999999998,
+        "resource_or_reserve": "resource"
+      }
+    ]
+  },
+  "02385db31dc0fc04c2c0a598cabd5d8a0cc2c990002d04c5b1ec8e3e6795d8c8ef": {
+    "cdr_record_id": "02385db31dc0fc04c2c0a598cabd5d8a0cc2c990002d04c5b1ec8e3e6795d8c8ef",
+    "contained_metal_inventory": [
+      {
+        "commodity_observed_name": "cerium",
+        "reserve_contained_metal": 0.0,
+        "reserve_contained_metal_breakdown": [],
+        "resource_contained_metal": 0.33455,
+        "resource_contained_metal_breakdown": [
+          {
+            "category_observed_name": "indicated",
+            "normalized_grade": 1.44,
+            "normalized_ore_value": 5.0,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "inferred",
+            "normalized_grade": 0.89,
+            "normalized_ore_value": 29.5,
+            "resource_or_reserve": "resource"
+          }
+        ]
+      }
+    ],
+    "country": "Canada",
+    "main_commodity": "earth_metals",
+    "mineral_site_name": "Wicheeda Rare Earth Element Project",
+    "state_or_province": "British Columbia",
+    "total_mineral_reserve_tonnage": 0.0,
+    "total_mineral_reserve_tonnage_breakdown": [],
+    "total_mineral_resource_tonnage": 34.5,
+    "total_mineral_resource_tonnage_breakdown": [
+      {
+        "category_observed_name": "indicated",
+        "normalized_ore_value": 5.0,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "inferred",
+        "normalized_ore_value": 29.5,
+        "resource_or_reserve": "resource"
+      }
+    ]
+  },
+  "023a9e77a67e3689e17aa48d8b22913b9216a6895b9d84039cf00ad91c660ee548": {
+    "cdr_record_id": "023a9e77a67e3689e17aa48d8b22913b9216a6895b9d84039cf00ad91c660ee548",
+    "contained_metal_inventory": [
+      {
+        "commodity_observed_name": "nickel",
+        "reserve_contained_metal": 0.0,
+        "reserve_contained_metal_breakdown": [],
+        "resource_contained_metal": 0.2145551,
+        "resource_contained_metal_breakdown": [
+          {
+            "category_observed_name": "indicated",
+            "normalized_grade": 0.45,
+            "normalized_ore_value": 8.549999999999999,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "inferred",
+            "normalized_grade": 0.38,
+            "normalized_ore_value": 2.0,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "indicated",
+            "normalized_grade": 0.45,
+            "normalized_ore_value": 8.45,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "indicated",
+            "normalized_grade": 0.46,
+            "normalized_ore_value": 8.01,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "indicated",
+            "normalized_grade": 0.47,
+            "normalized_ore_value": 7.319999999999999,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "indicated",
+            "normalized_grade": 0.49,
+            "normalized_ore_value": 5.08,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "inferred",
+            "normalized_grade": 0.38,
+            "normalized_ore_value": 1.91,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "inferred",
+            "normalized_grade": 0.4,
+            "normalized_ore_value": 1.5699999999999998,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "inferred",
+            "normalized_grade": 0.45,
+            "normalized_ore_value": 0.595,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "inferred",
+            "normalized_grade": 0.48,
+            "normalized_ore_value": 0.298,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "inferred",
+            "normalized_grade": 0.56,
+            "normalized_ore_value": 0.066,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "indicated",
+            "normalized_grade": 0.52,
+            "normalized_ore_value": 2.11,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "indicated",
+            "normalized_grade": 0.55,
+            "normalized_ore_value": 0.6709999999999999,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "indicated",
+            "normalized_grade": 0.57,
+            "normalized_ore_value": 0.223,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "inferred",
+            "normalized_grade": 0.56,
+            "normalized_ore_value": 0.065,
+            "resource_or_reserve": "resource"
+          }
+        ]
+      }
+    ],
+    "country": "Canada",
+    "main_commodity": "nickel",
+    "mineral_site_name": "Graham Property",
+    "state_or_province": "Ontario",
+    "total_mineral_reserve_tonnage": 0.0,
+    "total_mineral_reserve_tonnage_breakdown": [],
+    "total_mineral_resource_tonnage": 46.918,
+    "total_mineral_resource_tonnage_breakdown": [
+      {
+        "category_observed_name": "indicated",
+        "normalized_ore_value": 8.549999999999999,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "inferred",
+        "normalized_ore_value": 2.0,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "indicated",
+        "normalized_ore_value": 8.45,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "indicated",
+        "normalized_ore_value": 8.01,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "indicated",
+        "normalized_ore_value": 7.319999999999999,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "indicated",
+        "normalized_ore_value": 5.08,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "inferred",
+        "normalized_ore_value": 1.91,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "inferred",
+        "normalized_ore_value": 1.5699999999999998,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "inferred",
+        "normalized_ore_value": 0.595,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "inferred",
+        "normalized_ore_value": 0.298,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "inferred",
+        "normalized_ore_value": 0.066,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "indicated",
+        "normalized_ore_value": 2.11,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "indicated",
+        "normalized_ore_value": 0.6709999999999999,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "indicated",
+        "normalized_ore_value": 0.223,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "inferred",
+        "normalized_ore_value": 0.065,
+        "resource_or_reserve": "resource"
+      }
+    ]
+  },
+  "02438bcc98fde0b10d03d369b1c152f2dc9608dfdea90737ab989ef665d6abffb3": {
+    "cdr_record_id": "02438bcc98fde0b10d03d369b1c152f2dc9608dfdea90737ab989ef665d6abffb3",
+    "contained_metal_inventory": [
+      {
+        "commodity_observed_name": "lithium",
+        "reserve_contained_metal": 0.70546,
+        "reserve_contained_metal_breakdown": [
+          {
+            "category_observed_name": "proven",
+            "normalized_grade": 1.58,
+            "normalized_ore_value": 11.7,
+            "resource_or_reserve": "reserve"
+          },
+          {
+            "category_observed_name": "probable",
+            "normalized_grade": 1.46,
+            "normalized_ore_value": 8.3,
+            "resource_or_reserve": "reserve"
+          },
+          {
+            "category_observed_name": "proven",
+            "normalized_grade": 1.54,
+            "normalized_ore_value": 13.3,
+            "resource_or_reserve": "reserve"
+          },
+          {
+            "category_observed_name": "probable",
+            "normalized_grade": 1.39,
+            "normalized_ore_value": 14.0,
+            "resource_or_reserve": "reserve"
+          }
+        ],
+        "resource_contained_metal": 0.5096188,
+        "resource_contained_metal_breakdown": [
+          {
+            "category_observed_name": "measured",
+            "normalized_grade": 1.6,
+            "normalized_ore_value": 12.998,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "indicated",
+            "normalized_grade": 1.54,
+            "normalized_ore_value": 14.993,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "inferred",
+            "normalized_grade": 1.51,
+            "normalized_ore_value": 4.686,
+            "resource_or_reserve": "resource"
+          }
+        ]
+      }
+    ],
+    "country": "Canada",
+    "main_commodity": "lithium",
+    "mineral_site_name": "Whabouchi Property",
+    "state_or_province": "Quebec",
+    "total_mineral_reserve_tonnage": 47.3,
+    "total_mineral_reserve_tonnage_breakdown": [
+      {
+        "category_observed_name": "proven",
+        "normalized_ore_value": 11.7,
+        "resource_or_reserve": "reserve"
+      },
+      {
+        "category_observed_name": "probable",
+        "normalized_ore_value": 8.3,
+        "resource_or_reserve": "reserve"
+      },
+      {
+        "category_observed_name": "proven",
+        "normalized_ore_value": 13.3,
+        "resource_or_reserve": "reserve"
+      },
+      {
+        "category_observed_name": "probable",
+        "normalized_ore_value": 14.0,
+        "resource_or_reserve": "reserve"
+      }
+    ],
+    "total_mineral_resource_tonnage": 32.677,
+    "total_mineral_resource_tonnage_breakdown": [
+      {
+        "category_observed_name": "measured",
+        "normalized_ore_value": 12.998,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "indicated",
+        "normalized_ore_value": 14.993,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "inferred",
+        "normalized_ore_value": 4.686,
+        "resource_or_reserve": "resource"
+      }
+    ]
+  },
+  "0248014bb5104094cd060e36532edd613e702960dc36ecbf2382ba756e128eb907": {
+    "cdr_record_id": "0248014bb5104094cd060e36532edd613e702960dc36ecbf2382ba756e128eb907",
+    "contained_metal_inventory": [
+      {
+        "commodity_observed_name": "copper",
+        "reserve_contained_metal": 2.16,
+        "reserve_contained_metal_breakdown": [
+          {
+            "category_observed_name": "proven+probable",
+            "normalized_grade": 0.45,
+            "normalized_ore_value": 480.0,
+            "resource_or_reserve": "reserve"
+          }
+        ],
+        "resource_contained_metal": 4.294,
+        "resource_contained_metal_breakdown": [
+          {
+            "category_observed_name": "measured+indicated",
+            "normalized_grade": 0.38,
+            "normalized_ore_value": 980.0,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "inferred",
+            "normalized_grade": 0.3,
+            "normalized_ore_value": 190.0,
+            "resource_or_reserve": "resource"
+          }
+        ]
+      }
+    ],
+    "country": "Canada",
+    "main_commodity": "copper",
+    "mineral_site_name": "Red Chris Project",
+    "state_or_province": "British Columbia",
+    "total_mineral_reserve_tonnage": 480.0,
+    "total_mineral_reserve_tonnage_breakdown": [
+      {
+        "category_observed_name": "proven+probable",
+        "normalized_ore_value": 480.0,
+        "resource_or_reserve": "reserve"
+      }
+    ],
+    "total_mineral_resource_tonnage": 1170.0,
+    "total_mineral_resource_tonnage_breakdown": [
+      {
+        "category_observed_name": "measured+indicated",
+        "normalized_ore_value": 980.0,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "inferred",
+        "normalized_ore_value": 190.0,
+        "resource_or_reserve": "resource"
+      }
+    ]
+  },
+  "024d19dd4d5c56766d1b384671e30aa6b57f4c726d486bc798982b21ebe6a3ebf1": {
+    "cdr_record_id": "024d19dd4d5c56766d1b384671e30aa6b57f4c726d486bc798982b21ebe6a3ebf1",
+    "contained_metal_inventory": [
+      {
+        "commodity_observed_name": "zinc",
+        "reserve_contained_metal": 0.0,
+        "reserve_contained_metal_breakdown": [],
+        "resource_contained_metal": 7.193676873599999,
+        "resource_contained_metal_breakdown": [
+          {
+            "category_observed_name": "inferred",
+            "normalized_grade": 1.22,
+            "normalized_ore_value": 38.401776,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "inferred",
+            "normalized_grade": 1.44,
+            "normalized_ore_value": 31.280255999999998,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "inferred",
+            "normalized_grade": 1.63,
+            "normalized_ore_value": 25.927775999999998,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "inferred",
+            "normalized_grade": 1.82,
+            "normalized_ore_value": 21.745584,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "inferred",
+            "normalized_grade": 2.01,
+            "normalized_ore_value": 18.080496,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "inferred",
+            "normalized_grade": 2.18,
+            "normalized_ore_value": 15.358896,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "inferred",
+            "normalized_grade": 2.35,
+            "normalized_ore_value": 13.118112,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "inferred",
+            "normalized_grade": 2.5,
+            "normalized_ore_value": 11.285568,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "inferred",
+            "normalized_grade": 2.65,
+            "normalized_ore_value": 9.679824,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "inferred",
+            "normalized_grade": 2.81,
+            "normalized_ore_value": 8.282736,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "inferred",
+            "normalized_grade": 2.95,
+            "normalized_ore_value": 7.0852319999999995,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "inferred",
+            "normalized_grade": 3.1,
+            "normalized_ore_value": 6.096384,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "inferred",
+            "normalized_grade": 3.24,
+            "normalized_ore_value": 5.243615999999999,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "inferred",
+            "normalized_grade": 3.37,
+            "normalized_ore_value": 4.517856,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "inferred",
+            "normalized_grade": 3.5,
+            "normalized_ore_value": 3.8646719999999997,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "inferred",
+            "normalized_grade": 3.62,
+            "normalized_ore_value": 3.3384959999999997,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "inferred",
+            "normalized_grade": 3.75,
+            "normalized_ore_value": 2.8758239999999997,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "inferred",
+            "normalized_grade": 3.88,
+            "normalized_ore_value": 2.485728,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "inferred",
+            "normalized_grade": 3.97,
+            "normalized_ore_value": 2.195424,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "inferred",
+            "normalized_grade": 4.06,
+            "normalized_ore_value": 1.9323359999999998,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "inferred",
+            "normalized_grade": 4.15,
+            "normalized_ore_value": 1.687392,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "inferred",
+            "normalized_grade": 4.2,
+            "normalized_ore_value": 1.505952,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "inferred",
+            "normalized_grade": 4.26,
+            "normalized_ore_value": 1.324512,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "inferred",
+            "normalized_grade": 4.34,
+            "normalized_ore_value": 1.17936,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "indicated",
+            "normalized_grade": 1.57,
+            "normalized_ore_value": 9.997344,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "indicated",
+            "normalized_grade": 1.79,
+            "normalized_ore_value": 8.545824,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "indicated",
+            "normalized_grade": 2.01,
+            "normalized_ore_value": 7.3392479999999995,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "indicated",
+            "normalized_grade": 2.21,
+            "normalized_ore_value": 6.377616,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "indicated",
+            "normalized_grade": 2.41,
+            "normalized_ore_value": 5.542992,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "indicated",
+            "normalized_grade": 2.6,
+            "normalized_ore_value": 4.8263039999999995,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "indicated",
+            "normalized_grade": 2.8,
+            "normalized_ore_value": 4.209408,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "indicated",
+            "normalized_grade": 3.0,
+            "normalized_ore_value": 3.67416,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "indicated",
+            "normalized_grade": 3.18,
+            "normalized_ore_value": 3.238704,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "indicated",
+            "normalized_grade": 3.38,
+            "normalized_ore_value": 2.821392,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "indicated",
+            "normalized_grade": 3.57,
+            "normalized_ore_value": 2.4766559999999997,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "indicated",
+            "normalized_grade": 3.73,
+            "normalized_ore_value": 2.204496,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "indicated",
+            "normalized_grade": 3.93,
+            "normalized_ore_value": 1.941408,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "indicated",
+            "normalized_grade": 4.1,
+            "normalized_ore_value": 1.7236799999999999,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "indicated",
+            "normalized_grade": 4.28,
+            "normalized_ore_value": 1.54224,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "indicated",
+            "normalized_grade": 4.47,
+            "normalized_ore_value": 1.369872,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "indicated",
+            "normalized_grade": 4.63,
+            "normalized_ore_value": 1.233792,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "indicated",
+            "normalized_grade": 4.79,
+            "normalized_ore_value": 1.115856,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "indicated",
+            "normalized_grade": 4.95,
+            "normalized_ore_value": 1.0069919999999999,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "indicated",
+            "normalized_grade": 5.1,
+            "normalized_ore_value": 0.9072,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "indicated",
+            "normalized_grade": 5.22,
+            "normalized_ore_value": 0.825552,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "indicated",
+            "normalized_grade": 5.43,
+            "normalized_ore_value": 0.7348319999999999,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "indicated",
+            "normalized_grade": 5.55,
+            "normalized_ore_value": 0.6713279999999999,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "indicated",
+            "normalized_grade": 5.7,
+            "normalized_ore_value": 0.625968,
+            "resource_or_reserve": "resource"
+          }
+        ]
+      }
+    ],
+    "country": "Canada",
+    "main_commodity": "zinc",
+    "mineral_site_name": "Jersey-Emerald Property",
+    "state_or_province": "British Columbia",
+    "total_mineral_reserve_tonnage": 0.0,
+    "total_mineral_reserve_tonnage_breakdown": [],
+    "total_mineral_resource_tonnage": 313.446672,
+    "total_mineral_resource_tonnage_breakdown": [
+      {
+        "category_observed_name": "inferred",
+        "normalized_ore_value": 38.401776,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "inferred",
+        "normalized_ore_value": 31.280255999999998,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "inferred",
+        "normalized_ore_value": 25.927775999999998,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "inferred",
+        "normalized_ore_value": 21.745584,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "inferred",
+        "normalized_ore_value": 18.080496,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "inferred",
+        "normalized_ore_value": 15.358896,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "inferred",
+        "normalized_ore_value": 13.118112,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "inferred",
+        "normalized_ore_value": 11.285568,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "inferred",
+        "normalized_ore_value": 9.679824,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "inferred",
+        "normalized_ore_value": 8.282736,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "inferred",
+        "normalized_ore_value": 7.0852319999999995,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "inferred",
+        "normalized_ore_value": 6.096384,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "inferred",
+        "normalized_ore_value": 5.243615999999999,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "inferred",
+        "normalized_ore_value": 4.517856,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "inferred",
+        "normalized_ore_value": 3.8646719999999997,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "inferred",
+        "normalized_ore_value": 3.3384959999999997,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "inferred",
+        "normalized_ore_value": 2.8758239999999997,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "inferred",
+        "normalized_ore_value": 2.485728,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "inferred",
+        "normalized_ore_value": 2.195424,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "inferred",
+        "normalized_ore_value": 1.9323359999999998,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "inferred",
+        "normalized_ore_value": 1.687392,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "inferred",
+        "normalized_ore_value": 1.505952,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "inferred",
+        "normalized_ore_value": 1.324512,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "inferred",
+        "normalized_ore_value": 1.17936,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "indicated",
+        "normalized_ore_value": 9.997344,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "indicated",
+        "normalized_ore_value": 8.545824,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "indicated",
+        "normalized_ore_value": 7.3392479999999995,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "indicated",
+        "normalized_ore_value": 6.377616,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "indicated",
+        "normalized_ore_value": 5.542992,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "indicated",
+        "normalized_ore_value": 4.8263039999999995,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "indicated",
+        "normalized_ore_value": 4.209408,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "indicated",
+        "normalized_ore_value": 3.67416,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "indicated",
+        "normalized_ore_value": 3.238704,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "indicated",
+        "normalized_ore_value": 2.821392,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "indicated",
+        "normalized_ore_value": 2.4766559999999997,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "indicated",
+        "normalized_ore_value": 2.204496,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "indicated",
+        "normalized_ore_value": 1.941408,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "indicated",
+        "normalized_ore_value": 1.7236799999999999,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "indicated",
+        "normalized_ore_value": 1.54224,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "indicated",
+        "normalized_ore_value": 1.369872,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "indicated",
+        "normalized_ore_value": 1.233792,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "indicated",
+        "normalized_ore_value": 1.115856,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "indicated",
+        "normalized_ore_value": 1.0069919999999999,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "indicated",
+        "normalized_ore_value": 0.9072,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "indicated",
+        "normalized_ore_value": 0.825552,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "indicated",
+        "normalized_ore_value": 0.7348319999999999,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "indicated",
+        "normalized_ore_value": 0.6713279999999999,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "indicated",
+        "normalized_ore_value": 0.625968,
+        "resource_or_reserve": "resource"
+      }
+    ]
+  },
+  "02535c4f674d8805775d2f1f50fafdaa51b248a5be809de9545d6ecb5b36f8c076": {
+    "cdr_record_id": "02535c4f674d8805775d2f1f50fafdaa51b248a5be809de9545d6ecb5b36f8c076",
+    "contained_metal_inventory": [
+      {
+        "commodity_observed_name": "tungsten",
+        "reserve_contained_metal": 0.0,
+        "reserve_contained_metal_breakdown": [],
+        "resource_contained_metal": 0.3827984,
+        "resource_contained_metal_breakdown": [
+          {
+            "category_observed_name": "indicated",
+            "normalized_grade": 0.88,
+            "normalized_ore_value": 30.201999999999998,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "indicated",
+            "normalized_grade": 0.88,
+            "normalized_ore_value": 2.826,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "inferred",
+            "normalized_grade": 0.75,
+            "normalized_ore_value": 9.836,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "inferred",
+            "normalized_grade": 0.91,
+            "normalized_ore_value": 2.02,
+            "resource_or_reserve": "resource"
+          }
+        ]
+      }
+    ],
+    "country": "Canada",
+    "main_commodity": "tungsten",
+    "mineral_site_name": "Mactung Tungsten Deposit",
+    "state_or_province": "Yukon",
+    "total_mineral_reserve_tonnage": 0.0,
+    "total_mineral_reserve_tonnage_breakdown": [],
+    "total_mineral_resource_tonnage": 44.884,
+    "total_mineral_resource_tonnage_breakdown": [
+      {
+        "category_observed_name": "indicated",
+        "normalized_ore_value": 30.201999999999998,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "indicated",
+        "normalized_ore_value": 2.826,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "inferred",
+        "normalized_ore_value": 9.836,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "inferred",
+        "normalized_ore_value": 2.02,
+        "resource_or_reserve": "resource"
+      }
+    ]
+  },
+  "02a432b7e0c3f5432c7606759a6851e66a8f45094d522fa7c4c460084d9a5ddbc9": {
+    "cdr_record_id": "02a432b7e0c3f5432c7606759a6851e66a8f45094d522fa7c4c460084d9a5ddbc9",
+    "contained_metal_inventory": [
+      {
+        "commodity_observed_name": "nickel",
+        "reserve_contained_metal": 0.0,
+        "reserve_contained_metal_breakdown": [],
+        "resource_contained_metal": 0.0257436,
+        "resource_contained_metal_breakdown": [
+          {
+            "category_observed_name": "indicated",
+            "normalized_grade": 0.7,
+            "normalized_ore_value": 0.12,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "inferred",
+            "normalized_grade": 0.86,
+            "normalized_ore_value": 0.012,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "indicated",
+            "normalized_grade": 1.56,
+            "normalized_ore_value": 0.999,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "inferred",
+            "normalized_grade": 1.4,
+            "normalized_ore_value": 0.22799999999999998,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "indicated",
+            "normalized_grade": 1.36,
+            "normalized_ore_value": 0.353,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "inferred",
+            "normalized_grade": 1.12,
+            "normalized_ore_value": 0.059,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "indicated",
+            "normalized_grade": 0.63,
+            "normalized_ore_value": 0.06,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "inferred",
+            "normalized_grade": 0.52,
+            "normalized_ore_value": 0.022,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "indicated",
+            "normalized_grade": 0.5,
+            "normalized_ore_value": 0.013999999999999999,
+            "resource_or_reserve": "resource"
+          }
+        ]
+      }
+    ],
+    "country": "Canada",
+    "main_commodity": "nickel",
+    "mineral_site_name": "Turnagain Nickel Property",
+    "state_or_province": "Ontario",
+    "total_mineral_reserve_tonnage": 0.0,
+    "total_mineral_reserve_tonnage_breakdown": [],
+    "total_mineral_resource_tonnage": 1.867,
+    "total_mineral_resource_tonnage_breakdown": [
+      {
+        "category_observed_name": "indicated",
+        "normalized_ore_value": 0.12,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "inferred",
+        "normalized_ore_value": 0.012,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "indicated",
+        "normalized_ore_value": 0.999,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "inferred",
+        "normalized_ore_value": 0.22799999999999998,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "indicated",
+        "normalized_ore_value": 0.353,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "inferred",
+        "normalized_ore_value": 0.059,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "indicated",
+        "normalized_ore_value": 0.06,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "inferred",
+        "normalized_ore_value": 0.022,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "indicated",
+        "normalized_ore_value": 0.013999999999999999,
+        "resource_or_reserve": "resource"
+      }
+    ]
+  },
+  "02d40055ac23d9034c815a941763045780b709289537ed42a56b7390db074d11cd": {
+    "cdr_record_id": "02d40055ac23d9034c815a941763045780b709289537ed42a56b7390db074d11cd",
+    "contained_metal_inventory": [
+      {
+        "commodity_observed_name": "nickel",
+        "reserve_contained_metal": 0.0,
+        "reserve_contained_metal_breakdown": [],
+        "resource_contained_metal": 0.0072068073,
+        "resource_contained_metal_breakdown": [
+          {
+            "category_observed_name": "indicated",
+            "normalized_grade": 0.72,
+            "normalized_ore_value": 0.665308,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "indicated",
+            "normalized_grade": 3.93,
+            "normalized_ore_value": 0.049561999999999995,
+            "resource_or_reserve": "resource"
+          },
+          {
+            "category_observed_name": "inferred",
+            "normalized_grade": 3.39,
+            "normalized_ore_value": 0.013829,
+            "resource_or_reserve": "resource"
+          }
+        ]
+      }
+    ],
+    "country": "Canada",
+    "main_commodity": "nickel",
+    "mineral_site_name": "McWatters Mine",
+    "state_or_province": "Ontario",
+    "total_mineral_reserve_tonnage": 0.0,
+    "total_mineral_reserve_tonnage_breakdown": [],
+    "total_mineral_resource_tonnage": 0.728699,
+    "total_mineral_resource_tonnage_breakdown": [
+      {
+        "category_observed_name": "indicated",
+        "normalized_ore_value": 0.665308,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "indicated",
+        "normalized_ore_value": 0.049561999999999995,
+        "resource_or_reserve": "resource"
+      },
+      {
+        "category_observed_name": "inferred",
+        "normalized_ore_value": 0.013829,
+        "resource_or_reserve": "resource"
+      }
+    ]
+  }
+}

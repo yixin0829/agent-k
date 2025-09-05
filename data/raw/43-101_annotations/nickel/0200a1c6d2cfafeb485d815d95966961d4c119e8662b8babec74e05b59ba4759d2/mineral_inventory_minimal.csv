@@ -1,0 +1,21 @@
+commodity_observed_name,category_observed_name,ore_unit_observed_name,ore_value,grade_unit_observed_name,grade_value,cutoff_grade_unit_observed_name,cutoff_grade_value,contained_metal,zone
+Cobalt,indicated,tonnage,115290000,%,0.009,%,0.1,,NORTHWEST Domain 1
+Cobalt,indicated,tonnage,205131000,%,0.011,%,0.1,,HORSETRAIL Domain 2+3
+Cobalt,indicated,tonnage,61305000,%,0.013,%,0.1,,HATZL Domain 4+5
+Cobalt,indicated,tonnage,9207000,%,0.011,%,0.1,,DUFFY Domain 6
+Cobalt,inferred,tonnage,143283000,%,0.009,%,0.1,,NORTHWEST Domain 1
+Cobalt,inferred,tonnage,394394000,%,0.011,%,0.1,,HORSETRAIL Domain 2+3
+Cobalt,inferred,tonnage,182743000,%,0.012,%,0.1,,HATZL Domain 4+5
+Cobalt,inferred,tonnage,22503000,%,0.011,%,0.1,,DUFFY Domain 6
+Cobalt,measured,tonnage,11295000,%,0.009,%,0.1,,NORTHWEST Domain 1
+Cobalt,measured,tonnage,26335000,%,0.011,%,0.1,,HORSETRAIL Domain 2+3
+Nickel,indicated,tonnage,115290000,%,0.21,%,0.1,,NORTHWEST Domain 1
+Nickel,indicated,tonnage,205131000,%,0.24,%,0.1,,HORSETRAIL Domain 2+3
+Nickel,indicated,tonnage,61305000,%,0.2,%,0.1,,HATZL Domain 4+5
+Nickel,indicated,tonnage,9207000,%,0.22,%,0.1,,DUFFY Domain 6
+Nickel,inferred,tonnage,143283000,%,0.22,%,0.1,,NORTHWEST Domain 1
+Nickel,inferred,tonnage,394394000,%,0.23,%,0.1,,HORSETRAIL Domain 2+3
+Nickel,inferred,tonnage,182743000,%,0.2,%,0.1,,HATZL Domain 4+5
+Nickel,inferred,tonnage,22503000,%,0.24,%,0.1,,DUFFY Domain 6
+Nickel,measured,tonnage,11295000,%,0.21,%,0.1,,NORTHWEST Domain 1
+Nickel,measured,tonnage,26335000,%,0.24,%,0.1,,HORSETRAIL Domain 2+3

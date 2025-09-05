@@ -1,0 +1,33 @@
+commodity_observed_name,category_observed_name,ore_unit_observed_name,ore_value,grade_unit_observed_name,grade_value,cutoff_grade_unit_observed_name,cutoff_grade_value,contained_metal,zone
+Platinum,indicated,tonnage,8460000.0,g/t,1.04,g/t,0.59,,Open Pit
+Palladium,indicated,tonnage,8460000.0,g/t,0.98,g/t,0.59,,Open Pit
+Rhodium,indicated,tonnage,8460000.0,g/t,0.04,g/t,0.59,,Open Pit
+Gold,indicated,tonnage,8460000.0,g/t,0.07,g/t,0.59,,Open Pit
+Silver,indicated,tonnage,8460000.0,g/t,1.5,g/t,0.59,,Open Pit
+Copper,indicated,tonnage,8460000.0,%,0.25,g/t,0.59,,Open Pit
+Nickel,indicated,tonnage,8460000.0,%,0.18,g/t,0.59,,Open Pit
+Cobalt,indicated,tonnage,8460000.0,g/t,140,g/t,0.59,,Open Pit
+Platinum,inferred,tonnage,53000.0,g/t,0.96,g/t,0.59,,Open Pit
+Palladium,inferred,tonnage,53000.0,g/t,0.89,g/t,0.59,,Open Pit
+Rhodium,inferred,tonnage,53000.0,g/t,0.04,g/t,0.59,,Open Pit
+Gold,inferred,tonnage,53000.0,g/t,0.07,g/t,0.59,,Open Pit
+Silver,inferred,tonnage,53000.0,g/t,1.6,g/t,0.59,,Open Pit
+Copper,inferred,tonnage,53000.0,%,0.22,g/t,0.59,,Open Pit
+Nickel,inferred,tonnage,53000.0,%,0.18,g/t,0.59,,Open Pit
+Cobalt,inferred,tonnage,53000.0,g/t,142,g/t,0.59,,Open Pit
+Platinum,indicated,tonnage,1030000.0,g/t,1.63,,,,Underground
+Palladium,indicated,tonnage,1030000.0,g/t,1.51,,,,Underground
+Rhodium,indicated,tonnage,1030000.0,g/t,0.08,,,,Underground
+Gold,indicated,tonnage,1030000.0,g/t,0.11,,,,Underground
+Silver,indicated,tonnage,1030000.0,g/t,2.4,,,,Underground
+Copper,indicated,tonnage,1030000.0,%,0.39,,,,Underground
+Nickel,indicated,tonnage,1030000.0,%,0.24,,,,Underground
+Cobalt,indicated,tonnage,1030000.0,g/t,172,,,,Underground
+Platinum,inferred,tonnage,212000.0,g/t,1.40,,,,Underground
+Palladium,inferred,tonnage,212000.0,g/t,1.29,,,,Underground
+Rhodium,inferred,tonnage,212000.0,g/t,0.06,,,,Underground
+Gold,inferred,tonnage,212000.0,g/t,0.09,,,,Underground
+Silver,inferred,tonnage,212000.0,g/t,1.9,,,,Underground
+Copper,inferred,tonnage,212000.0,%,0.34,,,,Underground
+Nickel,inferred,tonnage,212000.0,%,0.23,,,,Underground
+Cobalt,inferred,tonnage,212000.0,g/t,158,,,,Underground

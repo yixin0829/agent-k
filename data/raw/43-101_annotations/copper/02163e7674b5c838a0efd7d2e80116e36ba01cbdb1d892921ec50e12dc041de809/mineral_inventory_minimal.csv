@@ -1,0 +1,5 @@
+commodity_observed_name,category_observed_name,ore_unit_observed_name,ore_value,grade_unit_observed_name,grade_value,cutoff_grade_unit_observed_name,cutoff_grade_value,contained_metal,zone
+copper,indicated,tonnes,2827047.0,percent,1.9,grams per tonne,0.0,,Chu Chua
+zinc,indicated,tonnes,2827047.0,percent,0.32,grams per tonne,0.0,,Chu Chua
+silver,indicated,tonnes,2827047.0,grams per tonne,8.96,grams per tonne,0.0,,Chu Chua
+gold,indicated,tonnes,2827047.0,grams per tonne,0.47,grams per tonne,0.0,,Chu Chua

@@ -1,0 +1,23 @@
+commodity_observed_name,category_observed_name,ore_unit_observed_name,ore_value,grade_unit_observed_name,grade_value,cutoff_grade_unit_observed_name,cutoff_grade_value,contained_metal,zone
+Total Rare Earth,indicated,tonnes,5000000.0,percent,2.95,,,,Wicheeda
+Cerium,indicated,tonnes,5000000.0,percent,1.44,,,,Wicheeda
+Lanthanum,indicated,tonnes,5000000.0,percent,1.04,,,,Wicheeda
+Praseodymium,indicated,tonnes,5000000.0,percent,0.11,,,,Wicheeda
+Neodymium,indicated,tonnes,5000000.0,percent,0.30,,,,Wicheeda
+Samarium,indicated,tonnes,5000000.0,ppm,296.0,,,,Wicheeda
+Gadolinium,indicated,tonnes,5000000.0,ppm,126.0,,,,Wicheeda
+Europium,indicated,tonnes,5000000.0,ppm,60.0,,,,Wicheeda
+Dysprosium,indicated,tonnes,5000000.0,ppm,33.0,,,,Wicheeda
+Terbium,indicated,tonnes,5000000.0,ppm,11.0,,,,Wicheeda
+Holmium,indicated,tonnes,5000000.0,ppm,3.0,,,,Wicheeda
+Total Rare Earth,inferred,tonnes,29500000.0,percent,1.83,,,,Wicheeda
+Cerium,inferred,tonnes,29500000.0,percent,0.89,,,,Wicheeda
+Lanthanum,inferred,tonnes,29500000.0,percent,0.61,,,,Wicheeda
+Praseodymium,inferred,tonnes,29500000.0,percent,0.08,,,,Wicheeda
+Neodymium,inferred,tonnes,29500000.0,percent,0.21,,,,Wicheeda
+Samarium,inferred,tonnes,29500000.0,ppm,240.0,,,,Wicheeda
+Gadolinium,inferred,tonnes,29500000.0,ppm,112.0,,,,Wicheeda
+Europium,inferred,tonnes,29500000.0,ppm,50.0,,,,Wicheeda
+Dysprosium,inferred,tonnes,29500000.0,ppm,32.0,,,,Wicheeda
+Terbium,inferred,tonnes,29500000.0,ppm,10.0,,,,Wicheeda
+Holmium,inferred,tonnes,29500000.0,ppm,4.0,,,,Wicheeda

@@ -17,3 +17,6 @@ Agent-K is a novel agentic framework that enable extracting accurate complex num
 This project is licensed under the MIT License - see the [LICENSE](https://github.com/yixin0829/agent-k/blob/main/LICENSE) file for details.
 
 ## Citation
+```bibtex
+[Arxiv citation to be added]
+```

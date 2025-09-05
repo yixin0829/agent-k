@@ -1,0 +1,7 @@
+commodity_observed_name,category_observed_name,ore_unit_observed_name,ore_value,grade_unit_observed_name,grade_value,cutoff_grade_unit_observed_name,cutoff_grade_value,contained_metal,zone
+gold,measured+indicated,million tonnes,980,grams per tonne,0.41,,,,Open pit and underground
+copper,measured+indicated,million tonnes,980,percent,0.38,,,,Open pit and underground
+gold,inferred,million tonnes,190,grams per tonne,0.31,,,,Open pit and underground
+copper,inferred,million tonnes,190,percent,0.3,,,,Open pit and underground
+gold,proven+probable,million tonnes,480,grams per tonne,0.52,,,,Open pit and underground
+copper,proven+probable,million tonnes,480,percent,0.45,,,,Open pit and underground

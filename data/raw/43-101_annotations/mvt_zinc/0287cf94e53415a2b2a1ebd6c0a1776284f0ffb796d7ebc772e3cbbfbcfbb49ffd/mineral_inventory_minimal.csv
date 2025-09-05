@@ -1,0 +1,15 @@
+commodity_observed_name,category_observed_name,ore_unit_observed_name,ore_value,grade_unit_observed_name,grade_value,cutoff_grade_unit_observed_name,cutoff_grade_value,contained_metal,zone
+Zinc,proved,tonnes,1441000.0,percent,7.42,Reocín
+Lead,proved,tonnes,1441000.0,percent,0.80,Reocín
+Lead,measured,tonnes,417000.0,percent,1.24,Underground
+Zinc,measured,tonnes,417000.0,percent,11.73,Underground
+Lead,measured,tonnes,745000.0,percent,0.84,Opencut
+Zinc,measured,tonnes,745000.0,percent,7.78,Opencut
+Lead,measured,tonnes,1162000.0,percent,0.98,Reocín Total
+Zinc,measured,tonnes,1162000.0,percent,9.20,Reocín Total
+Lead,proved,tonnes,488000.0,percent,1.06,Underground
+Zinc,proved,tonnes,488000.0,percent,10.04,Underground
+Lead,proved,tonnes,953000.0,percent,0.66,Opencut
+Zinc,proved,tonnes,953000.0,percent,6.08,Opencut
+Lead,proved,tonnes,1441000.0,percent,0.80,Reocín Total
+Zinc,proved,tonnes,1441000.0,percent,7.42,Reocín Total

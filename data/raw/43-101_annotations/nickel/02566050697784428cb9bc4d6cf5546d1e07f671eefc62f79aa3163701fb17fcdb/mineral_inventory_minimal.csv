@@ -1,0 +1,3 @@
+commodity_observed_name,category_observed_name,ore_unit_observed_name,ore_value,grade_unit_observed_name,grade_value,cutoff_grade_unit_observed_name,cutoff_grade_value,contained_metal,zone
+Nickel,indicated,tons,4279000.0,percent,0.875,percent,0.5,,Mel Deposit
+Nickel,inferred,tons,1010000.0,percent,0.839,percent,0.5,,Mel Deposit

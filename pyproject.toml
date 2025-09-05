@@ -4,4 +4,39 @@ version = "0.1.0"
 description = "Agent-K is a novel agentic framework that enable extracting accurate complex numerical properties from documents at scale."
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "chromadb>=0.6.3",
+    "docling==2.39.0",
+    "langchain-chroma>=0.2.2",
+    "langchain-community>=0.3.21",
+    "langchain-openai>=0.3.32",
+    "langgraph>=0.4.1",
+    "litellm==1.67.0",
+    "loguru>=0.7.3",
+    "matplotlib>=3.10.0",
+    "openai>=1.58.1",
+    "pandas>=2.2.3",
+    "pydantic>=2.10.4",
+    "scikit-learn>=1.6.1",
+    "seaborn>=0.13.2",
+    "tenacity>=9.0.0",
+    "tiktoken>=0.9.0",
+    "tqdm>=4.67.1",
+]
+
+[dependency-groups]
+dev = [
+    "ipykernel>=6.29.5",
+    "ipywidgets>=8.1.5",
+    "pre-commit>=4.0.1",
+    "python-dotenv>=1.0.1",
+    "ruff>=0.8.3",
+]
+
+[tool.ruff.lint]
+# Enable on top of default:
+# flake8-bugbear (`B`)
+# isort ("I") rules
+# E302 blank-lines-top-level
+select = ["E4", "E7", "E9", "F", "B", "I"]
+ignore = ["B005", "F841", "B904"]

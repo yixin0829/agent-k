@@ -1,0 +1,19 @@
+commodity_observed_name,category_observed_name,ore_unit_observed_name,ore_value,grade_unit_observed_name,grade_value,cutoff_grade_unit_observed_name,cutoff_grade_value,contained_metal,zone
+Nickel,indicated,tonnes,120000.0,percent,0.70,percent,0.46,,IF Zone
+Nickel,inferred,tonnes,12000.0,percent,0.86,percent,0.46,,IF Zone
+Nickel,indicated,tonnes,999000.0,percent,1.56,percent,0.46,,Massive Zone Lower
+Nickel,inferred,tonnes,228000.0,percent,1.40,percent,0.46,,Massive Zone Lower
+Nickel,indicated,tonnes,353000.0,percent,1.36,percent,0.46,,Massive Zone Upper
+Nickel,inferred,tonnes,59000.0,percent,1.12,percent,0.46,,Massive Zone Upper
+Nickel,indicated,tonnes,60000.0,percent,0.63,percent,0.46,,Disseminated Zone Lower
+Nickel,inferred,tonnes,22000.0,percent,0.52,percent,0.46,,Disseminated Zone Lower
+Nickel,indicated,tonnes,14000.0,percent,0.50,percent,0.46,,Disseminated Zone Upper
+Copper,indicated,tonnes,120000.0,percent,0.06,percent,0.46,,IF Zone
+Copper,inferred,tonnes,12000.0,percent,0.07,percent,0.46,,IF Zone
+Copper,indicated,tonnes,999000.0,percent,0.11,percent,0.46,,Massive Zone Lower
+Copper,inferred,tonnes,228000.0,percent,0.09,percent,0.46,,Massive Zone Lower
+Copper,indicated,tonnes,353000.0,percent,0.09,percent,0.46,,Massive Zone Upper
+Copper,inferred,tonnes,59000.0,percent,0.08,percent,0.46,,Massive Zone Upper
+Copper,indicated,tonnes,60000.0,percent,0.04,percent,0.46,,Disseminated Zone Lower
+Copper,inferred,tonnes,22000.0,percent,0.02,percent,0.46,,Disseminated Zone Lower
+Copper,indicated,tonnes,14000.0,percent,0.03,percent,0.46,,Disseminated Zone Upper

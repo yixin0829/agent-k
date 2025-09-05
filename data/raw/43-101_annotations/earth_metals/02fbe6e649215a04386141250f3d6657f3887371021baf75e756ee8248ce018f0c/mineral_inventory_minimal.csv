@@ -1,0 +1,13 @@
+commodity_observed_name,category_observed_name,ore_unit_observed_name,ore_value,grade_unit_observed_name,grade_value,cutoff_grade_unit_observed_name,cutoff_grade_value,contained_metal,zone
+Praseodymium,indicated,tonnes,2329000.0,ppm,403,C$/t,140,,Deep Fox Project
+Neodymium,indicated,tonnes,2329000.0,ppm,1486,C$/t,140,,Deep Fox Project
+Dysprosium,indicated,tonnes,2329000.0,ppm,206,C$/t,140,,Deep Fox Project
+Praseodymium Oxide,indicated,tonnes,2329000.0,ppm,487,C$/t,140,,Deep Fox Project
+Neodymium Oxide,indicated,tonnes,2329000.0,ppm,1739,C$/t,140,,Deep Fox Project
+Dysprosium Oxide,indicated,tonnes,2329000.0,ppm,237,C$/t,140,,Deep Fox Project
+Praseodymium,inferred,tonnes,3902000.0,ppm,357,C$/t,140,,Deep Fox Project
+Neodymium,inferred,tonnes,3902000.0,ppm,1323,C$/t,140,,Deep Fox Project
+Dysprosium,inferred,tonnes,3902000.0,ppm,181,C$/t,140,,Deep Fox Project
+Praseodymium Oxide,inferred,tonnes,3902000.0,ppm,432,C$/t,140,,Deep Fox Project
+Neodymium Oxide,inferred,tonnes,3902000.0,ppm,1548,C$/t,140,,Deep Fox Project
+Dysprosium Oxide,inferred,tonnes,3902000.0,ppm,208,C$/t,140,,Deep Fox Project

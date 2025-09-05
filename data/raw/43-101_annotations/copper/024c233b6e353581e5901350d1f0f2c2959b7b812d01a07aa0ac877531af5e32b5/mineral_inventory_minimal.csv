@@ -1,0 +1,5 @@
+commodity_observed_name,category_observed_name,ore_unit_observed_name,ore_value,grade_unit_observed_name,grade_value,cutoff_grade_unit_observed_name,cutoff_grade_value,contained_metal,zone
+copper,measured+indicated,tonnes,19610000,percent,0.68,,,,Lorraine
+gold,measured+indicated,tonnes,19610000,grams per tonne,0.185,,,,Lorraine
+copper,inferred,tonnes,12330000,percent,0.63,,,,Lorraine
+gold,inferred,tonnes,12330000,grams per tonne,0.14,,,,Lorraine

@@ -1,0 +1,5 @@
+commodity_observed_name,category_observed_name,ore_unit_observed_name,ore_value,grade_unit_observed_name,grade_value,cutoff_grade_unit_observed_name,cutoff_grade_value,contained_metal,zone
+Tungsten,indicated,tonnes,30202000,percent,0.88,percent,0.5,,Yukon
+Tungsten,indicated,tonnes,2826000,percent,0.88,percent,0.5,,NWT
+Tungsten,inferred,tonnes,9836000,percent,0.75,percent,0.5,,Yukon
+Tungsten,inferred,tonnes,2020000,percent,0.91,percent,0.5,,NWT

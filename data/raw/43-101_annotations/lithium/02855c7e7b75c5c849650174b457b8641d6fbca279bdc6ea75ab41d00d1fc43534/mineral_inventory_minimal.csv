@@ -1,0 +1,18 @@
+commodity_observed_name,category_observed_name,ore_unit_observed_name,ore_value,grade_unit_observed_name,grade_value,cutoff_grade_unit_observed_name,cutoff_grade_value,contained_metal,zone
+lithium,measured,thousand tonnes,50753.0,percent,0.312,percent,0.2,,Stage I Lens
+potassium,measured,thousand tonnes,50753.0,percent,3.27,percent,0.2,,Stage I Lens
+sodium,measured,thousand tonnes,50753.0,percent,1.13,percent,0.2,,Stage I Lens
+lithium,indicated,thousand tonnes,164046.0,percent,0.285,percent,0.2,,Stage I Lens
+potassium,indicated,thousand tonnes,164046.0,percent,3.07,percent,0.2,,Stage I Lens
+sodium,indicated,thousand tonnes,164046.0,percent,1.04,percent,0.2,,Stage I Lens
+lithium,inferred,thousand tonnes,124890.0,percent,0.294,percent,0.2,,Stage I Lens
+potassium,inferred,thousand tonnes,124890.0,percent,3.04,percent,0.2,,Stage I Lens
+sodium,inferred,thousand tonnes,124890.0,percent,1.1,percent,0.2,,Stage I Lens
+lithium,indicated,tonnes,95000000.0,percent,0.27,,,,Stage II Lens
+potassium,indicated,tonnes,95000000.0,percent,3.66,,,,Stage II Lens
+sodium,indicated,tonnes,95000000.0,percent,1.55,,,,Stage II Lens
+fluorine,indicated,tonnes,95000000.0,percent,0.57,,,,Stage II Lens
+lithium,inferred,tonnes,47000000.0,percent,0.26,,,,Stage II Lens
+potassium,inferred,tonnes,47000000.0,percent,3.83,,,,Stage II Lens
+sodium,inferred,tonnes,47000000.0,percent,1.43,,,,Stage II Lens
+fluorine,inferred,tonnes,47000000.0,percent,0.58,,,,Stage II Lens

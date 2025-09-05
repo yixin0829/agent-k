@@ -1,0 +1,5 @@
+commodity_observed_name,category_observed_name,ore_unit_observed_name,ore_value,grade_unit_observed_name,grade_value,cutoff_grade_unit_observed_name,cutoff_grade_value,contained_metal,zone
+Yttrium,indicated,tonnes,183900000.0,percent,0.007,percent,1.0,,Montviel Core Zone
+Niobium,indicated,tonnes,183900000.0,percent,0.126,percent,1.0,,Montviel Core Zone
+Yttrium,inferred,tonnes,66700000.0,percent,0.008,percent,1.0,,Montviel Core Zone
+Niobium,inferred,tonnes,66700000.0,percent,0.140,percent,1.0,,Montviel Core Zone

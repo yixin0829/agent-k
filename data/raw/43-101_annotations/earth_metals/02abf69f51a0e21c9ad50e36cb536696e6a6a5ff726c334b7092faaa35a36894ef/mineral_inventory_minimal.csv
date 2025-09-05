@@ -1,0 +1,9 @@
+commodity_observed_name,category_observed_name,ore_unit_observed_name,ore_value,grade_unit_observed_name,grade_value,cutoff_grade_unit_observed_name,cutoff_grade_value,contained_metal,zone
+Niobium,indicated,metric tons,30940000.0,percent,0.168,All (3)
+Tantalum,indicated,metric tons,30940000.0,ppm,183,All (3)
+Niobium,inferred,metric tons,28850000.0,percent,0.122,All (3)
+Tantalum,inferred,metric tons,28850000.0,ppm,166,All (3)
+Niobium,indicated,metric tons,25750000.0,percent,0.186,All (3)
+Tantalum,indicated,metric tons,25750000.0,ppm,199,All (3)
+Niobium,inferred,metric tons,16880000.0,percent,0.162,All (3)
+Tantalum,inferred,metric tons,16880000.0,ppm,204,All (3)

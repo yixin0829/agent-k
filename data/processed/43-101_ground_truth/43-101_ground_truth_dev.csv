@@ -1,0 +1,11 @@
+cdr_record_id,id,main_commodity,commodity_observed_name,total_mineral_resource_tonnage,total_mineral_reserve_tonnage,total_mineral_resource_contained_metal,total_mineral_reserve_contained_metal,country,state_or_province,mineral_site_name,total_mineral_resource_tonnage_max,total_mineral_reserve_tonnage_max
+0200a1c6d2cfafeb485d815d95966961d4c119e8662b8babec74e05b59ba4759d2,2,nickel,nickel,1171.486,0.0,2.6060343,0.0,Canada,British Columbia,Turnagain Nickel Project,1171.486,0.0
+021b001961514a258c99e04f9d696edd68a551bb191037ac176e88ee3e47860dbe,16,earth_metals,niobium,430.036,0.0,1.5294518,0.0,Canada,British Columbia,Omineca Mining District,430.036,0.0
+02385db31dc0fc04c2c0a598cabd5d8a0cc2c990002d04c5b1ec8e3e6795d8c8ef,22,earth_metals,cerium,34.5,0.0,0.33455,0.0,Canada,British Columbia,Wicheeda Rare Earth Element Project,34.5,0.0
+023a9e77a67e3689e17aa48d8b22913b9216a6895b9d84039cf00ad91c660ee548,36,nickel,nickel,46.918,0.0,0.2145551,0.0,Canada,Ontario,Graham Property,46.918,0.0
+02438bcc98fde0b10d03d369b1c152f2dc9608dfdea90737ab989ef665d6abffb3,46,lithium,lithium,32.677,47.3,0.5096188,0.70546,Canada,Quebec,Whabouchi Property,32.677,47.3
+0248014bb5104094cd060e36532edd613e702960dc36ecbf2382ba756e128eb907,47,copper,copper,1170.0,480.0,4.294,2.16,Canada,British Columbia,Red Chris Project,1170.0,480.0
+024d19dd4d5c56766d1b384671e30aa6b57f4c726d486bc798982b21ebe6a3ebf1,53,zinc,zinc,313.446672,0.0,7.193676873599999,0.0,Canada,British Columbia,Jersey-Emerald Property,313.446672,0.0
+02535c4f674d8805775d2f1f50fafdaa51b248a5be809de9545d6ecb5b36f8c076,54,tungsten,tungsten,44.884,0.0,0.3827984,0.0,Canada,Yukon,Mactung Tungsten Deposit,44.884,0.0
+02a432b7e0c3f5432c7606759a6851e66a8f45094d522fa7c4c460084d9a5ddbc9,106,nickel,nickel,1.867,0.0,0.0257436,0.0,Canada,Ontario,Turnagain Nickel Property,1.867,0.0
+02d40055ac23d9034c815a941763045780b709289537ed42a56b7390db074d11cd,122,nickel,nickel,0.728699,0.0,0.0072068073,0.0,Canada,Ontario,McWatters Mine,0.728699,0.0

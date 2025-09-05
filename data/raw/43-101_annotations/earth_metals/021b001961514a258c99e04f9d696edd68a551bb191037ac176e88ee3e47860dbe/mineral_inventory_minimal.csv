@@ -1,0 +1,4 @@
+commodity_observed_name,category_observed_name,ore_unit_observed_name,ore_value,grade_unit_observed_name,grade_value,cutoff_grade_unit_observed_name,cutoff_grade_value,contained_metal,zone
+Niobium,measured,tonnes,112651000,percent,0.41,percent,0.2,,COG 0.20%
+Niobium,indicated,tonnes,173169000,percent,0.35,percent,0.2,,COG 0.20%
+Niobium,inferred,tonnes,144216000,percent,0.32,percent,0.2,,COG 0.20%

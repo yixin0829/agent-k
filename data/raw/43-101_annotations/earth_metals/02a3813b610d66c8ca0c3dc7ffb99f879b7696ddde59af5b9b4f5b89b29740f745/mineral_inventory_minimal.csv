@@ -1,0 +1,6 @@
+commodity_observed_name,category_observed_name,ore_unit_observed_name,ore_value,grade_unit_observed_name,grade_value,cutoff_grade_unit_observed_name,cutoff_grade_value,contained_metal,zone
+Niobium,measured,tonnes,288930000,percent,0.43,M kg,1242,Niobec Mine,
+Niobium,indicated,tonnes,169180000,percent,0.4,M kg,685,Niobec Mine,
+Niobium,inferred,tonnes,336445000,percent,0.37,M kg,1240,Niobec Mine,
+Niobium,proven,tonnes,16571000,percent,0.54,M kg,1240,Niobec Mine,
+Niobium,probable,tonnes,29145000,percent,0.53,M kg,1240,Niobec Mine,

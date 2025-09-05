@@ -1,0 +1,6 @@
+commodity_observed_name,category_observed_name,ore_unit_observed_name,ore_value,grade_unit_observed_name,grade_value,cutoff_grade_unit_observed_name,cutoff_grade_value,contained_metal,zone
+Tungsten,indicated,tonnes,514000,percent,0.23,percent,0.1,,
+Molybdenum,indicated,tonnes,514000,percent,0.07,percent,0.1,,
+Tungsten,inferred,tonnes,1879000.0,percent,0.31,percent,0.1,,
+Molybdenum,inferred,tonnes,1879000.0,percent,0.08,percent,0.1,,
+Tungsten,probable,tonnes,375000.0,percent,0.22,percent,0.08,,

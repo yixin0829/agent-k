@@ -1,0 +1,33 @@
+commodity_observed_name,category_observed_name,ore_unit_observed_name,ore_value,grade_unit_observed_name,grade_value,cutoff_grade_unit_observed_name,cutoff_grade_value,contained_metal,zone
+Platinum,indicated,tonnage,8015000.0,g/t,1.08,g/t,0.61,,Open Pit
+Palladium,indicated,tonnage,8015000.0,g/t,1.02,g/t,0.61,,Open Pit
+Rhodium,indicated,tonnage,8015000.0,g/t,0.05,g/t,0.61,,Open Pit
+Gold,indicated,tonnage,8015000.0,g/t,0.07,g/t,0.61,,Open Pit
+Silver,indicated,tonnage,8015000.0,g/t,1.6,g/t,0.61,,Open Pit
+Copper,indicated,tonnage,8015000.0,%,0.26,g/t,0.61,,Open Pit
+Nickel,indicated,tonnage,8015000.0,%,0.18,g/t,0.61,,Open Pit
+Cobalt,indicated,tonnage,8015000.0,g/t,142,g/t,0.61,,Open Pit
+Platinum,inferred,tonnage,53000.0,g/t,0.96,g/t,0.61,,Open Pit
+Palladium,inferred,tonnage,53000.0,g/t,0.89,g/t,0.61,,Open Pit
+Rhodium,inferred,tonnage,53000.0,g/t,0.04,g/t,0.61,,Open Pit
+Gold,inferred,tonnage,53000.0,g/t,0.07,g/t,0.61,,Open Pit
+Silver,inferred,tonnage,53000.0,g/t,1.6,g/t,0.61,,Open Pit
+Copper,inferred,tonnage,53000.0,%,0.22,g/t,0.61,,Open Pit
+Nickel,inferred,tonnage,53000.0,%,0.18,g/t,0.61,,Open Pit
+Cobalt,inferred,tonnage,53000.0,g/t,142,g/t,0.61,,Open Pit
+Platinum,indicated,tonnage,1046000.0,g/t,1.62,g/t,1.94,,Underground
+Palladium,indicated,tonnage,1046000.0,g/t,1.50,g/t,1.94,,Underground
+Rhodium,indicated,tonnage,1046000.0,g/t,0.08,g/t,1.94,,Underground
+Gold,indicated,tonnage,1046000.0,g/t,0.11,g/t,1.94,,Underground
+Silver,indicated,tonnage,1046000.0,g/t,2.4,g/t,1.94,,Underground
+Copper,indicated,tonnage,1046000.0,%,0.39,g/t,1.94,,Underground
+Nickel,indicated,tonnage,1046000.0,%,0.24,g/t,1.94,,Underground
+Cobalt,indicated,tonnage,1046000.0,g/t,171,g/t,1.94,,Underground
+Platinum,inferred,tonnage,213000.0,g/t,1.40,g/t,1.94,,Underground
+Palladium,inferred,tonnage,213000.0,g/t,1.29,g/t,1.94,,Underground
+Rhodium,inferred,tonnage,213000.0,g/t,0.06,g/t,1.94,,Underground
+Gold,inferred,tonnage,213000.0,g/t,0.09,g/t,1.94,,Underground
+Silver,inferred,tonnage,213000.0,g/t,1.9,g/t,1.94,,Underground
+Copper,inferred,tonnage,213000.0,%,0.34,g/t,1.94,,Underground
+Nickel,inferred,tonnage,213000.0,%,0.23,g/t,1.94,,Underground
+Cobalt,inferred,tonnage,213000.0,g/t,158,g/t,1.94,,Underground

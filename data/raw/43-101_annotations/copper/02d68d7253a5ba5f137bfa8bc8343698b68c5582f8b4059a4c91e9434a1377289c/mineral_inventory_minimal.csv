@@ -1,0 +1,13 @@
+commodity_observed_name,category_observed_name,ore_unit_observed_name,ore_value,grade_unit_observed_name,grade_value,cutoff_grade_unit_observed_name,cutoff_grade_value,contained_metal,zone
+gold,inferred,tonnes,31680000,grams per tonne,0.4,grams per tonne,0.3,,Raintree West
+silver,inferred,tonnes,31680000,grams per tonne,5.39,grams per tonne,0.3,,Raintree West
+copper,inferred,tonnes,31680000,percent,0.06,grams per tonne,0.3,,Raintree West
+gold,inferred,tonnes,51760000,grams per tonne,0.68,grams per tonne,0.6,,Raintree West
+silver,inferred,tonnes,51760000,grams per tonne,3.74,grams per tonne,0.6,,Raintree West
+copper,inferred,tonnes,51760000,percent,0.1,grams per tonne,0.6,,Raintree West
+gold,indicated,tonnes,31080000,grams per tonne,0.49,grams per tonne,0.3,,Island Mountain
+silver,indicated,tonnes,31080000,grams per tonne,1.1,grams per tonne,0.3,,Island Mountain
+copper,indicated,tonnes,31080000,percent,0.06,grams per tonne,0.3,,Island Mountain
+gold,inferred,tonnes,82020000,grams per tonne,0.47,grams per tonne,0.3,,Island Mountain
+silver,inferred,tonnes,82020000,grams per tonne,1.02,grams per tonne,0.3,,Island Mountain
+copper,inferred,tonnes,82020000,percent,0.05,grams per tonne,0.3,,Island Mountain

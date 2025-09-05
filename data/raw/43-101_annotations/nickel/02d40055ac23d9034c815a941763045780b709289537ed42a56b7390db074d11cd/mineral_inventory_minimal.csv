@@ -1,0 +1,4 @@
+commodity_observed_name,category_observed_name,ore_unit_observed_name,ore_value,grade_unit_observed_name,grade_value,cutoff_grade_unit_observed_name,cutoff_grade_value,contained_metal,zone
+Nickel,indicated,tonnage,665308.0,%,0.72,%,0.5,,Disseminated Zone (Upper)
+Nickel,indicated,tonnage,49562.0,%,3.93,%,0.5,,Massive Zone (Lower)
+Nickel,inferred,tonnage,13829.0,%,3.39,%,0.5,,Massive Zone (Lower)

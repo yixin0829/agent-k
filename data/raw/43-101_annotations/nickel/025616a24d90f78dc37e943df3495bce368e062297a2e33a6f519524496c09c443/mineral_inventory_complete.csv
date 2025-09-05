@@ -1,0 +1,59 @@
+commodity_observed_name,category_observed_name,ore_unit_observed_name,ore_value,grade_unit_observed_name,grade_value,cutoff_grade_unit_observed_name,cutoff_grade_value,contained_metal,zone
+tungsten,measured,Kt,1,%,0.06,%,0.05,,Las Cortinas West
+tungsten,measured,Kt,74,%,0.41,%,0.05,,Los Santos Sur
+tungsten,indicated,Kt,399,%,0.22,%,0.05,,Las Cortinas West
+tungsten,indicated,Kt,417,%,0.3,%,0.05,,Los Santos Sur
+tungsten,indicated,Kt,1050,%,0.31,%,0.05,,Los Santos Sur - SW
+tungsten,inferred,Kt,88,%,0.13,%,0.05,,Las Cortinas West
+tungsten,inferred,Kt,275,%,0.26,%,0.05,,Los Santos Sur
+tungsten,measured+indicated,Kt,400,%,0.22,%,0.05,,Las Cortinas West
+tungsten,measured+indicated,Kt,491,%,0.32,%,0.05,,Los Santos Sur
+tungsten,measured+indicated,Kt,1050,%,0.31,%,0.05,,Los Santos Sur - SW
+tungsten,indicated,Kt,26,%,0.15,%,0.05,,_Capa Este
+tungsten,indicated,Kt,157,%,0.14,%,0.05,,Capa G
+tungsten,indicated,Kt,84,%,0.44,%,0.05,,Capa 4
+tungsten,inferred,Kt,127,%,0.19,%,0.05,,_Capa Este
+tungsten,inferred,Kt,418,%,0.15,%,0.05,,Capa G
+tungsten,inferred,Kt,385,%,0.36,%,0.05,,Capa 4
+tungsten,measured+indicated,Kt,26,%,0.15,%,0.05,,_Capa Este
+tungsten,measured+indicated,Kt,157,%,0.14,%,0.05,,Capa G
+tungsten,measured+indicated,Kt,84,%,0.44,%,0.05,,Capa 4
+tungsten,measured,Kt,67,%,0.44,%,0.1,,Los Santos Sur
+tungsten,indicated,Kt,299,%,0.27,%,0.1,,Las Cortinas West
+tungsten,indicated,Kt,340,%,0.35,%,0.1,,Los Santos Sur
+tungsten,indicated,Kt,888,%,0.36,%,0.1,,Los Santos Sur - SW
+tungsten,indicated,Kt,18,%,0.18,%,0.1,,_Capa Este
+tungsten,indicated,Kt,71,%,0.23,%,0.1,,Capa G
+tungsten,indicated,Kt,64,%,0.55,%,0.1,,Capa 4
+tungsten,measured+indicated,Kt,299,%,0.27,%,0.1,,Las Cortinas West
+tungsten,measured+indicated,Kt,407,%,0.36,%,0.1,,Los Santos Sur
+tungsten,measured+indicated,Kt,888,%,0.36,%,0.1,,Los Santos Sur - SW
+tungsten,measured+indicated,Kt,18,%,0.18,%,0.1,,_Capa Este
+tungsten,measured+indicated,Kt,71,%,0.23,%,0.1,,Capa G
+tungsten,measured+indicated,Kt,64,%,0.55,%,0.1,,Capa 4
+tungsten,inferred,Kt,51,%,0.16,%,0.1,,Las Cortinas West
+tungsten,inferred,Kt,219,%,0.31,%,0.1,,Los Santos Sur
+tungsten,inferred,Kt,445,%,0.33,%,0.1,,Los Santos Sur - SW
+tungsten,inferred,Kt,99,%,0.22,%,0.1,,_Capa Este
+tungsten,inferred,Kt,270,%,0.2,%,0.1,,Capa G
+tungsten,inferred,Kt,343,%,0.4,%,0.1,,Capa 4
+tungsten,proven,Kt,0.1,%,0.07,%,0.07,,Las Cortinas West
+tungsten,probable,Kt,224,%,0.29,%,0.07,,Las Cortinas West
+tungsten,proven+probable,Kt,224,%,0.29,%,0.07,,Las Cortinas West
+tungsten,proven,Kt,57,%,0.44,%,0.07,,Los Santos Sur
+tungsten,probable,Kt,237,%,0.39,%,0.07,,Los Santos Sur
+tungsten,proven+probable,Kt,294,%,0.4,%,0.07,,Los Santos Sur
+tungsten,proven,Kt,0,%,0,%,0.07,,"SW, D1"
+tungsten,probable,Kt,764,%,0.32,%,0.07,,"SW, D1"
+tungsten,proven+probable,Kt,764,%,0.32,%,0.07,,"SW, D1"
+tungsten,proven,Kt,0,%,0,%,0.07,,Capa G
+tungsten,probable,Kt,90,%,0.19,%,0.07,,Capa G
+tungsten,proven+probable,Kt,90,%,0.19,%,0.07,,Capa G
+tungsten,probable,Kt,62,%,0.53,%,0.07,,Capa 4
+tungsten,proven+probable,Kt,62,%,0.53,%,0.07,,Capa 4
+tungsten,proven,Kt,57,%,0.44,%,0.07,,Open Pit Total
+tungsten,probable,Kt,1377,%,0.33,%,0.07,,Open Pit Total
+tungsten,proven+probable,Kt,1434,%,0.33,%,0.07,,Open Pit Total
+tungsten,proven,Kt,0,%,0,%,0.3,,D1
+tungsten,probable,Kt,31,%,0.59,%,0.3,,D1
+tungsten,proven+probable,Kt,31,%,0.59,%,0.3,,D1

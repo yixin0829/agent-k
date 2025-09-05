@@ -1,0 +1,35 @@
+# Parameter Search Configuration
+# This file defines the parameter search space for Agentic RAG optimization
+
+# Model configuration
+model:
+  name: "gpt-4o-mini-2024-07-18"  # Model to use for experiments
+
+# Dataset configuration
+dataset:
+  sample_size: null  # Number of PDFs to process per experiment (set to null for all)
+  eval_type: "DEV"  # Dataset to use: DEV, VAL, TEST, or FULL
+
+# Parameter search spaces
+parameters:
+  max_reflection_iterations:
+    values: [2, 3, 4, 5, 6, 7]
+    description: "Maximum number of reflection iterations for hallucination checking"
+
+  temperature:
+    values: [0.1, 0.2, 0.4, 0.6, 0.8, 1.0]
+    description: "Temperature parameter for model generation"
+
+  num_retrieved_docs:
+    values: [1, 2, 3, 4, 5, 6, 7]
+    description: "Number of documents to retrieve for context"
+
+# Output configuration
+output:
+  base_dir: "data/parameter_search"
+  save_intermediate: true  # Save results after each experiment
+
+# Experiment settings
+experiment:
+  run_parallel: false  # Whether to run multiple experiments in parallel
+  max_retries: 3  # Maximum retries for failed experiments

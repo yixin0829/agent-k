@@ -1,0 +1,3 @@
+commodity_observed_name,category_observed_name,ore_unit_observed_name,ore_value,grade_unit_observed_name,grade_value,cutoff_grade_unit_observed_name,cutoff_grade_value,contained_metal,zone
+Tungsten,indicated,tonnes,1495000.0,percent,0.55,percent,0.3,,Tabuaço Project
+Tungsten,inferred,tonnes,1230000.0,percent,0.59,percent,0.3,,Tabuaço Project

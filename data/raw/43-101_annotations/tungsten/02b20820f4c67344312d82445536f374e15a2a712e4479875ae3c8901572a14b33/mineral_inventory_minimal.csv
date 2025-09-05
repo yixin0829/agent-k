@@ -1,0 +1,23 @@
+commodity_observed_name,category_observed_name,ore_unit_observed_name,ore_value,grade_unit_observed_name,grade_value,cutoff_grade_unit_observed_name,cutoff_grade_value,contained_metal,zone
+Tin,indicated,tonnes,12400000.0,percent,0.38,,North Zone
+Zinc,indicated,tonnes,12400000.0,percent,0.86,,North Zone
+Indium,indicated,tonnes,12400000.0,ppm,63.5,,North Zone
+Tin,inferred,tonnes,2800000.0,percent,0.30,,North Zone
+Zinc,inferred,tonnes,2800000.0,percent,1.13,,North Zone
+Indium,inferred,tonnes,2800000.0,ppm,69.8,,North Zone
+Tin,indicated,tonnes,10882000.0,percent,0.43,,North Zone
+Indium,indicated,tonnes,10882000.0,grams per tonne,67.8,,North Zone
+Zinc,indicated,tonnes,10882000.0,percent,0.64,,North Zone
+Arsenic,indicated,tonnes,10882000.0,percent,0.98,,North Zone
+Tungsten,indicated,tonnes,10882000.0,percent,0.09,,North Zone
+Molybdenum,indicated,tonnes,10882000.0,percent,0.06,,North Zone
+Copper,indicated,tonnes,10882000.0,percent,0.11,,North Zone
+Bismuth,indicated,tonnes,10882000.0,percent,0.08,,North Zone
+Tin,inferred,tonnes,7603000.0,percent,0.22,,North Zone
+Indium,inferred,tonnes,7603000.0,grams per tonne,74.6,,North Zone
+Zinc,inferred,tonnes,7603000.0,percent,0.99,,North Zone
+Arsenic,inferred,tonnes,7603000.0,percent,0.80,,North Zone
+Tungsten,inferred,tonnes,7603000.0,percent,0.08,,North Zone
+Molybdenum,inferred,tonnes,7603000.0,percent,0.05,,North Zone
+Copper,inferred,tonnes,7603000.0,percent,0.09,,North Zone
+Bismuth,inferred,tonnes,7603000.0,percent,0.05,,North Zone

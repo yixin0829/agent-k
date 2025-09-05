@@ -1,0 +1,17 @@
+commodity_observed_name,category_observed_name,ore_unit_observed_name,ore_value,grade_unit_observed_name,grade_value,cutoff_grade_unit_observed_name,cutoff_grade_value,contained_metal,zone
+Praseodymium,indicated,tonnes,8483000,ppm,381,C$/t,260,,Open Pit
+Neodymium,indicated,tonnes,8483000,ppm,1422,C$/t,260,,Open Pit
+Dysprosium,indicated,tonnes,8483000,ppm,187,C$/t,260,,Open Pit
+Terbium,indicated,tonnes,8483000,ppm,32,C$/t,260,,Open Pit
+Praseodymium,inferred,tonnes,1441000,ppm,329,C$/t,260,,Open Pit
+Neodymium,inferred,tonnes,1441000,ppm,1231,C$/t,260,,Open Pit
+Dysprosium,inferred,tonnes,1441000,ppm,179,C$/t,260,,Open Pit
+Terbium,inferred,tonnes,1441000,ppm,30,C$/t,260,,Open Pit
+Praseodymium,indicated,tonnes,6611000,ppm,368,C$/t,260,,Underground
+Neodymium,indicated,tonnes,6611000,ppm,1376,C$/t,260,,Underground
+Dysprosium,indicated,tonnes,6611000,ppm,182,C$/t,260,,Underground
+Terbium,indicated,tonnes,6611000,ppm,31,C$/t,260,,Underground
+Praseodymium,inferred,tonnes,4862000,ppm,380,C$/t,260,,Underground
+Neodymium,inferred,tonnes,4862000,ppm,1427,C$/t,260,,Underground
+Dysprosium,inferred,tonnes,4862000,ppm,191,C$/t,260,,Underground
+Terbium,inferred,tonnes,4862000,ppm,33,C$/t,260,,Underground

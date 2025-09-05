@@ -1,0 +1,21 @@
+commodity_observed_name,category_observed_name,ore_unit_observed_name,ore_value,grade_unit_observed_name,grade_value,cutoff_grade_unit_observed_name,cutoff_grade_value,contained_metal,zone
+Tungsten,measured,tonnes,51000,percent,0.18,percent,0.12,,L0
+Tungsten,measured,tonnes,706000,percent,0.2,percent,0.12,,L1
+Tungsten,measured,tonnes,468000,percent,0.2,percent,0.12,,L2
+Tungsten,measured,tonnes,727000,percent,0.21,percent,0.12,,L3
+Tungsten,indicated,tonnes,1038000,percent,0.23,percent,0.12,,L0
+Tungsten,indicated,tonnes,1314000,percent,0.21,percent,0.12,,L1
+Tungsten,indicated,tonnes,2984000,percent,0.24,percent,0.12,,L2
+Tungsten,indicated,tonnes,2396000,percent,0.25,percent,0.12,,L3
+Tungsten,indicated,tonnes,343000,percent,0.22,percent,0.12,,L4
+Tungsten,inferred,tonnes,180000,percent,0.22,percent,0.13,,Panasqueira Deep
+Tungsten,inferred,tonnes,2730000,percent,0.23,percent,0.13,,North
+Tungsten,inferred,tonnes,2250000,percent,0.2,percent,0.13,,South
+Tungsten,proven,tonnes,25000,percent,0.19,percent,0.12,,Level 0
+Tungsten,proven,tonnes,238000,percent,0.22,percent,0.12,,Level 1
+Tungsten,proven,tonnes,216000,percent,0.21,percent,0.12,,Level 2
+Tungsten,proven,tonnes,297000,percent,0.24,percent,0.12,,Level 3
+Tungsten,probable,tonnes,26000,percent,0.17,percent,0.12,,Level 0
+Tungsten,probable,tonnes,468000,percent,0.18,percent,0.12,,Level 1
+Tungsten,probable,tonnes,251000,percent,0.19,percent,0.12,,Level 2
+Tungsten,probable,tonnes,431000,percent,0.19,percent,0.12,,Level 3

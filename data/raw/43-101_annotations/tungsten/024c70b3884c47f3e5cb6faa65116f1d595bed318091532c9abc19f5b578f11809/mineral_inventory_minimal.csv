@@ -1,0 +1,15 @@
+commodity_observed_name,category_observed_name,ore_unit_observed_name,ore_value,grade_unit_observed_name,grade_value,cutoff_grade_unit_observed_name,cutoff_grade_value,contained_metal,zone
+Tungsten,indicated,tons,256000.0,percent,0.192,percent,0.15,,Emerald and East Emerald Zones
+Tungsten,indicated,tons,18000.0,percent,0.282,percent,0.24,,Emerald and East Emerald Zones
+Tungsten,inferred,tons,1220000.0,percent,0.274,percent,0.15,,Emerald and East Emerald Zones
+Tungsten,inferred,tons,430000.0,percent,0.452,percent,0.24,,Emerald and East Emerald Zones
+Tungsten,indicated,tons,209000.0,percent,0.188,percent,0.15,,Emerald and East Emerald Zones
+Tungsten,indicated,tons,12000.0,percent,0.291,percent,0.24,,Emerald and East Emerald Zones
+Tungsten,inferred,tons,1110000.0,percent,0.285,percent,0.15,,Emerald and East Emerald Zones
+Tungsten,inferred,tons,470000.0,percent,0.429,percent,0.24,,Emerald and East Emerald Zones
+Tungsten,inferred,tons,710000.0,percent,0.346,percent,0.15,,Emerald Zone
+Tungsten,inferred,tons,420000.0,percent,0.455,percent,0.24,,Emerald Zone
+Tungsten,indicated,tons,256000.0,percent,0.192,percent,0.15,,East Emerald Zones
+Tungsten,indicated,tons,18000.0,percent,0.282,percent,0.24,,East Emerald Zones
+Tungsten,inferred,tons,510000.0,percent,0.174,percent,0.15,,East Emerald Zones
+Tungsten,inferred,tons,12000.0,percent,0.330,percent,0.24,,East Emera

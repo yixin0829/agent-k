@@ -1,0 +1,6 @@
+commodity_observed_name,category_observed_name,ore_unit_observed_name,ore_value,grade_unit_observed_name,grade_value,cutoff_grade_unit_observed_name,cutoff_grade_value,contained_metal,zone
+Tungsten,measured,tonnes,75000,percent,0.41,percent,0.05,,Los Santos
+Tungsten,indicated,tonnes,2133000,percent,0.28,percent,0.05,,Los Santos
+Tungsten,inferred,tonnes,1878000,percent,0.25,percent,0.05,,Los Santos
+Tungsten,proven,tonnes,57000,percent,0.44,tonnes,,Mine Reserves,
+Tungsten,probable,tonnes,1408000,percent,0.33,tonnes,,Mine Reserves,

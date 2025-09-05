@@ -1,0 +1,136 @@
+commodity_observed_name,category_observed_name,ore_unit_observed_name,ore_value,grade_unit_observed_name,grade_value,cutoff_grade_unit_observed_name,cutoff_grade_value,contained_metal,zone
+Zinc,inferred,tonnes,1937300.0,percent,1.79,percent,0.50,,License 5 Lower Mineralisation
+Zinc,inferred,tonnes,1492700.0,percent,2.06,percent,1.00,,License 5 Lower Mineralisation
+Zinc,inferred,tonnes,714800.0,percent,2.95,percent,1.50,,License 5 Lower Mineralisation
+Zinc,inferred,tonnes,445600.0,percent,3.67,percent,2.00,,License 5 Lower Mineralisation
+Zinc,inferred,tonnes,276000.0,percent,4.57,percent,2.50,,License 5 Lower Mineralisation
+Zinc,inferred,tonnes,113500.0,percent,7.32,percent,3.00,,License 5 Lower Mineralisation
+Zinc,inferred,tonnes,94900.0,percent,8.12,percent,3.50,,License 5 Lower Mineralisation
+Zinc,inferred,tonnes,80400.0,percent,8.93,percent,4.00,,License 5 Lower Mineralisation
+Zinc,inferred,tonnes,77500.0,percent,9.11,percent,4.50,,License 5 Lower Mineralisation
+Zinc,inferred,tonnes,72900.0,percent,9.38,percent,5.00,,License 5 Lower Mineralisation
+Zinc,inferred,tonnes,65500.0,percent,9.84,percent,5.50,,License 5 Lower Mineralisation
+Zinc,inferred,tonnes,56200.0,percent,10.52,percent,6.00,,License 5 Lower Mineralisation
+Zinc,inferred,tonnes,51500.0,percent,10.91,percent,6.50,,License 5 Lower Mineralisation
+Zinc,inferred,tonnes,47800.0,percent,11.23,percent,7.00,,License 5 Lower Mineralisation
+Zinc,inferred,tonnes,44300.0,percent,11.56,percent,7.50,,License 5 Lower Mineralisation
+Zinc,inferred,tonnes,40400.0,percent,11.93,percent,8.00,,License 5 Lower Mineralisation
+Zinc,inferred,tonnes,38300.0,percent,12.13,percent,8.50,,License 5 Lower Mineralisation
+Zinc,inferred,tonnes,35500.0,percent,12.41,percent,9.00,,License 5 Lower Mineralisation
+Zinc,inferred,tonnes,32200.0,percent,12.73,percent,9.50,,License 5 Lower Mineralisation
+Zinc,inferred,tonnes,28500.0,percent,13.12,percent,10.00,,License 5 Lower Mineralisation
+Zinc,inferred,tonnes,25000.0,percent,13.53,percent,10.50,,License 5 Lower Mineralisation
+Zinc,inferred,tonnes,19600.0,percent,14.3,percent,11.00,,License 5 Lower Mineralisation
+Zinc,inferred,tonnes,18400.0,percent,14.5,percent,11.50,,License 5 Lower Mineralisation
+Zinc,inferred,tonnes,17200.0,percent,14.71,percent,12.00,,License 5 Lower Mineralisation
+Zinc,inferred,tonnes,16500.0,percent,14.81,percent,12.50,,License 5 Lower Mineralisation
+Zinc,inferred,tonnes,16000.0,percent,14.87,percent,13.00,,License 5 Lower Mineralisation
+Zinc,inferred,tonnes,13000.0,percent,15.25,percent,13.50,,License 5 Lower Mineralisation
+Lead,inferred,tonnes,1937300.0,percent,0.34,percent,0.50,,License 5 Lower Mineralisation
+Lead,inferred,tonnes,1492700.0,percent,0.40,percent,1.00,,License 5 Lower Mineralisation
+Lead,inferred,tonnes,714800.0,percent,0.52,percent,1.50,,License 5 Lower Mineralisation
+Lead,inferred,tonnes,445600.0,percent,0.57,percent,2.00,,License 5 Lower Mineralisation
+Lead,inferred,tonnes,276000.0,percent,0.64,percent,2.50,,License 5 Lower Mineralisation
+Lead,inferred,tonnes,113500.0,percent,0.78,percent,3.00,,License 5 Lower Mineralisation
+Lead,inferred,tonnes,94900.0,percent,0.81,percent,3.50,,License 5 Lower Mineralisation
+Lead,inferred,tonnes,80400.0,percent,0.81,percent,4.00,,License 5 Lower Mineralisation
+Lead,inferred,tonnes,77500.0,percent,0.81,percent,4.50,,License 5 Lower Mineralisation
+Lead,inferred,tonnes,72900.0,percent,0.83,percent,5.00,,License 5 Lower Mineralisation
+Lead,inferred,tonnes,65500.0,percent,0.87,percent,5.50,,License 5 Lower Mineralisation
+Lead,inferred,tonnes,56200.0,percent,0.92,percent,6.00,,License 5 Lower Mineralisation
+Lead,inferred,tonnes,51500.0,percent,0.94,percent,6.50,,License 5 Lower Mineralisation
+Lead,inferred,tonnes,47800.0,percent,0.96,percent,7.00,,License 5 Lower Mineralisation
+Lead,inferred,tonnes,44300.0,percent,0.98,percent,7.50,,License 5 Lower Mineralisation
+Lead,inferred,tonnes,40400.0,percent,1.01,percent,8.00,,License 5 Lower Mineralisation
+Lead,inferred,tonnes,38300.0,percent,1.03,percent,8.50,,License 5 Lower Mineralisation
+Lead,inferred,tonnes,35500.0,percent,1.05,percent,9.00,,License 5 Lower Mineralisation
+Lead,inferred,tonnes,32200.0,percent,1.07,percent,9.50,,License 5 Lower Mineralisation
+Lead,inferred,tonnes,28500.0,percent,1.10,percent,10.00,,License 5 Lower Mineralisation
+Lead,inferred,tonnes,25000.0,percent,1.12,percent,10.50,,License 5 Lower Mineralisation
+Lead,inferred,tonnes,19600.0,percent,1.18,percent,11.00,,License 5 Lower Mineralisation
+Lead,inferred,tonnes,18400.0,percent,1.19,percent,11.50,,License 5 Lower Mineralisation
+Lead,inferred,tonnes,17200.0,percent,1.20,percent,12.00,,License 5 Lower Mineralisation
+Lead,inferred,tonnes,16500.0,percent,1.21,percent,12.50,,License 5 Lower Mineralisation
+Lead,inferred,tonnes,16000.0,percent,1.21,percent,13.00,,License 5 Lower Mineralisation
+Lead,inferred,tonnes,13000.0,percent,1.23,percent,13.50,,License 5 Lower Mineralisation
+Silver,inferred,tonnes,1937300.0,grams per tonne,1.63,percent,0.50,,License 5 Lower Mineralisation
+Silver,inferred,tonnes,1492700.0,grams per tonne,1.83,percent,1.00,,License 5 Lower Mineralisation
+Silver,inferred,tonnes,714800.0,grams per tonne,2.34,percent,1.50,,License 5 Lower Mineralisation
+Silver,inferred,tonnes,445600.0,grams per tonne,2.82,percent,2.00,,License 5 Lower Mineralisation
+Silver,inferred,tonnes,276000.0,grams per tonne,3.32,percent,2.50,,License 5 Lower Mineralisation
+Silver,inferred,tonnes,113500.0,grams per tonne,4.87,percent,3.00,,License 5 Lower Mineralisation
+Silver,inferred,tonnes,94900.0,grams per tonne,4.69,percent,3.50,,License 5 Lower Mineralisation
+Silver,inferred,tonnes,80400.0,grams per tonne,4.70,percent,4.00,,License 5 Lower Mineralisation
+Silver,inferred,tonnes,77500.0,grams per tonne,4.64,percent,4.50,,License 5 Lower Mineralisation
+Silver,inferred,tonnes,72900.0,grams per tonne,4.50,percent,5.00,,License 5 Lower Mineralisation
+Silver,inferred,tonnes,65500.0,grams per tonne,4.48,percent,5.50,,License 5 Lower Mineralisation
+Silver,inferred,tonnes,56200.0,grams per tonne,4.23,percent,6.00,,License 5 Lower Mineralisation
+Silver,inferred,tonnes,51500.0,grams per tonne,4.47,percent,6.50,,License 5 Lower Mineralisation
+Silver,inferred,tonnes,47800.0,grams per tonne,4.64,percent,7.00,,License 5 Lower Mineralisation
+Silver,inferred,tonnes,44300.0,grams per tonne,4.77,percent,7.50,,License 5 Lower Mineralisation
+Silver,inferred,tonnes,40400.0,grams per tonne,4.98,percent,8.00,,License 5 Lower Mineralisation
+Silver,inferred,tonnes,38300.0,grams per tonne,5.02,percent,8.50,,License 5 Lower Mineralisation
+Silver,inferred,tonnes,35500.0,grams per tonne,4.98,percent,9.00,,License 5 Lower Mineralisation
+Silver,inferred,tonnes,32200.0,grams per tonne,4.89,percent,9.50,,License 5 Lower Mineralisation
+Silver,inferred,tonnes,28500.0,grams per tonne,4.75,percent,10.00,,License 5 Lower Mineralisation
+Silver,inferred,tonnes,25000.0,grams per tonne,4.56,percent,10.50,,License 5 Lower Mineralisation
+Silver,inferred,tonnes,19600.0,grams per tonne,4.07,percent,11.00,,License 5 Lower Mineralisation
+Silver,inferred,tonnes,18400.0,grams per tonne,3.99,percent,11.50,,License 5 Lower Mineralisation
+Silver,inferred,tonnes,17200.0,grams per tonne,3.83,percent,12.00,,License 5 Lower Mineralisation
+Silver,inferred,tonnes,16500.0,grams per tonne,3.76,percent,12.50,,License 5 Lower Mineralisation
+Silver,inferred,tonnes,16000.0,grams per tonne,3.70,percent,13.00,,License 5 Lower Mineralisation
+Silver,inferred,tonnes,13000.0,grams per tonne,3.36,percent,13.50,,License 5 Lower Mineralisation
+Copper,inferred,tonnes,1937300.0,percent,0.001,percent,0.50,,License 5 Lower Mineralisation
+Copper,inferred,tonnes,1492700.0,percent,0.001,percent,1.00,,License 5 Lower Mineralisation
+Copper,inferred,tonnes,714800.0,percent,0.001,percent,1.50,,License 5 Lower Mineralisation
+Copper,inferred,tonnes,445600.0,percent,0.001,percent,2.00,,License 5 Lower Mineralisation
+Copper,inferred,tonnes,276000.0,percent,0.001,percent,2.50,,License 5 Lower Mineralisation
+Copper,inferred,tonnes,113500.0,percent,0.001,percent,3.00,,License 5 Lower Mineralisation
+Copper,inferred,tonnes,94900.0,percent,0.001,percent,3.50,,License 5 Lower Mineralisation
+Copper,inferred,tonnes,80400.0,percent,0.001,percent,4.00,,License 5 Lower Mineralisation
+Copper,inferred,tonnes,77500.0,percent,0.001,percent,4.50,,License 5 Lower Mineralisation
+Copper,inferred,tonnes,72900.0,percent,0.001,percent,5.00,,License 5 Lower Mineralisation
+Copper,inferred,tonnes,65500.0,percent,0.001,percent,5.50,,License 5 Lower Mineralisation
+Copper,inferred,tonnes,56200.0,percent,0.001,percent,6.00,,License 5 Lower Mineralisation
+Copper,inferred,tonnes,51500.0,percent,0.001,percent,6.50,,License 5 Lower Mineralisation
+Copper,inferred,tonnes,47800.0,percent,0.001,percent,7.00,,License 5 Lower Mineralisation
+Copper,inferred,tonnes,44300.0,percent,0.001,percent,7.50,,License 5 Lower Mineralisation
+Copper,inferred,tonnes,40400.0,percent,0.001,percent,8.00,,License 5 Lower Mineralisation
+Copper,inferred,tonnes,38300.0,percent,0.001,percent,8.50,,License 5 Lower Mineralisation
+Copper,inferred,tonnes,35500.0,percent,0.001,percent,9.00,,License 5 Lower Mineralisation
+Copper,inferred,tonnes,32200.0,percent,0.001,percent,9.50,,License 5 Lower Mineralisation
+Copper,inferred,tonnes,28500.0,percent,0.001,percent,10.00,,License 5 Lower Mineralisation
+Copper,inferred,tonnes,25000.0,percent,0.001,percent,10.50,,License 5 Lower Mineralisation
+Copper,inferred,tonnes,19600.0,percent,0.001,percent,11.00,,License 5 Lower Mineralisation
+Copper,inferred,tonnes,18400.0,percent,0.001,percent,11.50,,License 5 Lower Mineralisation
+Copper,inferred,tonnes,17200.0,percent,0.001,percent,12.00,,License 5 Lower Mineralisation
+Copper,inferred,tonnes,16500.0,percent,0.001,percent,12.50,,License 5 Lower Mineralisation
+Copper,inferred,tonnes,16000.0,percent,0.001,percent,13.00,,License 5 Lower Mineralisation
+Copper,inferred,tonnes,13000.0,percent,0.001,percent,13.50,,License 5 Lower Mineralisation
+Iron,inferred,tonnes,1937300.0,percent,22.91,percent,0.50,,License 5 Lower Mineralisation
+Iron,inferred,tonnes,1492700.0,percent,24.86,percent,1.00,,License 5 Lower Mineralisation
+Iron,inferred,tonnes,714800.0,percent,27.52,percent,1.50,,License 5 Lower Mineralisation
+Iron,inferred,tonnes,445600.0,percent,25.79,percent,2.00,,License 5 Lower Mineralisation
+Iron,inferred,tonnes,276000.0,percent,22.58,percent,2.50,,License 5 Lower Mineralisation
+Iron,inferred,tonnes,113500.0,percent,17.03,percent,3.00,,License 5 Lower Mineralisation
+Iron,inferred,tonnes,94900.0,percent,16.35,percent,3.50,,License 5 Lower Mineralisation
+Iron,inferred,tonnes,80400.0,percent,15.68,percent,4.00,,License 5 Lower Mineralisation
+Iron,inferred,tonnes,77500.0,percent,15.44,percent,4.50,,License 5 Lower Mineralisation
+Iron,inferred,tonnes,72900.0,percent,15.7,percent,5.00,,License 5 Lower Mineralisation
+Iron,inferred,tonnes,65500.0,percent,16.37,percent,5.50,,License 5 Lower Mineralisation
+Iron,inferred,tonnes,56200.0,percent,17.21,percent,6.00,,License 5 Lower Mineralisation
+Iron,inferred,tonnes,51500.0,percent,17.05,percent,6.50,,License 5 Lower Mineralisation
+Iron,inferred,tonnes,47800.0,percent,16.82,percent,7.00,,License 5 Lower Mineralisation
+Iron,inferred,tonnes,44300.0,percent,16.92,percent,7.50,,License 5 Lower Mineralisation
+Iron,inferred,tonnes,40400.0,percent,17.2,percent,8.00,,License 5 Lower Mineralisation
+Iron,inferred,tonnes,38300.0,percent,17.45,percent,8.50,,License 5 Lower Mineralisation
+Iron,inferred,tonnes,35500.0,percent,17.74,percent,9.00,,License 5 Lower Mineralisation
+Iron,inferred,tonnes,32200.0,percent,18.05,percent,9.50,,License 5 Lower Mineralisation
+Iron,inferred,tonnes,28500.0,percent,18.41,percent,10.00,,License 5 Lower Mineralisation
+Iron,inferred,tonnes,25000.0,percent,18.74,percent,10.50,,License 5 Lower Mineralisation
+Iron,inferred,tonnes,19600.0,percent,19.32,percent,11.00,,License 5 Lower Mineralisation
+Iron,inferred,tonnes,18400.0,percent,19.49,percent,11.50,,License 5 Lower Mineralisation
+Iron,inferred,tonnes,17200.0,percent,19.62,percent,12.00,,License 5 Lower Mineralisation
+Iron,inferred,tonnes,16500.0,percent,19.69,percent,12.50,,License 5 Lower Mineralisation
+Iron,inferred,tonnes,16000.0,percent,19.73,percent,13.00,,License 5 Lower Mineralisation
+Iron,inferred,tonnes,13000.0,percent,19.94,percent,13.50,,License 5 Lower Mineralisation

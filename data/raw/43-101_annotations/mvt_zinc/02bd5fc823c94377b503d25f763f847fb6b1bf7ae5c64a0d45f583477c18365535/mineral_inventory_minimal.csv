@@ -1,0 +1,17 @@
+commodity_observed_name,category_observed_name,ore_unit_observed_name,ore_value,grade_unit_observed_name,grade_value,cutoff_grade_unit_observed_name,cutoff_grade_value,contained_metal,zone
+zinc,indicated,tonnes,161000,percent,18.2,,,,Mina Grandé Sur
+zinc,indicated,tonnes,172000,percent,17.1,,,,Mina Grandé Centro
+zinc,indicated,tonnes,140000,percent,21,,,,Mina Grandé Norté
+zinc,indicated,tonnes,339000,percent,19.3,,,,Mina Chica
+zinc,indicated,tonnes,10000,percent,13.8,,,,Bongarita
+zinc,indicated,tonnes,1110000,percent,15.9,percent,5,,
+zinc,indicated,tonnes,822000,percent,18.9,percent,10,,
+zinc,indicated,tonnes,549000,percent,22,percent,15,,
+zinc,inferred,tonnes,436000,percent,17.4,,,,Mina Grandé Sur
+zinc,inferred,tonnes,201000,percent,16,,,,Mina Grandé Centro
+zinc,inferred,tonnes,450000,percent,16.5,,,,Mina Grandé Norté
+zinc,inferred,tonnes,252000,percent,16.9,,,,Mina Chica
+zinc,inferred,tonnes,700,percent,12.7,,,,Bongarita
+zinc,inferred,tonnes,1852000,percent,14.4,percent,5,,
+zinc,inferred,tonnes,1339000,percent,16.8,percent,10,,
+zinc,inferred,tonnes,752000,percent,20.1,percent,15,,

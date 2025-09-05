@@ -1,0 +1,18 @@
+commodity_observed_name,category_observed_name,ore_unit_observed_name,ore_value,grade_unit_observed_name,grade_value,cutoff_grade_unit_observed_name,cutoff_grade_value,contained_metal,zone
+Tungsten,indicated,tons,132597,percent,1.2,percent,0.8,,West Extension
+Tungsten,indicated,tons,379763,percent,1.38,percent,0.8,,West Extension Below 3700el
+Tungsten,indicated,tons,24183,percent,1.97,percent,0.8,,E-Zone
+Tungsten,indicated,tons,414090,percent,1.26,percent,0.8,,Main Zone Pillars
+Tungsten,indicated,tons,29023,percent,1.07,percent,0.8,,Central Flats
+Tungsten,indicated,tons,40255,percent,1.64,percent,0.8,,South Flats
+Tungsten,indicated,tons,479118,percent,1.17,percent,0.8,,PUG
+Tungsten,indicated,tons,6447,percent,0.73,percent,0.8,,Stockpile
+Tungsten,probable,tons,95666,percent,1.08,percent,0.8,,West Extension
+Tungsten,probable,tons,271451,percent,1.07,percent,0.8,,West Extension Below 3700el
+Tungsten,probable,tons,148187,percent,1.11,percent,0.8,,West Extension Below 3570el
+Tungsten,probable,tons,23967,percent,1.09,percent,0.8,,E-Zone
+Tungsten,probable,tons,376554,percent,1.06,percent,0.8,,Main Zone Pillars
+Tungsten,probable,tons,22250,percent,0.87,percent,0.8,,Central Flats
+Tungsten,probable,tons,45287,percent,1.33,percent,0.8,,South Flats
+Tungsten,probable,tons,30390,percent,1.17,percent,0.8,,PUG
+Tungsten,probable,tons,6447,percent,0.73,percent,0.8,,Stockpile

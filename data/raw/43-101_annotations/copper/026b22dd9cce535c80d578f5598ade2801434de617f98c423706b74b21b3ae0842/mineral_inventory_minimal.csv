@@ -1,0 +1,15 @@
+commodity_observed_name,category_observed_name,ore_unit_observed_name,ore_value,grade_unit_observed_name,grade_value,cutoff_grade_unit_observed_name,cutoff_grade_value,contained_metal,zone
+gold,measured,million tonnes,12.6,grams per tonne,0.4,,,,Rovina
+copper,measured,million tonnes,12.6,percent,0.33,,,,Rovina
+gold,indicated,million tonnes,65.3,grams per tonne,0.36,,,,Rovina
+copper,indicated,million tonnes,65.3,percent,0.28,,,,Rovina
+gold,inferred,million tonnes,35.1,grams per tonne,0.33,,,,Rovina
+copper,inferred,million tonnes,35.1,percent,0.25,,,,Rovina
+gold,measured,million tonnes,9.4,grams per tonne,0.76,grams per tonne,0.45,,Colnic
+copper,measured,million tonnes,9.4,percent,0.12,grams per tonne,0.45,,Colnic
+gold,indicated,million tonnes,105.8,grams per tonne,0.57,grams per tonne,0.45,,Colnic
+copper,indicated,million tonnes,105.8,percent,0.11,grams per tonne,0.45,,Colnic
+gold,inferred,million tonnes,41.2,grams per tonne,0.44,grams per tonne,0.45,,Colnic
+copper,inferred,million tonnes,41.2,percent,0.1,grams per tonne,0.45,,Colnic
+gold,inferred,million tonnes,101.3,grams per tonne,0.9,grams per tonne,0.45,,Ciresata
+copper,inferred,million tonnes,101.3,percent,0.17,grams per tonne,0.45,,Ciresata

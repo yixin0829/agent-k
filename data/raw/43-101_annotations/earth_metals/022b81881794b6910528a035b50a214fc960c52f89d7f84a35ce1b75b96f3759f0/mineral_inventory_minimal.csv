@@ -1,0 +1,10 @@
+commodity_observed_name,category_observed_name,ore_unit_observed_name,ore_value,grade_unit_observed_name,grade_value,cutoff_grade_unit_observed_name,cutoff_grade_value,contained_metal,zone
+Niobium,indicated,tonnes,90900000,percent,0.66,US$/t,180,,Elk Creek
+Titanium,indicated,tonnes,90900000,percent,2.59,US$/t,180,,Elk Creek
+Scandium,indicated,tonnes,90900000,grams per tonne,70,US$/t,180,,Elk Creek
+Niobium,inferred,tonnes,133600000,percent,0.48,US$/t,180,,Elk Creek
+Titanium,inferred,tonnes,133600000,percent,2.23,US$/t,180,,Elk Creek
+Scandium,inferred,tonnes,133600000,grams per tonne,59,US$/t,180,,Elk Creek
+Niobium,probable,tonnes,31661000,percent,0.79,NSR $/t,180,,Elk Creek
+Titanium,probable,tonnes,31661000,percent,2.81,NSR $/t,180,,Elk Creek
+Scandium,probable,tonnes,31661000,ppm,71.58,NSR $/t,180,,Elk Creek
